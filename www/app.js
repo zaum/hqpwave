@@ -118,7 +118,7 @@ window.updateTimelineDot = function() {
   $dot.css('top', `${Math.max(margin, Math.min(containerHeight - dotSize - margin, dotTop))}px`);
 };
 
-// Make timeline dot draggable
+// Make timeline dot draggable (mouse and touch)
 window.makeTimelineDotDraggable = function() {
   const $dot = window._timelineDot;
   const $container = $('#timelineMinimap');
@@ -128,21 +128,20 @@ window.makeTimelineDotDraggable = function() {
   let startPercent = 0;
   let startClientY = 0;
   
-  $dot.on('mousedown', function(e) {
+  // Helper function to handle drag start
+  function startDrag(clientY) {
     isDragging = true;
-    startClientY = e.clientY;
+    startClientY = clientY;
     
     const scrollContainer = document.getElementById('libraryView');
     if (scrollContainer) {
       const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
       startPercent = scrollHeight > 0 ? scrollContainer.scrollTop / scrollHeight : 0;
     }
-    
-    e.preventDefault();
-    e.stopPropagation();
-  });
+  }
   
-  $(document).on('mousemove', function(e) {
+  // Helper function to handle drag move
+  function moveDrag(clientY) {
     if (!isDragging) return;
     
     const scrollContainer = document.getElementById('libraryView');
@@ -155,7 +154,7 @@ window.makeTimelineDotDraggable = function() {
     const availableHeight = containerHeight - dotSize - (margin * 2);
     
     // Calculate delta from start position
-    const deltaY = e.clientY - startClientY;
+    const deltaY = clientY - startClientY;
     const deltaPercent = deltaY / availableHeight;
     
     // Apply delta to start percent
@@ -165,10 +164,44 @@ window.makeTimelineDotDraggable = function() {
     // Scroll to position
     const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
     scrollContainer.scrollTop = newPercent * scrollHeight;
+  }
+  
+  // Helper function to handle drag end
+  function endDrag() {
+    isDragging = false;
+  }
+  
+  // Mouse events
+  $dot.on('mousedown', function(e) {
+    startDrag(e.clientY);
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  
+  $(document).on('mousemove', function(e) {
+    moveDrag(e.clientY);
   });
   
   $(document).on('mouseup', function() {
-    isDragging = false;
+    endDrag();
+  });
+  
+  // Touch events
+  $dot.on('touchstart', function(e) {
+    const touch = e.touches[0];
+    startDrag(touch.clientY);
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  
+  $(document).on('touchmove', function(e) {
+    const touch = e.touches[0];
+    moveDrag(touch.clientY);
+    e.preventDefault();
+  });
+  
+  $(document).on('touchend', function() {
+    endDrag();
   });
 };
 import AlbumView from './album-view.js';

@@ -35,6 +35,8 @@ export default class LibraryView extends Subview {
   constructor() {
     super($("#libraryView"));
     this.$title = this.$el.find('#libraryTitle');
+    this.$title.addClass('clickable');
+    this.$title.on('click tap', () => this.$el[0].scrollTop = 0);
     this.$itemCount = this.$el.find('#libraryNumbers');
     this.$searchButton = this.$el.find('#librarySearchButton');
     this.$searchCloseButton = this.$el.find('#librarySearchCloseButton');

@@ -417,9 +417,16 @@ label {
 }
 .viewHeader .title {
   font-size: 16px;
-  font-weight: bold;
-  margin-top: -3px;
 }
+
+.viewHeader .title.clickable {
+  cursor: pointer;
+}
+
+.viewHeader .title.clickable:hover {
+  opacity: 0.7;
+}
+
 .viewHeader .headerCountText {
   margin-left: 6px;
   font-size: 14px;
@@ -913,7 +920,7 @@ html {
   top: 10px;
   left: 10px;
   overflow-y: auto;
-  color: red;
+  color: var(--col-highlight);
   font-size: 16px;
   font-weight: bold;
   background: rgba(255, 255, 255, 0.2);
@@ -3182,7 +3189,7 @@ html {
   text-align: right;
   width: 100px;
   padding-right: 10px;
-  border-right: 2px solid var(--col-accent);
+  border-right: 2px solid var(--col-highlight);
 }
 #settingsHotkeys .c2 {
   padding-left: 8px;
@@ -3620,8 +3627,4 @@ select * {
 /* Adjust library view when minimap is visible */
 #libraryView.hasMinimap {
   padding-right: 60px;
-}
-
-#libraryView.hasMinimap #libraryAlbumsList {
-  padding-right: 68px;
 }
