@@ -1,32 +1,41 @@
 // Timeline minimap rendering and interaction for group by year view
 window.renderTimelineMinimap = function(years) {
+  const $container = $('#timelineMinimapContainer');
   const $minimap = $('#timelineMinimap');
   $minimap.empty();
+  $minimap.css('display', 'block');
   if (!years || years.length === 0) return;
-  // Get first and last year
+  
   const firstYear = years[0];
   const lastYear = years[years.length - 1];
+  
   // Add top label (clickable)
-  const $topLabel = $(`<div class="minimapYearLabel">${firstYear}</div>`);
-  $topLabel.on('click', function() {
+  const $topLabel = $(`<div class="minimapYearLabel" style="top: 0;">${firstYear}</div>`);
+  $topLabel.on('click', function(e) {
+    e.stopPropagation(); // Prevent container click
     scrollToYear(firstYear);
   });
   $minimap.append($topLabel);
+  
   // Minimap line
   const $line = $('<div class="minimapLine"></div>');
   $minimap.append($line);
+  
   // Add bottom label (clickable)
-  const $bottomLabel = $(`<div class="minimapYearLabel">${lastYear}</div>`);
-  $bottomLabel.on('click', function() {
+  const $bottomLabel = $(`<div class="minimapYearLabel" style="bottom: 0;">${lastYear}</div>`);
+  $bottomLabel.on('click', function(e) {
+    e.stopPropagation(); // Prevent container click
     scrollToYear(lastYear);
   });
   $minimap.append($bottomLabel);
   
+  // Add dot
+  const $dot = $('<div class="minimapDot"></div>');
+  $minimap.append($dot);
+  
   // Helper function to scroll to year
   function scrollToYear(year) {
     const container = document.getElementById('libraryView');
-    
-    // Try stored positions first
     if (window._yearPositions) {
       const pos = window._yearPositions.find(p => p.year === year);
       if (pos) {
@@ -34,54 +43,44 @@ window.renderTimelineMinimap = function(years) {
         return;
       }
     }
-    
-    // Fallback to DOM query
     const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
     if ($group.length) {
-      const top = $group[0].offsetTop;
-      container.scrollTop = top;
+      container.scrollTop = $group[0].offsetTop;
     }
   }
-  // Add dot
-  const $dot = $('<div class="minimapDot"></div>');
-  $line.append($dot);
+  
   // Store for scroll sync
   window._timelineYears = years;
   window._timelineDot = $dot;
   window._timelineLine = $line;
-  // Clickable area for each year
-  $line.off('click').on('click', function(e) {
-    const lineRect = $line[0].getBoundingClientRect();
-    const y = e.clientY - lineRect.top;
-    const percent = y / lineRect.height;
+  window._timelineContainer = $container;
+  
+  // Click on the entire container width
+  $container.off('click').on('click', function(e) {
+    const rect = $container[0].getBoundingClientRect();
+    // Available click area: padding-top (30px) to height - padding-bottom (40px)
+    const topPadding = 30;
+    const bottomPadding = 40;
+    const clickAreaTop = rect.top + topPadding;
+    const clickAreaHeight = rect.height - topPadding - bottomPadding;
+    const y = e.clientY - clickAreaTop;
+    const percent = Math.max(0, Math.min(1, y / clickAreaHeight));
     const idx = Math.round(percent * (years.length - 1));
     const year = years[idx];
     if (year) {
-      // Use stored positions if available
-      const container = document.getElementById('libraryView');
-      if (window._yearPositions) {
-        const pos = window._yearPositions.find(p => p.year === year);
-        if (pos) {
-          container.scrollTop = pos.top;
-        }
-      } else {
-        // Fallback to DOM query
-        const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
-        if ($group.length) {
-          const top = $group[0].offsetTop;
-          container.scrollTop = top;
-        }
-      }
+      scrollToYear(year);
     }
   });
+  
   // Sync dot position on scroll
-  const container = document.getElementById('libraryView');
-  if (container) {
-    container.onscroll = function() {
+  const scrollContainer = document.getElementById('libraryView');
+  if (scrollContainer) {
+    scrollContainer.onscroll = function() {
       window.updateTimelineDot();
     };
     window.updateTimelineDot();
   }
+  
   // Make dot draggable
   window.makeTimelineDotDraggable();
 };
@@ -89,91 +88,63 @@ window.renderTimelineMinimap = function(years) {
 window.updateTimelineDot = function() {
   const years = window._timelineYears;
   const $dot = window._timelineDot;
-  const $line = window._timelineLine;
-  if (!years || !$dot || !$line) return;
-  const container = document.getElementById('libraryView');
-  if (!container) return;
+  const $container = $('#timelineMinimap');
+  if (!years || !$dot || !$container) return;
+  const scrollContainer = document.getElementById('libraryView');
+  if (!scrollContainer) return;
   
-  // Use stored positions if available
-  if (window._yearPositions) {
-    let minDist = Infinity, minIdx = 0;
-    for (let i = 0; i < years.length; i++) {
-      const year = years[i];
-      const pos = window._yearPositions.find(p => p.year === year);
-      if (pos) {
-        const dist = Math.abs(pos.top - container.scrollTop);
-        if (dist < minDist) {
-          minDist = dist;
-          minIdx = i;
-        }
-      }
-    }
-    const percent = years.length > 1 ? minIdx / (years.length - 1) : 0;
-    const lineHeight = $line.height();
-    $dot.css('top', `${percent * (lineHeight - 16)}px`);
-  } else {
-    // Fallback to DOM query
-    let minDist = Infinity, minIdx = 0;
-    for (let i = 0; i < years.length; i++) {
-      const year = years[i];
-      const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
-      if ($group.length) {
-        const dist = Math.abs($group[0].offsetTop - container.scrollTop);
-        if (dist < minDist) {
-          minDist = dist;
-          minIdx = i;
-        }
-      }
-    }
-    // Position dot
-    const percent = years.length > 1 ? minIdx / (years.length - 1) : 0;
-    const lineHeight = $line.height();
-    $dot.css('top', `${percent * (lineHeight - 16)}px`);
-  }
+  // Get scroll progress (0 to 1)
+  const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+  const scrollProgress = scrollHeight > 0 ? scrollContainer.scrollTop / scrollHeight : 0;
+  
+  // Get container height and dot size
+  const containerHeight = $container.height();
+  const dotSize = 14;
+  const margin = 50; // Same as CSS top/bottom on .minimapLine
+  
+  // Position dot based on scroll progress, accounting for margins
+  const availableHeight = containerHeight - dotSize - (margin * 2);
+  const dotTop = margin + (scrollProgress * availableHeight);
+  $dot.css('top', `${Math.max(margin, Math.min(containerHeight - dotSize - margin, dotTop))}px`);
 };
 
 // Make timeline dot draggable
 window.makeTimelineDotDraggable = function() {
   const $dot = window._timelineDot;
-  const $line = window._timelineLine;
-  const years = window._timelineYears;
-  if (!$dot || !$line || !years) return;
+  const $container = $('#timelineMinimapContainer');
+  if (!$dot || !$container) return;
   
   let isDragging = false;
+  let startY = 0;
+  let startScrollTop = 0;
   
   $dot.on('mousedown', function(e) {
     isDragging = true;
+    startY = e.clientY;
+    const scrollContainer = document.getElementById('libraryView');
+    startScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
     e.preventDefault();
   });
   
   $(document).on('mousemove', function(e) {
     if (!isDragging) return;
     
-    const lineRect = $line[0].getBoundingClientRect();
-    const y = e.clientY - lineRect.top;
-    const percent = Math.max(0, Math.min(1, y / lineRect.height));
-    const idx = Math.round(percent * (years.length - 1));
-    const year = years[idx];
+    const scrollContainer = document.getElementById('libraryView');
+    if (!scrollContainer) return;
     
-    if (year) {
-      const container = document.getElementById('libraryView');
-      if (container) {
-        // Use stored positions if available
-        if (window._yearPositions) {
-          const pos = window._yearPositions.find(p => p.year === year);
-          if (pos) {
-            container.scrollTop = pos.top;
-          }
-        } else {
-          // Fallback to DOM query
-          const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
-          if ($group.length) {
-            const top = $group[0].offsetTop;
-            container.scrollTop = top;
-          }
-        }
-      }
-    }
+    const containerRect = $container[0].getBoundingClientRect();
+    const containerHeight = containerRect.height;
+    const dotSize = 14;
+    const margin = 50;
+    const availableHeight = containerHeight - dotSize - (margin * 2);
+    
+    // Calculate Y relative to container, adjusted for margins
+    const y = e.clientY - containerRect.top - margin;
+    const percent = Math.max(0, Math.min(1, y / availableHeight));
+    
+    // Scroll to position based on percent
+    const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    scrollContainer.scrollTop = percent * scrollHeight;
   });
   
   $(document).on('mouseup', function() {

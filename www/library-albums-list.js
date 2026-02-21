@@ -74,13 +74,6 @@ export default class LibraryAlbumsList extends LibraryContentList {
   clear() {
     super.clear();
     this.domDirty = true;
-    // Hide timeline elements when not in year view
-    $('#timelineYears').css('display', 'none');
-    $('#timelineVerticalLine').css('display', 'none');
-    $('#timelineMinimapContainer').css({
-      'display': 'flex',
-      'visibility': 'hidden'
-    });
   }
 
   // override
@@ -104,6 +97,15 @@ export default class LibraryAlbumsList extends LibraryContentList {
       return;
     }
     this.groupType = groupType;
+
+    // Show minimap only for group-by-year
+    if (groupType === 'year') {
+      $('#timelineMinimapContainer').addClass('isVisible');
+      $('#libraryView').addClass('hasMinimap');
+    } else {
+      $('#timelineMinimapContainer').removeClass('isVisible');
+      $('#libraryView').removeClass('hasMinimap');
+    }
 
     this.groupsDirty = true;
     this.domDirty = true;
@@ -218,6 +220,18 @@ export default class LibraryAlbumsList extends LibraryContentList {
     if (this.domDirty) {
       this.populateDom();
       this.domDirty = false;
+      
+      // Render timeline minimap if grouping by year
+      if (this.groupType === 'year' && this.labels && this.labels.length > 0) {
+        const years = this.labels.map(label => {
+          const year = parseInt(label);
+          return isNaN(year) ? null : year;
+        }).filter(y => y !== null);
+        if (window.renderTimelineMinimap) {
+          window.renderTimelineMinimap(years);
+        }
+      }
+      
       $(document).trigger('library-albums-list-populated');
     }
   }
