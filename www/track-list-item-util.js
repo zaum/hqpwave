@@ -128,7 +128,7 @@ export default class TrackListItemUtil {
 
     let s = '';
     s += `<div class="trackItem ${groupingClass}" data-index="${index}" data-hash="${hash}">`;
-    s += `  <div class="left">${leftText}</div>`;
+    s += `  <div class="left"><div class="iconButton dragHandleButton"></div>${leftText}</div>`;
     const mainText = album 
         ? TrackListItemUtil.makeMainContents(item, album)
         : TrackListItemUtil.makeNonLibraryMainContents(item, album);
@@ -143,7 +143,7 @@ export default class TrackListItemUtil {
       s += `  <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}"></div>`;
       s += `</div>`;
     }
-    s += `  <div class="right"><div class="contextButton iconButton moreButton"></div></div>`;
+    s += `  <div class="right"><div class="iconButton deleteButton"></div></div>`;
     s += `</div>`;
     return $(s);
   }
@@ -167,7 +167,7 @@ export default class TrackListItemUtil {
     let result = '';
     result += `<span class="trackText">${ song ? song : 'Track' }</span>`;
     if (seconds) {
-      result += `&nbsp;<span class="duration">(${Util.durationText(seconds)})</span>`;
+      result += `&nbsp;&nbsp;&nbsp;<span class="duration">${Util.durationText(seconds)}</span>`;
     }
 
     // Album track items do not have the album's performer or composer properties (redundantly) populated.
@@ -238,7 +238,7 @@ export default class TrackListItemUtil {
     result += `<span class="trackText">${song || 'Track'}</span>`;
 
     if (seconds) {
-      result += ` <span class="duration">(${Util.durationText(seconds)})</span>`;
+      result += `&nbsp;&nbsp;&nbsp;<span class="duration">${Util.durationText(seconds)}</span>`;
     }
 
     return result;

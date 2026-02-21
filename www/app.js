@@ -1,3 +1,185 @@
+// Timeline minimap rendering and interaction for group by year view
+window.renderTimelineMinimap = function(years) {
+  const $minimap = $('#timelineMinimap');
+  $minimap.empty();
+  if (!years || years.length === 0) return;
+  // Get first and last year
+  const firstYear = years[0];
+  const lastYear = years[years.length - 1];
+  // Add top label (clickable)
+  const $topLabel = $(`<div class="minimapYearLabel">${firstYear}</div>`);
+  $topLabel.on('click', function() {
+    scrollToYear(firstYear);
+  });
+  $minimap.append($topLabel);
+  // Minimap line
+  const $line = $('<div class="minimapLine"></div>');
+  $minimap.append($line);
+  // Add bottom label (clickable)
+  const $bottomLabel = $(`<div class="minimapYearLabel">${lastYear}</div>`);
+  $bottomLabel.on('click', function() {
+    scrollToYear(lastYear);
+  });
+  $minimap.append($bottomLabel);
+  
+  // Helper function to scroll to year
+  function scrollToYear(year) {
+    const container = document.getElementById('libraryView');
+    
+    // Try stored positions first
+    if (window._yearPositions) {
+      const pos = window._yearPositions.find(p => p.year === year);
+      if (pos) {
+        container.scrollTop = pos.top;
+        return;
+      }
+    }
+    
+    // Fallback to DOM query
+    const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
+    if ($group.length) {
+      const top = $group[0].offsetTop;
+      container.scrollTop = top;
+    }
+  }
+  // Add dot
+  const $dot = $('<div class="minimapDot"></div>');
+  $line.append($dot);
+  // Store for scroll sync
+  window._timelineYears = years;
+  window._timelineDot = $dot;
+  window._timelineLine = $line;
+  // Clickable area for each year
+  $line.off('click').on('click', function(e) {
+    const lineRect = $line[0].getBoundingClientRect();
+    const y = e.clientY - lineRect.top;
+    const percent = y / lineRect.height;
+    const idx = Math.round(percent * (years.length - 1));
+    const year = years[idx];
+    if (year) {
+      // Use stored positions if available
+      const container = document.getElementById('libraryView');
+      if (window._yearPositions) {
+        const pos = window._yearPositions.find(p => p.year === year);
+        if (pos) {
+          container.scrollTop = pos.top;
+        }
+      } else {
+        // Fallback to DOM query
+        const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
+        if ($group.length) {
+          const top = $group[0].offsetTop;
+          container.scrollTop = top;
+        }
+      }
+    }
+  });
+  // Sync dot position on scroll
+  const container = document.getElementById('libraryView');
+  if (container) {
+    container.onscroll = function() {
+      window.updateTimelineDot();
+    };
+    window.updateTimelineDot();
+  }
+  // Make dot draggable
+  window.makeTimelineDotDraggable();
+};
+
+window.updateTimelineDot = function() {
+  const years = window._timelineYears;
+  const $dot = window._timelineDot;
+  const $line = window._timelineLine;
+  if (!years || !$dot || !$line) return;
+  const container = document.getElementById('libraryView');
+  if (!container) return;
+  
+  // Use stored positions if available
+  if (window._yearPositions) {
+    let minDist = Infinity, minIdx = 0;
+    for (let i = 0; i < years.length; i++) {
+      const year = years[i];
+      const pos = window._yearPositions.find(p => p.year === year);
+      if (pos) {
+        const dist = Math.abs(pos.top - container.scrollTop);
+        if (dist < minDist) {
+          minDist = dist;
+          minIdx = i;
+        }
+      }
+    }
+    const percent = years.length > 1 ? minIdx / (years.length - 1) : 0;
+    const lineHeight = $line.height();
+    $dot.css('top', `${percent * (lineHeight - 16)}px`);
+  } else {
+    // Fallback to DOM query
+    let minDist = Infinity, minIdx = 0;
+    for (let i = 0; i < years.length; i++) {
+      const year = years[i];
+      const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
+      if ($group.length) {
+        const dist = Math.abs($group[0].offsetTop - container.scrollTop);
+        if (dist < minDist) {
+          minDist = dist;
+          minIdx = i;
+        }
+      }
+    }
+    // Position dot
+    const percent = years.length > 1 ? minIdx / (years.length - 1) : 0;
+    const lineHeight = $line.height();
+    $dot.css('top', `${percent * (lineHeight - 16)}px`);
+  }
+};
+
+// Make timeline dot draggable
+window.makeTimelineDotDraggable = function() {
+  const $dot = window._timelineDot;
+  const $line = window._timelineLine;
+  const years = window._timelineYears;
+  if (!$dot || !$line || !years) return;
+  
+  let isDragging = false;
+  
+  $dot.on('mousedown', function(e) {
+    isDragging = true;
+    e.preventDefault();
+  });
+  
+  $(document).on('mousemove', function(e) {
+    if (!isDragging) return;
+    
+    const lineRect = $line[0].getBoundingClientRect();
+    const y = e.clientY - lineRect.top;
+    const percent = Math.max(0, Math.min(1, y / lineRect.height));
+    const idx = Math.round(percent * (years.length - 1));
+    const year = years[idx];
+    
+    if (year) {
+      const container = document.getElementById('libraryView');
+      if (container) {
+        // Use stored positions if available
+        if (window._yearPositions) {
+          const pos = window._yearPositions.find(p => p.year === year);
+          if (pos) {
+            container.scrollTop = pos.top;
+          }
+        } else {
+          // Fallback to DOM query
+          const $group = $(`.libraryGroupLabel.year:contains('${year}')`).first();
+          if ($group.length) {
+            const top = $group[0].offsetTop;
+            container.scrollTop = top;
+          }
+        }
+      }
+    }
+  });
+  
+  $(document).on('mouseup', function() {
+    isDragging = false;
+  });
+};
 import AlbumView from './album-view.js';
 import AppUtil from './app-util.js';
 import Busyer from './busyer.js';
@@ -63,6 +245,8 @@ export default class App {
       $('html').addClass('isTouch');
     }
     AppUtil.updateColorTheme();
+    // Initialize highlight color CSS variable
+    document.documentElement.style.setProperty('--col-highlight', Settings.highlightColor);
     ViewUtil.setVisible($('html'), true);
 
     $(window).on('resize', this.onWindowResize);
@@ -95,6 +279,7 @@ export default class App {
 
     this.$settingsButton.on("click", () => this.showSettingsView());
     this.$hqpSettingsButton.on("click", () => this.showHqpSettingsView());
+    $("#appTitle").on("click", () => this.doAppTitleClick());
 
     App.instance = this; // yes really
 
@@ -184,6 +369,13 @@ export default class App {
 
   showHqpSettingsView() {
     this.showSubview(this.hqpSettingsView);
+  }
+
+  doAppTitleClick() {
+    const topSubview = this.getTopSubview();
+    if (topSubview && topSubview !== this.libraryView) {
+      this.hideSubview(topSubview);
+    }
   }
 
   hidePlaylist() {

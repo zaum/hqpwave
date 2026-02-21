@@ -123,11 +123,11 @@ export default class PlaybarView {
     } else {
       const meta = Model.status.metadata;
       if (meta['@_artist']) {
-        s += meta['@_artist'];
+        s += '<span class="playingArtist">' + meta['@_artist'] + '</span>';
       }
       if (meta['@_song']) {
         if (s) {
-          s += ' - ';
+          s += ' ';
         }
         let song;
         if (Util.areUriAndPathEquivalent(meta['@_song'], meta['@_uri'])) {
@@ -222,6 +222,7 @@ export default class PlaybarView {
     this._updateTotalSeconds();
     this._updatePlaylistNumbers();
     this._updatePreviousNextButtons();
+    this._updateMusicPlayingAnimation();
   }
 
   onModelPlaylistUpdated(e) {
@@ -261,4 +262,20 @@ export default class PlaybarView {
       this.hideVolumePanel();
     }
   };
+
+  _updateMusicPlayingAnimation() {
+    const $musicPlaying = this.$el.find("#musicPlaying");
+    if (Model.status.isPlaying) {
+      $musicPlaying.addClass("isPlaying");
+    } else {
+      $musicPlaying.removeClass("isPlaying");
+    }
+  };
 }
+
+
+
+
+
+
+

@@ -211,6 +211,7 @@ export default class AlbumView extends Subview {
       $item.on("click tap", e => this.onItemClick(e));
       $item.find(".moreButton").on("click tap", e => this.onItemContextButtonClick(e));
       $item.find(".favoriteButton").on("click tap", e => TrackListItemUtil.onFavoriteButtonClick(e));
+      $item.find(".playButton").on("click tap", e => this.onPlayButtonClick(e));
       this.listItems$.push($item);
       this.$list.append($item);
     }
@@ -280,7 +281,7 @@ export default class AlbumView extends Subview {
 
 	makeListItem(index, item) {
 		const seconds = parseInt(item['@_length']);
-		const duration = seconds ? `&nbsp;<span class="albumItemDuration">(${Util.durationText(seconds)})</span>` : '';
+		const duration = seconds ? `&nbsp;&nbsp;&nbsp;<span class="albumItemDuration">${Util.durationText(seconds)}</span>` : '';
 		const song = item['@_song'];
     const hash = item['@_hash'];
     const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
@@ -300,7 +301,10 @@ export default class AlbumView extends Subview {
 
     let s = '';
     s += `<div class="albumItem" data-index="${index}" data-hash="${hash}">`;
-		s += `  <div class="albumItemLeft">${index+1}</div>`;
+		s += `  <div class="albumItemLeft">`;
+    s += `    <div class="playButton" data-index="${index}" title="Play Track Now"></div>`;
+    s += `    <span class="indexText">${index+1}</span>`;
+    s += `  </div>`;
 		s += `  <div class="albumItemMain">`;
     s += `    <div class="song">${song}${duration}</div>`;
     if (extra) {
@@ -309,7 +313,11 @@ export default class AlbumView extends Subview {
     s += `  </div>`;
     s += `  <div class="trackItemMeta">`;
     s += `    <div class="numViews">${numViews || ''}</div>`;
-    s += `    <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}"></div>`;
+    s += `    <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}">`;
+    s += `      <svg class="favoriteIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">`;
+    s += `        <path fill="var(--col-text-highlight)" fill-opacity="1" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>`;
+    s += `      </svg>`;
+    s += `    </div>`;
     s += `  </div>`;
 		s += `  <div class="albumItemContext iconButton moreButton" data-index="${index}"></div>`;
 		s += `</div>`;
@@ -454,6 +462,17 @@ export default class AlbumView extends Subview {
 		const index = parseInt($button.attr("data-index"));
     this.contextMenu.show(this.$el, $button, this.album, index);
 	}
+
+  onPlayButtonClick(event) {
+    event.stopPropagation();
+    const $button = $(event.currentTarget);
+    const index = parseInt($button.attr("data-index"));
+    const startIndex = index;
+    const endIndex = index;
+    const isPlayNow = true;
+    const commands = Commands.playlistAddUsingAlbumAndIndices(this.album, startIndex, endIndex, isPlayNow);
+    AppUtil.doPlaylistAdds(commands, isPlayNow, isPlayNow);
+  }
 
   onNewTrack = (e, currentUri, lastUri) => {
     if (App.instance.getTopSubview() != this) {

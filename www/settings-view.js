@@ -19,6 +19,7 @@ export default class SettingsView extends Subview {
   $themeDarkCheckbox;
   $themeLightCheckbox;
   $metaCheckbox;
+  $highlightColorPicker;
   infoView;
 
   constructor() {
@@ -32,6 +33,8 @@ export default class SettingsView extends Subview {
     this.$themeDarkCheckbox.on('click tap', this.onThemeCheckbox);
     this.$themeLightCheckbox.on('click tap', this.onThemeCheckbox);
     this.$metaCheckbox.on('click tap', this.onMetaCheckbox);
+    this.$highlightColorPicker = this.$el.find('#highlightColorPicker');
+    this.$highlightColorPicker.on('change', this.onHighlightColorChange);
     this.$el.find('#metaDownload').attr('href', Values.META_DOWNLOAD_LINK);
 
     Util.addAppListener(this, 'model-info-updated', () => this.infoView.update());
@@ -47,6 +50,8 @@ export default class SettingsView extends Subview {
     this.updateThemeCheckbox();
 
     this.updateMetaCheckbox();
+
+    this.updateHighlightColorPicker();
 
     ViewUtil.doStockFadeIn(this.$el);
     this.$el[0].scrollTop = 0;
@@ -78,6 +83,20 @@ export default class SettingsView extends Subview {
       this.$metaCheckbox.removeClass('isChecked');
     }
   }
+
+  updateHighlightColorPicker() {
+    this.$highlightColorPicker.val(Settings.highlightColor);
+    this.updateHighlightColorCSS();
+  }
+
+  updateHighlightColorCSS() {
+    document.documentElement.style.setProperty('--col-highlight', Settings.highlightColor);
+  }
+
+  onHighlightColorChange = () => {
+    Settings.highlightColor = this.$highlightColorPicker.val();
+    this.updateHighlightColorCSS();
+  };
 
   onThemeCheckbox = (e) => {
     Settings.colorTheme = (e.currentTarget.id == 'settingsThemeDarkCheckbox') ? 'dark' : 'light';

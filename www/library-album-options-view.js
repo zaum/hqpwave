@@ -15,6 +15,7 @@ export default class LibraryAlbumOptionsView {
 
   $el;
   $buttonsHolder;
+  $expandCollapseButton;
   $sortButton;
   $groupButton;
   $filterButton;
@@ -29,6 +30,7 @@ export default class LibraryAlbumOptionsView {
     this.$el = $el;
 
     this.$buttonsHolder = this.$el.find('#libraryOptionsButtons');
+    this.$expandCollapseButton = this.$el.find('#libraryExpandCollapseButton');
     this.$sortButton = this.$el.find('#librarySortButton');
     this.$groupButton = this.$el.find('#libraryGroupButton');
     this.$filterButton = this.$el.find('#libraryFilterButton');
@@ -40,10 +42,25 @@ export default class LibraryAlbumOptionsView {
 
     this.pointerUtil = new ModalPointerUtil(this.$el, () => this.hideDropdowns());
 
+    this.$expandCollapseButton.on('click tap', () => this.onExpandCollapseClick());
     this.$sortButton.on('click tap', e => this.toggleDropdown(this.sortDropdown));
     this.$groupButton.on('click tap', e => this.toggleDropdown(this.groupDropdown));
     this.$filterButton.on('click tap', e => this.toggleDropdown(this.filterDropdown));
     $(document).on('dropdown-item-select', this.onDropdownItemSelect);
+  }
+
+  onExpandCollapseClick() {
+    if (this.$expandCollapseButton.hasClass('isSelected')) {
+      // Currently in "collapse" state, so collapse all and switch to expand
+      this.$expandCollapseButton.removeClass('isSelected');
+      this.$expandCollapseButton.attr('title', 'Expand all');
+      $(document).trigger('library-collapse-all-groups');
+    } else {
+      // Currently in "expand" state, so expand all and switch to collapse
+      this.$expandCollapseButton.addClass('isSelected');
+      this.$expandCollapseButton.attr('title', 'Collapse all');
+      $(document).trigger('library-expand-all-groups');
+    }
   }
 
   toggleDropdown(dropdown) {

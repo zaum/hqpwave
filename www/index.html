@@ -54,6 +54,10 @@
 					<div id="libraryHeaderView" class="viewHeader">
 						<span id="libraryTitle" class="title">Library</span>
 						<span id="libraryNumbers" class="headerCountText"></span>
+						<div id="libraryHeaderSearchContainer" style="position: absolute; left: 50%; transform: translateX(-50%);">
+							<input id="libraryHeaderSearchInput" type="text" placeholder="Search everywhere in metadata">
+							<span id="libraryHeaderSearchClear" class="searchClearButton" style="display: none;">×</span>
+						</div>
 						<div id="libraryAlbumOptionsView" style="margin-left:auto; display:flex;">
 							<div id="librarySortDropdown" class="dropdown">
 								<div class="dropdownTitle">Sort by</div>
@@ -83,6 +87,7 @@
 								</div>
 							</div>
 							<div id="libraryOptionsButtons">
+								<div id="libraryExpandCollapseButton" class="iconButton toggleButton" title="Expand all"></div>
 								<div id="librarySortButton" class="iconButton toggleButton"></div>
 								<div id="libraryGroupButton" class="iconButton toggleButton"></div>
 								<!-- not using, for now -->
@@ -96,8 +101,9 @@
 					</div>
 
 						<div id="librarySearchPanel">
-							<div class="tabBar">
-								<div id="artistsTabButton" class="tabButton" data-value="artist"></div>
+						<div class="tabBar">
+							<div id="allTabButton" class="tabButton" data-value="all"></div>
+							<div id="artistsTabButton" class="tabButton" data-value="artist"></div>
 								<div id="albumsTabButton" class="tabButton" data-value="album" ></div>
 								<div id="genresTabButton" class="tabButton" data-value="genre"></div>
 								<div id="yearsTabButton" class="tabButton" data-value="year"></div>
@@ -107,6 +113,7 @@
 							<div id="searchTabContent">
 								<div class="inputLine">
 									<input id="librarySearchInput" name="librarySearchInput" type="text" required minlength="1" maxlength="64">
+									<span id="librarySearchClear" class="searchClearButton" style="display: none;">×</span>
 									<div id="librarySearchOkButton" class="textButton">OK</div>
 								</div>
 							</div>
@@ -118,7 +125,9 @@
 
 						<div id="librarySpinner" class="spinner"></div>
 
-						<div id="libraryAlbumsList"></div>
+						<div id="timelineView" style="display: block; min-height: 100%; position: relative;">
+							<div id="libraryAlbumsList"></div>
+						</div>
 						<div id="librarySearchList"></div>
 				</div>
 
@@ -141,10 +150,15 @@
 								</div>
 								<div id="albumViewGenreButtons"></div>
 								<div id="albumViewPath"></div>
-								<div id="albumViewButtons">
-									<div id="albumPlayNowButton" class="textButton">play now</div>
-									<div id="albumQueueButton" class="textButton">add to queue</div>
-									<div id="albumFavoriteButton" class="iconButton"></div></div>
+							<div id="albumViewButtons">
+								<div id="albumPlayNowButton" class="textButton">play now</div>
+								<div id="albumQueueButton" class="textButton">add to queue</div>
+								<div id="albumFavoriteButton" class="iconButton favoriteButton">
+									<svg class="favoriteIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+										<path fill="var(--col-text-highlight)" fill-opacity="1" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+									</svg>
+								</div>
+							</div>
 							</div>
 						</div>
 					</div>
@@ -268,7 +282,7 @@
 
 							<div id="hqpPresetRulesView">
 
-								<div class="settingsSubheading" style="">Preset rules</div>
+								<div class="settingsSubheading">Preset rules</div>
 
 								<div class="hqpPresetRulesInner">
 
@@ -386,6 +400,13 @@
 						</div>
 					</div>
 
+					<div class="settingsHighlightColor" style="margin-top:32px;">
+						<div>Highlight color:</div>
+						<div class="line">
+							<input type="color" id="highlightColorPicker" value="#00ff00" class="checkbox checkboxSmaller ruleCheckbox">
+							</div>
+					</div>
+
 					<div class="settingsMeta">
 						<span>HQPWV metadata:</span>
 							<div class="description">
@@ -398,6 +419,7 @@
 							</div>
 					</div>
 
+
 					<div id="settingsInfoView" style="margin-top:32px; ">
 						<div class="settingsSubheading" style="margin-bottom:4px;">Your HQPlayer version:</div>
 						<div id="hqpVersion">&nbsp;<br>&nbsp;</div>
@@ -405,11 +427,6 @@
 				</div>
 
 				<!-- z-index'ed overlays -->
-
-				<div id="groupContextMenu" class="contextMenu">
-					<div id="groupContextItemExpand" class="contextItem">Expand all</div>
-					<div id="groupContextItemCollapse" class="contextItem">Collapse all</div>
-				</div>
 
 				<div id="albumContextMenu" class="contextMenu">
 					<div id="albumContextItemQueue" class="contextItem">Queue track</div>
@@ -464,6 +481,14 @@
 					</div>
 				</div>
 
+				<div id="musicPlaying" class="music-playing">
+					<svg width="24" height="24" viewBox="0 0 24 24">
+						<rect class="bar" x="2" y="10" width="3" height="10" rx="1" />
+						<rect class="bar" x="7" y="10" width="3" height="10" rx="1" />
+						<rect class="bar" x="12" y="10" width="3" height="10" rx="1" />
+						<rect class="bar" x="17" y="10" width="3" height="10" rx="1" />
+					</svg>
+				</div>
 				<div id="playingText">&nbsp;</div>
 
 				<div id="playbarButtons">
@@ -513,3 +538,10 @@
 		</div>
 	</body>
 </html>
+
+
+
+
+
+
+

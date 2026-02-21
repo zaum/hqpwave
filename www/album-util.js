@@ -24,7 +24,8 @@ export default class AlbumUtil {
 
   static makeAlbumStatsText(album) {
     const duration = AlbumUtil.makeAlbumDurationText(AlbumUtil.getTracksOf(album));
-    const date = album['@_date'];
+    const fullDate = album['@_date'];
+    const date = fullDate ? fullDate.substring(0, 4) : null;
     const bitrateText = AlbumUtil.getBitrateText(album);
     const filetypeText = AlbumUtil.getFiletypeText(album);
 
@@ -59,8 +60,7 @@ export default class AlbumUtil {
     }
     ViewUtil.setDisplayed($holder, 'flex');
     for (const genre of album['genres']) {
-      const buttonText = (genre.length <= 15) ? genre : (genre.substring(0, 15) + `&hellip;`);
-      const s = `<span class="genreButton" data-value="${genre}">${buttonText}</span>`;
+      const s = `<span class="genreButton" data-value="${genre}">${genre}</span>`;
       const $button = $(s);
       $button.on('click tap', AlbumUtil.onGenreButtonClick);
       $holder.append($button);

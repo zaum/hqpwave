@@ -15,22 +15,20 @@ export default class GroupLabelUtil {
     s += `<div class="libraryGroupLabel ${labelClass}" data-collapsekey="${collapseKey}">`;
     s += `<span class="icon"></span>`;
     s += `<span class="inner">${label}</span>`;
-    s += (count > 0) ? `<span class="count">(${count})</span>` : '';
-    s += `<div class="iconButton moreButton"></div>`;
+    s += (count > 0) ? `<span class="count">${count}</span>` : '';
     s += `</div>`;
 
     const $label = $(s);
     $label.on('click tap', GroupLabelUtil.onClick);
 
-    const $moreButton = $label.find('.moreButton');
-    $moreButton.on('click tap', GroupLabelUtil.onContextButton);
-
     return $label;
   }
 
   static onClick = (event) => {
-    // Toggle states of both the 'label' el and the 'group' el that follows it
+    // Get the label element
     const $label = $(event.currentTarget);
+    
+    // Toggle states of both the 'label' el and the 'group' el that follows it
     const $group = $label.next();
     const shouldCollapse = !$label.hasClass('isCollapsed');
     if (shouldCollapse) {
@@ -47,10 +45,4 @@ export default class GroupLabelUtil {
       Settings.setLibraryGroupCollapsed(key, shouldCollapse);
     }
   };
-
-  static onContextButton = (event) => {
-    event.stopPropagation();
-    const $button = $(event.currentTarget);
-    $(document).trigger('group-label-context-button', $button);
-  }
 }

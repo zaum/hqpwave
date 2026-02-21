@@ -60,7 +60,7 @@ export default class ProgressView {
       } else if (!shouldAnimate && this.$thumb.hasClass('isAnimating')) {
         this.$thumb.removeClass('isAnimating');
       }
-      this.$thumb.css('left', (this.ratio * 100) + "%");
+      this.$thumb.css('width', (this.ratio * 100) + "%");
     }
   }
 

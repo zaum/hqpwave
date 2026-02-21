@@ -1,6 +1,7 @@
 import AlbumUtil from './album-util.js';
 import LibraryContentList from './library-content-list.js';
 import LibraryDataUtil from './library-data-util.js';
+import DataUtil from './data-util.js';
 import MetaUtil from './meta-util.js';
 import Model from './model.js';
 import Settings from './settings.js';
@@ -33,6 +34,8 @@ export default class LibrarySearchList extends LibraryContentList {
 
   // override
   show(now) {
+    // Hide timeline view when search is shown to avoid empty block
+    $('#timelineView').css('display', 'none');
     ViewUtil.setDisplayed(this.$el, true);
     if (now) {
       ViewUtil.setCssSync(this.$el, () => this.$el.css('opacity', 1));
@@ -58,6 +61,8 @@ export default class LibrarySearchList extends LibraryContentList {
         () => this.$el.css('opacity', 0),
         () => {
           ViewUtil.setDisplayed(this.$el, false);
+          // Show timeline view again when search is hidden
+          $('#timelineView').css('display', 'block');
           this.clear();
           if (callback) {
             callback();
@@ -94,6 +99,9 @@ export default class LibrarySearchList extends LibraryContentList {
   makeGroups() {
     let o;
     switch (this.searchType) {
+      case 'all':
+        o = this.makeAllMetadataGroup();
+        break;
       case 'artist':
         o = this.makeArtistGroups();
         break;
@@ -134,24 +142,43 @@ export default class LibrarySearchList extends LibraryContentList {
 
   // override
   get labelCssClass() {
-    return this.searchType;
+    return (this.searchType == 'all') ? 'all' : this.searchType;
   }
 
   // override
   populateGroupDiv($group, array) {
-    if (this.searchType == 'track' || this.searchType == 'trackFavorites') {
+    if (this.searchType == 'all') {
+      this.populateAllMetadataGroupDiv($group, array);
+    } else if (this.searchType == 'track' || this.searchType == 'trackFavorites') {
       this.populateTrackGroupDiv($group, array);
     } else {
       super.populateGroupDiv($group, array);
     }
   }
 
-  populateTrackGroupDiv($group, array) {
-    const a = array.map(item => item['track']);
-    const items$ = TrackListItemUtil.populateList($group, a);
-
+  populateAllMetadataGroupDiv($group, array) {
+    const items$ = [];
+    for (let i = 0; i < array.length; i++) {
+      const matchInfo = array[i];
+      const $item = this.makeAllMetadataListItem(matchInfo, i);
+      $group.append($item);
+      items$.push($item);
+    }
     for (const $item of items$) {
-      $item.find(".contextButton").on("click tap", this.onTrackListItemContextButton);
+      // Album click handlers
+      $item.find(".clickableAlbum").on("click tap", e => this.onAllMetadataAlbumClick(e));
+      
+      // More button handler
+      const $moreButton = $item.find(".contextButton");
+      if ($moreButton.length > 0) {
+        $moreButton.on("click tap", this.onAllMetadataContextButton);
+      }
+      
+      // Observe images for lazy loading
+      const img = $item.find('img')[0];
+      if (img) {
+        this.intersectionObs.observe(img);
+      }
     }
   }
 
@@ -183,6 +210,69 @@ export default class LibrarySearchList extends LibraryContentList {
       count += group.length;
     }
     return count;
+  }
+
+  /**
+   * Returns groups of albums matching search in any metadata field
+   * (artist, album title, genre, year, or track name).
+   */
+  makeAllMetadataGroup() {
+    if (!this.searchValue) {
+      return { labels: [], groups: []}
+    }
+    const matchingItems = [];
+
+    for (const album of this.albums) {
+      let matchInfo = {
+        album: album,
+        matchedTracks: [],
+        matchedField: null  // 'artist', 'album', 'genre', 'year', or 'track'
+      };
+
+      // Check album-level fields
+      const artist = album['@_artist'] ? album['@_artist'].toLowerCase() : '';
+      const albumName = album['@_album'] ? album['@_album'].toLowerCase() : '';
+      const genre = album['@_genre'] ? album['@_genre'].toLowerCase() : '';
+      const year = album['@_year'] ? album['@_year'].toLowerCase() : '';
+
+      if (artist.includes(this.searchValue)) {
+        matchInfo.matchedField = 'artist';
+      } else if (albumName.includes(this.searchValue)) {
+        matchInfo.matchedField = 'album';
+      } else if (genre.includes(this.searchValue)) {
+        matchInfo.matchedField = 'genre';
+      } else if (year.includes(this.searchValue)) {
+        matchInfo.matchedField = 'year';
+      }
+
+      // Check track-level fields
+      const tracks = AlbumUtil.getTracksOf(album);
+      for (const track of tracks) {
+        const song = track['@_song'] ? track['@_song'].toLowerCase() : '';
+        if (song.includes(this.searchValue)) {
+          matchInfo.matchedTracks.push(track);
+          if (!matchInfo.matchedField) {
+            matchInfo.matchedField = 'track';
+          }
+        }
+      }
+
+      // If matched in any field, add to results
+      if (matchInfo.matchedField || matchInfo.matchedTracks.length > 0) {
+        matchingItems.push(matchInfo);
+        if (matchingItems.length >= 500) {
+          break;
+        }
+      }
+    }
+
+    const labels = [];
+    const groups = [];
+    const group = matchingItems;
+    groups.push(group);
+    labels.push('');
+
+    return { labels: labels, groups: groups };
   }
 
   /**
@@ -315,6 +405,99 @@ export default class LibrarySearchList extends LibraryContentList {
     return { labels: [], groups: [group] };
   }
 
+  populateTrackGroupDiv($group, array) {
+    const a = array.map(item => item['track']);
+    const items$ = TrackListItemUtil.populateList($group, a);
+
+    for (const $item of items$) {
+      $item.find(".contextButton").on("click tap", this.onTrackListItemContextButton);
+    }
+  }
+
+  makeAllMetadataListItem(matchInfo, index) {
+    const album = matchInfo['album'];
+    const hash = album['@_hash'];
+    const imgPath = DataUtil.getAlbumImageUrl(album);
+    const artist = album['@_artist'] || '';
+    const albumText = album['@_album'] || '';
+    const matchedField = matchInfo['matchedField'];
+    const matchedTracks = matchInfo['matchedTracks'] || [];
+    const isFavoriteClass = MetaUtil.isAlbumFavoriteFor(hash) ? 'isFavorite' : '';
+
+    let s = '';
+    s += `<div class="libraryAllMetadataItem ${isFavoriteClass}" data-hash="${hash}" data-index="${index}">`;
+    s += `  <div class="itemPicture clickableAlbum"><img data-src="${imgPath}" /></div>`;
+    s += `  <div class="itemInfo clickableAlbum">`;
+    s += `    <div class="artistAlbum">`;
+    s += `      <div class="artist">${artist}</div>`;
+    s += `      <div class="album">${albumText}</div>`;
+    s += `    </div>`;
+    
+    // If matched in track(s), show them with highlighting and track numbers from album
+    if (matchedTracks.length > 0) {
+      s += `    <div class="tracksContainer">`;
+      
+      // Get all tracks from album to find real track numbers
+      const allAlbumTracks = AlbumUtil.getTracksOf(album);
+      
+      for (const track of matchedTracks) {
+        // Find the real track number in the album
+        let realTrackNumber = 0;
+        for (let i = 0; i < allAlbumTracks.length; i++) {
+          if (allAlbumTracks[i]['@_hash'] === track['@_hash']) {
+            realTrackNumber = i + 1;
+            break;
+          }
+        }
+        
+        const songName = track['@_song'] || '';
+        const highlightedSong = this.highlightSearchTerm(songName);
+        s += `      <div class="matchedTrack">${realTrackNumber}. ${highlightedSong}</div>`;
+      }
+      s += `    </div>`;
+    } else {
+      // Show which field matched (artist, album, genre, or year) with highlighting
+      let fieldText = '';
+      switch (matchedField) {
+        case 'artist':
+          fieldText = `Artist: ${this.highlightSearchTerm(artist)}`;
+          break;
+        case 'album':
+          fieldText = `Album: ${this.highlightSearchTerm(albumText)}`;
+          break;
+        case 'genre':
+          const genre = album['@_genre'] || '';
+          fieldText = `Genre: ${this.highlightSearchTerm(genre)}`;
+          break;
+        case 'year':
+          const year = album['@_year'] || '';
+          fieldText = `Year: ${this.highlightSearchTerm(year)}`;
+          break;
+      }
+      if (fieldText) {
+        s += `    <div class="matchedField">${fieldText}</div>`;
+      }
+    }
+    
+    s += `  </div>`;
+    s += `  <div class="itemMeta">`;
+    s += `    <div class="iconButton toggleButton favoriteButton" data-index="${index}"></div>`;
+    s += `    <div class="iconButton moreButton contextButton" data-index="${index}"></div>`;
+    s += `  </div>`;
+    s += `</div>`;
+
+    const $item = $(s);
+    return $item;
+  }
+
+  highlightSearchTerm(text) {
+    if (!text || !this.searchValue) {
+      return text;
+    }
+    const regex = new RegExp(`(${this.searchValue})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  }
+
   //(index, item, itemPrevious, itemNext, hasAlbum) {
   // todo is this used?
   makeTrackListItem(data, index) {
@@ -366,5 +549,42 @@ export default class LibrarySearchList extends LibraryContentList {
       return;
     }
     TrackListItemContextMenu.show($('#libraryView'), $button, o);
+  };
+
+  onAllMetadataContextButton = (e) => {
+    event.stopPropagation();
+    const $button = $(e.currentTarget);
+    const $listItem = $button.closest('.libraryAllMetadataItem');
+    const index = $listItem.attr('data-index');
+    if (!(index >= 0)) {
+      return;
+    }
+    if (!this.groups || !this.groups[0]) {
+      return;
+    }
+    const matchInfo = this.groups[0][index];
+    if (!matchInfo || !matchInfo['album']) {
+      return;
+    }
+    
+    // If there are matched tracks, show context menu for the album with track selection
+    // Otherwise show context menu for just the album
+    const album = matchInfo['album'];
+    const o = { album: album, track: null };
+    
+    if (matchInfo['matchedTracks'] && matchInfo['matchedTracks'].length > 0) {
+      // For track matches, use the first matched track for context menu
+      o['track'] = matchInfo['matchedTracks'][0];
+    }
+    
+    TrackListItemContextMenu.show($('#libraryView'), $button, o);
+  };
+
+  onAllMetadataAlbumClick = (e) => {
+    e.stopPropagation();
+    const $listItem = $(e.currentTarget).closest('.libraryAllMetadataItem');
+    const hash = $listItem.attr('data-hash');
+    const album = Model.library.getAlbumByAlbumHash(hash);
+    $(document).trigger('library-item-click', [album, $listItem]);
   };
 }

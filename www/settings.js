@@ -30,7 +30,7 @@ class Settings {
 
     this._metaEnabled = this.storage.getItem('metaEnabled') || 'true';
 
-    this._librarySearchType = this.storage.getItem('librarySearchType') || 'album';
+    this._librarySearchType = this.storage.getItem('librarySearchType') || 'all';
 
     this._librarySearchValue = this.storage.getItem('librarySearchValue') || '';
 
@@ -47,6 +47,7 @@ class Settings {
     }
 
     this._colorTheme = this.storage.getItem('colorTheme') || 'dark';
+    this._highlightColor = this.storage.getItem('highlightColor') || '#00ff00';
 
     s = this.storage.getItem('presetsArray');
     try {
@@ -181,6 +182,15 @@ class Settings {
   set colorTheme(s) {
     this._colorTheme = s;
     this.storage.setItem('colorTheme', s);
+  }
+
+  get highlightColor() {
+    return this._highlightColor;
+  }
+
+  set highlightColor(s) {
+    this._highlightColor = s;
+    this.storage.setItem('highlightColor', s);
   }
 
   get presetsArray() {

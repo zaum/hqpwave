@@ -74,6 +74,13 @@ export default class LibraryAlbumsList extends LibraryContentList {
   clear() {
     super.clear();
     this.domDirty = true;
+    // Hide timeline elements when not in year view
+    $('#timelineYears').css('display', 'none');
+    $('#timelineVerticalLine').css('display', 'none');
+    $('#timelineMinimapContainer').css({
+      'display': 'flex',
+      'visibility': 'hidden'
+    });
   }
 
   // override
@@ -113,24 +120,7 @@ export default class LibraryAlbumsList extends LibraryContentList {
     this.domDirty = true;
   }
 
-  /**
-   * Updates the data and the views as needed.
-   */
-  update() {
-    if (this.filteredSortedAlbumsDirty) {
-      this.makeFilteredSortedAlbums();
-      this.filteredSortedAlbumsDirty = false;
-    }
-    if (this.groupsDirty) {
-      this.makeGroups();
-      this.groupsDirty = false;
-    }
-    if (this.domDirty) {
-      this.populateDom();
-      this.domDirty = false;
-      $(document).trigger('library-albums-list-populated');
-    }
-  }
+  // No special update needed - uses default library rendering
 
   makeFilteredSortedAlbums() {
     if (!this.albums || !this.sortType) {
@@ -211,5 +201,24 @@ export default class LibraryAlbumsList extends LibraryContentList {
   onFilterChanged() {
     this.setFilterType(Settings.libraryFilterType);
     this.update();
+  }
+
+  /**
+   * Updates the data and the views as needed.
+   */
+  update() {
+    if (this.filteredSortedAlbumsDirty) {
+      this.makeFilteredSortedAlbums();
+      this.filteredSortedAlbumsDirty = false;
+    }
+    if (this.groupsDirty) {
+      this.makeGroups();
+      this.groupsDirty = false;
+    }
+    if (this.domDirty) {
+      this.populateDom();
+      this.domDirty = false;
+      $(document).trigger('library-albums-list-populated');
+    }
   }
 }

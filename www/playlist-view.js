@@ -27,6 +27,9 @@ export default class PlaylistView extends Subview {
   trackItems$;
   selectedUri = null;
   selectedIndex = -1;
+  dragStartIndex = -1;
+  dragCurrentIndex = -1;
+  $dragPlaceholder = null;
 
   constructor($el) {
   	super($el);
@@ -98,7 +101,8 @@ export default class PlaylistView extends Subview {
 
       for (const $item of this.trackItems$) {
           $item.on("click tap", this.onItemClick);
-          $item.find(".contextButton").on("click tap", this.onItemContextButton);
+          $item.find(".deleteButton").on("click tap", this.onDeleteButton);
+          $item.find(".dragHandleButton").on("mousedown touchstart", this.onDragHandleDown);
       }
     }
 
@@ -176,7 +180,7 @@ export default class PlaylistView extends Subview {
         Commands.selectTrack(index + 1)); // rem, 1-indexed
 	};
 
-	onItemContextButton = (event) => {
+  onDeleteButton = (event) => {
     event.stopPropagation();
     const $button = $(event.currentTarget);
     const $listItem = $button.parent().parent();
@@ -185,8 +189,188 @@ export default class PlaylistView extends Subview {
       cl('warning no index');
       return;
     }
-    this.contextMenu.show(this.$el, $button, index);
-	}
+    Service.queueCommandsFront([
+      Commands.playlistRemove(index + 1),
+      Commands.playlistGet()
+    ]);
+  };
+  
+  onDragHandleDown = (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const $handle = $(event.currentTarget);
+    const $listItem = $handle.parent().parent();
+    const index = parseInt($listItem.attr('data-index'));
+    if (!(index >= 0)) {
+      cl('warning no index for drag');
+      return;
+    }
+    this.dragStartIndex = index;
+    this.dragCurrentIndex = index;
+
+    // Create drag ghost element that follows cursor
+    this.$dragGhost = $listItem.clone();
+    this.$dragGhost.addClass('playlistDragGhost');
+    this.$dragGhost.css({
+      position: 'fixed',
+      left: event.clientX - 20,
+      top: event.clientY - 20,
+      zIndex: 10002,
+      pointerEvents: 'none'
+    });
+    $('body').append(this.$dragGhost);
+
+    // Hide original item and add dragging class
+    $listItem.addClass('isDragging');
+    $listItem.css('opacity', '0');
+
+    // Store original positions to avoid vibration
+    this.originalPositions = [];
+    this.$list.find('.trackItem:not(.isDragging)').each((i, el) => {
+      this.originalPositions.push({
+        element: el,
+        rect: el.getBoundingClientRect()
+      });
+    });
+
+    $(document).on('mousemove.playlistDrag', this.onDragMove);
+    $(document).on('mouseup.playlistDrag', this.onDragEnd);
+    $(document).on('touchmove.playlistDrag', this.onDragMove);
+    $(document).on('touchend.playlistDrag touchcancel.playlistDrag', this.onDragEnd);
+  };
+
+  onDragMove = (event) => {
+    const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+    const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+
+    // Update drag ghost position to follow cursor
+    if (this.$dragGhost) {
+      this.$dragGhost.css({
+        left: clientX - 20,
+        top: clientY - 20
+      });
+    }
+
+    // Only update target index if cursor has moved significantly to prevent vibration
+    // Exclude album header rows from track counting
+    const $items = this.$list.find('.trackItem:not(.isDragging):not(.trackItemAlbumHeader)');
+    let targetIndex = -1;
+
+    $items.each((i, el) => {
+      const rect = el.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      if (clientY < midY && targetIndex === -1) {
+        targetIndex = i;
+      }
+    });
+
+    if (targetIndex === -1) {
+      targetIndex = $items.length;
+    }
+
+    // Only update if target index has changed significantly
+    if (Math.abs(targetIndex - this.dragCurrentIndex) >= 1) {
+      this.dragCurrentIndex = targetIndex;
+      this.updateTrackPositionsForDrag();
+    }
+  };
+
+  updateTrackPositionsForDrag() {
+    if (this.dragStartIndex === -1 || this.dragCurrentIndex === -1) {
+      return;
+    }
+
+    // Only move actual track items, not album headers
+    const $items = this.$list.find('.trackItem:not(.isDragging):not(.trackItemAlbumHeader)');
+
+    // Create a single gap at the target position
+    $items.each((i, el) => {
+      const $item = $(el);
+      const itemIndex = i;
+      const targetIndex = this.dragCurrentIndex;
+
+      // Calculate the gap position considering the dragged item's removal
+      let gapPosition = targetIndex;
+      if (targetIndex > this.dragStartIndex) {
+        // When dragging down, the dragged item is removed from earlier position,
+        // so we need to adjust the gap position
+        gapPosition = targetIndex;
+      } else {
+        // When dragging up, normal positioning
+        gapPosition = targetIndex;
+      }
+
+      if (itemIndex >= gapPosition) {
+        // Move items from gap position onwards down by one track height
+        $item.css({
+          transform: 'translateY(48px)',
+          transition: 'transform 150ms ease-out'
+        });
+      } else {
+        // Keep items before gap position in place
+        $item.css({
+          transform: 'translateY(0)',
+          transition: 'transform 150ms ease-out'
+        });
+      }
+    });
+  }
+
+  onDragEnd = () => {
+    $(document).off('.playlistDrag');
+
+    // Remove drag ghost
+    if (this.$dragGhost) {
+      this.$dragGhost.remove();
+      this.$dragGhost = null;
+    }
+
+    // Restore original item visibility and remove dragging class
+    if (this.dragStartIndex >= 0 && this.trackItems$ && this.trackItems$[this.dragStartIndex]) {
+      const $originalItem = this.trackItems$[this.dragStartIndex];
+      $originalItem.removeClass('isDragging');
+      $originalItem.css('opacity', '1');
+    }
+
+    // Reset all track positions smoothly
+    this.$list.find('.trackItem').css({
+      transform: 'translateY(0)',
+      transition: 'transform 200ms ease-out'
+    });
+
+    const from = this.dragStartIndex;
+    const to = this.dragCurrentIndex;
+
+    this.dragStartIndex = -1;
+    this.dragCurrentIndex = -1;
+
+    if (!(from >= 0) || !(to >= 0) || from === to) {
+      return;
+    }
+
+    const commands = [];
+    if (to < from) {
+      // Moving up: move the track up by (from - to) positions
+      let idx = from + 1;
+      const moves = from - to;
+      for (let i = 0; i < moves; i++) {
+        commands.push(Commands.playlistMoveUp(idx));
+        idx--;
+      }
+    } else if (to > from) {
+      // Moving down: move the track down by (to - from) positions
+      let idx = from + 1;
+      const moves = to - from;
+      for (let i = 0; i < moves; i++) {
+        commands.push(Commands.playlistMoveDown(idx));
+        idx++;
+      }
+    }
+    commands.push(Commands.playlistGet());
+    if (commands.length > 1) {
+      Service.queueCommandsFront(commands);
+    }
+  };
 
   onClearButton = () => {
     Service.queueCommandsFront([Commands.playlistClear(), Commands.playlistGet()]);
