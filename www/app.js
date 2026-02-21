@@ -57,19 +57,29 @@ window.renderTimelineMinimap = function(years) {
   
   // Click on the entire container width
   $container.off('click').on('click', function(e) {
-    const rect = $container[0].getBoundingClientRect();
-    // Available click area: padding-top (30px) to height - padding-bottom (40px)
-    const topPadding = 30;
-    const bottomPadding = 40;
-    const clickAreaTop = rect.top + topPadding;
-    const clickAreaHeight = rect.height - topPadding - bottomPadding;
-    const y = e.clientY - clickAreaTop;
-    const percent = Math.max(0, Math.min(1, y / clickAreaHeight));
-    const idx = Math.round(percent * (years.length - 1));
-    const year = years[idx];
-    if (year) {
-      scrollToYear(year);
-    }
+    const scrollContainer = document.getElementById('libraryView');
+    if (!scrollContainer) return;
+    
+    // Use $minimap for inner dimensions (same as dot positioning)
+    const minimapRect = $minimap[0].getBoundingClientRect();
+    const containerRect = $container[0].getBoundingClientRect();
+    
+    // Get click position relative to minimap
+    const y = e.clientY - minimapRect.top;
+    const height = minimapRect.height;
+    
+    // Apply the same margin logic as dot positioning (50px)
+    const margin = 50;
+    const dotSize = 14;
+    const availableHeight = height - dotSize - (margin * 2);
+    
+    // Adjust y to account for margin
+    const adjustedY = y - margin;
+    const percent = Math.max(0, Math.min(1, adjustedY / availableHeight));
+    
+    // Scroll to the calculated percent position
+    const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    scrollContainer.scrollTop = percent * scrollHeight;
   });
   
   // Sync dot position on scroll
@@ -111,19 +121,25 @@ window.updateTimelineDot = function() {
 // Make timeline dot draggable
 window.makeTimelineDotDraggable = function() {
   const $dot = window._timelineDot;
-  const $container = $('#timelineMinimapContainer');
+  const $container = $('#timelineMinimap');
   if (!$dot || !$container) return;
   
   let isDragging = false;
-  let startY = 0;
-  let startScrollTop = 0;
+  let startPercent = 0;
+  let startClientY = 0;
   
   $dot.on('mousedown', function(e) {
     isDragging = true;
-    startY = e.clientY;
+    startClientY = e.clientY;
+    
     const scrollContainer = document.getElementById('libraryView');
-    startScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+    if (scrollContainer) {
+      const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+      startPercent = scrollHeight > 0 ? scrollContainer.scrollTop / scrollHeight : 0;
+    }
+    
     e.preventDefault();
+    e.stopPropagation();
   });
   
   $(document).on('mousemove', function(e) {
@@ -138,13 +154,17 @@ window.makeTimelineDotDraggable = function() {
     const margin = 50;
     const availableHeight = containerHeight - dotSize - (margin * 2);
     
-    // Calculate Y relative to container, adjusted for margins
-    const y = e.clientY - containerRect.top - margin;
-    const percent = Math.max(0, Math.min(1, y / availableHeight));
+    // Calculate delta from start position
+    const deltaY = e.clientY - startClientY;
+    const deltaPercent = deltaY / availableHeight;
     
-    // Scroll to position based on percent
+    // Apply delta to start percent
+    let newPercent = startPercent + deltaPercent;
+    newPercent = Math.max(0, Math.min(1, newPercent));
+    
+    // Scroll to position
     const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
-    scrollContainer.scrollTop = percent * scrollHeight;
+    scrollContainer.scrollTop = newPercent * scrollHeight;
   });
   
   $(document).on('mouseup', function() {
