@@ -47,6 +47,21 @@ export default class LibraryAlbumOptionsView {
     this.$groupButton.on('click tap', e => this.toggleDropdown(this.groupDropdown));
     this.$filterButton.on('click tap', e => this.toggleDropdown(this.filterDropdown));
     $(document).on('dropdown-item-select', this.onDropdownItemSelect);
+
+    // Conditionally hide the expand/collapse button based on 'group by none' selection
+    const updateExpandCollapseVisibility = () => {
+      if (Settings.libraryGroupType === 'none') {
+        this.$expandCollapseButton.hide();
+      } else {
+        this.$expandCollapseButton.show();
+      }
+    };
+
+    // Initial visibility update
+    updateExpandCollapseVisibility();
+
+    // Trigger visibility update when the group type changes
+    $(document).on('library-albums-group-changed', updateExpandCollapseVisibility);
   }
 
   onExpandCollapseClick() {

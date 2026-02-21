@@ -16,9 +16,12 @@ class TopBarUtil {
   $header;
 
   constructor() {
+    this.VIEW_HEADER_HEIGHT = window.innerWidth <= 480 ? 120 : 52;
     this.THRESHOLD = this.VIEW_HEADER_HEIGHT * 0.5;
     this.$libraryView = $('#libraryView');
     this.$libraryHeader = this.$libraryView.find('.viewHeader');
+    // Set initial padding to accommodate the visible header
+    this.$libraryView.css('padding-top', this.VIEW_HEADER_HEIGHT + 'px');
   }
 
   /**
@@ -35,6 +38,7 @@ class TopBarUtil {
     TopBar.hideButtons();
 
     TopBar.$el.append(this.$header);
+    $subview.css('padding-top', '8px');
 
     if (now) {
       ViewUtil.setCssPropertySync(this.$header, 'top', 0);
@@ -57,6 +61,7 @@ class TopBarUtil {
     TopBar.showButtons();
 
     this.$subview.append(this.$header);
+    this.$subview.css('padding-top', this.VIEW_HEADER_HEIGHT + 'px');
 
     if (now) {
       ViewUtil.setCssPropertySync(this.$header, 'top', 0);
