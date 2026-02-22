@@ -1,10 +1,12 @@
 import AlbumUtil from './album-util.js';
+import AppUtil from './app-util.js';
 import DataUtil from './data-util.js';
 import LibraryAlbumOptionsView from './library-album-options-view.js';
 import LibraryAlbumsList from './library-albums-list.js';
 import LibrarySearchPanel from './library-search-panel.js';
 import LibrarySearchList from './library-search-list.js';
 import LibraryDataUtil from './library-data-util.js';
+import LibraryGroupUtil from './library-group-util.js';
 import Model from './model.js';
 import Service from './service.js';
 import Settings from './settings.js';
@@ -295,41 +297,28 @@ export default class LibraryView extends Subview {
 
   /**
    * Apply search filter to albums list - filters in place without showing search panel
+   * Supports comma-separated AND search: "pink floyd, 1970, dsd" matches all three conditions
    */
   applyHeaderSearchFilter(value) {
-    const searchValue = value.toLowerCase();
-    
     // Get all albums
     let allAlbums = Model.library.albums;
     if (!allAlbums) {
       return;
     }
     
-    // Filter albums that match the search value
+    // Split by comma (with optional space) for AND search
+    // "pink floyd, 1970, dsd" -> ["pink floyd", "1970", "dsd"]
+    const searchTerms = value.split(/,\s*/).map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+    
+    if (searchTerms.length === 0) {
+      return;
+    }
+    
+    // Filter albums that match ALL search terms (AND logic)
     const filteredAlbums = allAlbums.filter(album => {
-      // Check album-level fields
-      const artist = album['@_artist'] ? album['@_artist'].toLowerCase() : '';
-      const albumName = album['@_album'] ? album['@_album'].toLowerCase() : '';
-      const genre = album['@_genre'] ? album['@_genre'].toLowerCase() : '';
-      const year = album['@_year'] ? album['@_year'].toLowerCase() : '';
-      
-      if (artist.includes(searchValue) || 
-          albumName.includes(searchValue) || 
-          genre.includes(searchValue) || 
-          year.includes(searchValue)) {
-        return true;
-      }
-      
-      // Check track-level fields
-      const tracks = AlbumUtil.getTracksOf(album);
-      for (const track of tracks) {
-        const song = track['@_song'] ? track['@_song'].toLowerCase() : '';
-        if (song.includes(searchValue)) {
-          return true;
-        }
-      }
-      
-      return false;
+      // For each search term, check if album matches
+      // ALL terms must match for the album to be included
+      return searchTerms.every(searchValue => this.albumMatchesSearchTerm(album, searchValue));
     });
     
     // Make sure albums list is visible
@@ -387,5 +376,167 @@ export default class LibraryView extends Subview {
     } else {
       this.$headerSearchClearButton.hide();
     }
+  }
+
+  /**
+   * Parse year search string into array of year matches.
+   * Supports: "1970", "1970-1980", "1990-", "-2000", "1970,1975,1980"
+   * Returns array of: integers (exact years) or [start, end] arrays (ranges)
+   */
+  parseYearSearch(string) {
+    if (!string) {
+      return [];
+    }
+
+    const result = [];
+    const tokens = string.split(/[,;/ ]/); // comma semicolon space
+
+    for (const token of tokens) {
+      // Check for range with dash: "1970-1980", "1990-", "-2000"
+      if (token.includes('-')) {
+        const parts = token.split('-');
+        
+        if (parts.length === 2) {
+          const startYear = parts[0] ? AppUtil.getValidYear(parts[0]) : null;
+          const endYear = parts[1] ? AppUtil.getValidYear(parts[1]) : null;
+          
+          // "1970-1980" - both years specified
+          if (startYear && endYear && endYear >= startYear) {
+            result.push([startYear, endYear]);
+          }
+          // "1990-" - from year to present
+          else if (startYear && !endYear) {
+            result.push([startYear, 2099]); // 2099 is max valid year
+          }
+          // "-2000" - from beginning to year
+          else if (!startYear && endYear) {
+            result.push([1500, endYear]); // 1500 is min valid year
+          }
+        }
+      } else {
+        // Single year
+        const year = AppUtil.getValidYear(token);
+        if (year) {
+          result.push(year);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Check if album year matches any of the year search criteria.
+   * @param albumYear - the year of the album (integer)
+   * @param yearArray - array from parseYearSearch
+   */
+  isYearMatch(albumYear, yearArray) {
+    if (!yearArray || yearArray.length === 0) {
+      return false;
+    }
+    
+    const year = AppUtil.getValidYear(albumYear);
+    if (!year) {
+      return false;
+    }
+
+    for (const item of yearArray) {
+      if (Array.isArray(item)) {
+        // Range: [start, end]
+        if (year >= item[0] && year <= item[1]) {
+          return true;
+        }
+      } else {
+        // Single year
+        if (year === item) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if a single album matches a single search term.
+   * Used by AND search logic in applyHeaderSearchFilter.
+   */
+  albumMatchesSearchTerm(album, searchValue) {
+    // Check album-level fields
+    const artist = album['@_artist'] ? album['@_artist'].toLowerCase() : '';
+    const albumName = album['@_album'] ? album['@_album'].toLowerCase() : '';
+    const genre = album['@_genre'] ? album['@_genre'].toLowerCase() : '';
+    
+    if (artist.includes(searchValue) || 
+        albumName.includes(searchValue) || 
+        genre.includes(searchValue)) {
+      return true;
+    }
+    
+    // Check year with range support
+    const yearArray = this.parseYearSearch(searchValue);
+    const isYearSearch = yearArray.length > 0;
+    
+    const albumYear = album['year'];
+    if (isYearSearch && albumYear && this.isYearMatch(albumYear, yearArray)) {
+      return true;
+    }
+    
+    // Also check raw year field for simple year searches
+    const yearRaw = album['@_year'] ? album['@_year'].toLowerCase() : '';
+    if (!isYearSearch && yearRaw && yearRaw.includes(searchValue)) {
+      return true;
+    }
+    
+    // Check sample rate formats
+    const rateHz = parseInt(album['@_rate']) || 0;
+    const bits = parseInt(album['@_bits']) || 0;
+    const isDsd = bits === 1;
+    
+    if (rateHz > 0) {
+      const rateKHz = rateHz / 1000;
+      const sampleRateFormats = [
+        String(rateHz),           // "44100"
+        rateHz + 'hz',            // "44100hz"
+        rateHz + ' hz',           // "44100 hz"
+        String(rateKHz),          // "44.1"
+        rateKHz + 'khz',          // "44.1khz"
+        rateKHz + ' khz'          // "44.1 khz"
+      ];
+      // Add integer kHz for whole numbers like 48, 96, 192
+      if (rateKHz === Math.floor(rateKHz)) {
+        sampleRateFormats.push(String(Math.floor(rateKHz)));
+      }
+      
+      if (sampleRateFormats.some(fmt => fmt.includes(searchValue))) {
+        return true;
+      }
+    }
+    
+    // Check DSD formats
+    if (isDsd && rateHz > 0) {
+      const dsdRate = rateHz / 1000000; // Convert Hz to MHz for DSD
+      const dsdFormats = ['dsd', dsdRate + 'mhz', dsdRate + ' mhz'];
+      const dsdMultiple = Math.round(dsdRate / 2.8);
+      if (dsdMultiple >= 1) {
+        dsdFormats.push('dsd' + (dsdMultiple * 64));
+        dsdFormats.push('dsd ' + (dsdMultiple * 64));
+      }
+      
+      if (dsdFormats.some(fmt => fmt.includes(searchValue))) {
+        return true;
+      }
+    }
+    
+    // Check track-level fields
+    const tracks = AlbumUtil.getTracksOf(album);
+    for (const track of tracks) {
+      const song = track['@_song'] ? track['@_song'].toLowerCase() : '';
+      if (song.includes(searchValue)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 }

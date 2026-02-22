@@ -1,4 +1,5 @@
 import AlbumUtil from './album-util.js';
+import AppUtil from './app-util.js';
 import LibraryContentList from './library-content-list.js';
 import LibraryDataUtil from './library-data-util.js';
 import DataUtil from './data-util.js';
@@ -214,7 +215,7 @@ export default class LibrarySearchList extends LibraryContentList {
 
   /**
    * Returns groups of albums matching search in any metadata field
-   * (artist, album title, genre, year, or track name).
+   * (artist, album title, genre, year, sample rate, or track name).
    */
   makeAllMetadataGroup() {
     if (!this.searchValue) {
@@ -234,6 +235,52 @@ export default class LibrarySearchList extends LibraryContentList {
       const albumName = album['@_album'] ? album['@_album'].toLowerCase() : '';
       const genre = album['@_genre'] ? album['@_genre'].toLowerCase() : '';
       const year = album['@_year'] ? album['@_year'].toLowerCase() : '';
+      
+      // Sample rate: convert Hz to various searchable formats
+      // e.g., 44100 Hz can be searched as "44.1", "44100", "44100hz", etc.
+      const rateHz = parseInt(album['@_rate']) || 0;
+      const bits = parseInt(album['@_bits']) || 0;
+      const isDsd = bits === 1;
+      const sampleRateFormats = [];
+      if (rateHz > 0) {
+        sampleRateFormats.push(String(rateHz)); // "44100"
+        sampleRateFormats.push(rateHz + 'hz'); // "44100hz"
+        sampleRateFormats.push(rateHz + ' hz'); // "44100 hz"
+        const rateKHz = rateHz / 1000;
+        sampleRateFormats.push(String(rateKHz)); // "44.1"
+        sampleRateFormats.push(rateKHz + 'khz'); // "44.1khz"
+        sampleRateFormats.push(rateKHz + ' khz'); // "44.1 khz"
+        // Also add integer kHz for whole numbers like 48, 96, 192
+        if (rateKHz === Math.floor(rateKHz)) {
+          sampleRateFormats.push(String(Math.floor(rateKHz))); // "48", "96", "192"
+        }
+      }
+      
+      // DSD detection: bits == 1 means DSD format
+      // DSD rates are typically 2.8MHz (DSD64), 5.6MHz (DSD128), 11.2MHz (DSD256), 22.4MHz (DSD512)
+      const dsdFormats = [];
+      if (isDsd && rateHz > 0) {
+        dsdFormats.push('dsd');
+        const dsdRate = rateHz / 1000000; // Convert Hz to MHz for DSD
+        dsdFormats.push(dsdRate + 'mhz');
+        dsdFormats.push(dsdRate + ' mhz');
+        // DSD64, DSD128, DSD256, DSD512 naming
+        const dsdMultiple = Math.round(dsdRate / 2.8);
+        if (dsdMultiple >= 1) {
+          dsdFormats.push('dsd' + (dsdMultiple * 64));
+          dsdFormats.push('dsd ' + (dsdMultiple * 64));
+        }
+      }
+
+      // Check year range (e.g., "1970-1980", "1990-", "-2000")
+      let yearMatches = false;
+      if (year) {
+        yearMatches = year.includes(this.searchValue);
+        // Check year range patterns
+        if (!yearMatches && AppUtil.isYearRangeSearch(this.searchValue)) {
+          yearMatches = AppUtil.albumMatchesYearRange(parseInt(year), this.searchValue);
+        }
+      }
 
       if (artist.includes(this.searchValue)) {
         matchInfo.matchedField = 'artist';
@@ -241,8 +288,12 @@ export default class LibrarySearchList extends LibraryContentList {
         matchInfo.matchedField = 'album';
       } else if (genre.includes(this.searchValue)) {
         matchInfo.matchedField = 'genre';
-      } else if (year.includes(this.searchValue)) {
+      } else if (yearMatches) {
         matchInfo.matchedField = 'year';
+      } else if (sampleRateFormats.some(fmt => fmt.includes(this.searchValue))) {
+        matchInfo.matchedField = 'sampleRate';
+      } else if (dsdFormats.some(fmt => fmt.includes(this.searchValue))) {
+        matchInfo.matchedField = 'dsd';
       }
 
       // Check track-level fields
@@ -456,7 +507,7 @@ export default class LibrarySearchList extends LibraryContentList {
       }
       s += `    </div>`;
     } else {
-      // Show which field matched (artist, album, genre, or year) with highlighting
+      // Show which field matched (artist, album, genre, year, or sample rate) with highlighting
       let fieldText = '';
       switch (matchedField) {
         case 'artist':
@@ -472,6 +523,20 @@ export default class LibrarySearchList extends LibraryContentList {
         case 'year':
           const year = album['@_year'] || '';
           fieldText = `Year: ${this.highlightSearchTerm(year)}`;
+          break;
+        case 'sampleRate':
+          const rateHz = parseInt(album['@_rate']) || 0;
+          const rateKHz = rateHz / 1000;
+          const bits = album['@_bits'] || '';
+          const sampleRateText = rateKHz >= 1 ? `${rateKHz} kHz` : `${rateHz} Hz`;
+          fieldText = `Sample Rate: ${this.highlightSearchTerm(sampleRateText)}${bits ? ' / ' + bits + ' bit' : ''}`;
+          break;
+        case 'dsd':
+          const dsdRateHz = parseInt(album['@_rate']) || 0;
+          const dsdRateMHz = dsdRateHz / 1000000;
+          const dsdMultiple = Math.round(dsdRateMHz / 2.8);
+          const dsdName = dsdMultiple >= 1 ? `DSD${dsdMultiple * 64}` : 'DSD';
+          fieldText = `Format: ${this.highlightSearchTerm(dsdName)} (${dsdRateMHz} MHz)`;
           break;
       }
       if (fieldText) {

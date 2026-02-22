@@ -255,7 +255,7 @@ export default class LibrarySearchPanel {
     switch (this._tabType) {
       case 'all':
         $tabButton = this.$allTabButton;
-        placeholder = 'Search everywhere in metadata';
+        placeholder = 'Filter';
         break;
       case 'artist':
         $tabButton = this.$artistsTabButton;
