@@ -20,16 +20,24 @@ export default class ModealPointerUtil {
   start() {
     setTimeout(() => $(document).on('click tap', this.onDocumentClick), 1);
     $(document).trigger('disable-user-input');
-    for (const $item of this.whitelist$) {
+    const addPointerEvents = ($item) => {
       $item.css('pointer-events', 'auto');
+      $item.find('*').css('pointer-events', 'auto');
+    };
+    for (const $item of this.whitelist$) {
+      addPointerEvents($item);
     }
   }
 
   clear() {
     $(document).off('click tap', this.onDocumentClick);
     $(document.body).css('pointer-events', '');
-    for (const $item of this.whitelist$) {
+    const removePointerEvents = ($item) => {
       $item.css('pointer-events', '');
+      $item.find('*').css('pointer-events', '');
+    };
+    for (const $item of this.whitelist$) {
+      removePointerEvents($item);
     }
   }
 

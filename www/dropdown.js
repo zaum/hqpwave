@@ -50,13 +50,11 @@ export default class Dropdown {
 
   show() {
     ViewUtil.setDisplayed(this.$el, true);
-    // Force reflow after display:block so that css anim will trigger
     this.$el[0].offsetHeight;
     ViewUtil.setVisible(this.$el, true);
-    // This class can be optionally added for anim-in effect
     this.$el.addClass('animIn');
   }
-
+  
   hide() {
     this.$el.removeClass('animIn');
     ViewUtil.setVisible(this.$el, false);
@@ -72,7 +70,6 @@ export default class Dropdown {
       cl('warning dropdown item missing data-value');
       return;
     }
-    // Event params are the dropdown id and `data-value` value
     $(document).trigger('dropdown-item-select', [this.$el.attr('id'), value]);
   }
 }
