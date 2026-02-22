@@ -46,6 +46,7 @@ export default class LibraryView extends Subview {
     this.$headerSearchInput = this.$el.find('#libraryHeaderSearchInput');
     this.$headerSearchContainer = this.$el.find('#libraryHeaderSearchContainer');
     this.$headerSearchClearButton = this.$el.find('#libraryHeaderSearchClear');
+    this.$headerView = this.$el.find('#libraryHeaderView');
 
     this.albumOptionsView = new LibraryAlbumOptionsView(this.$el.find("#libraryAlbumOptionsView"));
     this.albumsList = new LibraryAlbumsList(this.$el.find('#libraryAlbumsList'));
