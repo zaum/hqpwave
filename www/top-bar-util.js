@@ -14,6 +14,11 @@ class TopBarUtil {
 
   $subview;
   $header;
+  
+  // Track state to prevent unnecessary operations
+  isHeaderTaken = false;
+  // Animation lock to prevent double animations
+  isAnimating = false;
 
   constructor() {
     this.VIEW_HEADER_HEIGHT = window.innerWidth <= 480 ? 120 : 52;
@@ -28,12 +33,20 @@ class TopBarUtil {
    *
    */
   takeSubviewHeader($subview, now) {
+    // Don't do anything if already taken or animation in progress
+    if (this.isHeaderTaken || this.isAnimating) {
+      return;
+    }
+    
     const $h = $subview.find('.viewHeader');
     if ($h.length == 0) {
       return;
     }
     this.$subview = $subview;
     this.$header = $h;
+    
+    this.isHeaderTaken = true;
+    this.isAnimating = true;
 
     TopBar.hideButtons();
 
@@ -42,11 +55,12 @@ class TopBarUtil {
 
     if (now) {
       ViewUtil.setCssPropertySync(this.$header, 'top', 0);
+      this.isAnimating = false;
     } else {
       ViewUtil.animateCss(this.$header,
           () => { this.$header.css('top', (this.VIEW_HEADER_HEIGHT - 8)) },
           () => { this.$header.css('top', 0)},
-          () => {});
+          () => { this.isAnimating = false; });
     }
   }
 
@@ -54,9 +68,17 @@ class TopBarUtil {
    * Gives back header to its subview.
    */
   returnSubviewHeader(now) {
+    // Don't do anything if already returned or animation in progress
+    if (!this.isHeaderTaken || this.isAnimating) {
+      return;
+    }
+    
     if (!this.$header) {
       return;
     }
+    
+    this.isHeaderTaken = false;
+    this.isAnimating = true;
 
     TopBar.showButtons();
 
@@ -65,11 +87,12 @@ class TopBarUtil {
 
     if (now) {
       ViewUtil.setCssPropertySync(this.$header, 'top', 0);
+      this.isAnimating = false;
     } else {
       ViewUtil.animateCss(this.$header,
           () => { this.$header.css('top', -(this.VIEW_HEADER_HEIGHT - 16)) },
           () => { this.$header.css('top', 0)},
-          () => {});
+          () => { this.isAnimating = false; });
     }
 
     this.$subview = null;
@@ -83,6 +106,7 @@ class TopBarUtil {
    */
   updateFor($subview, now) {
     const y = $subview[0].scrollTop;
+    
     if (!this.$subview) {
       if (y > this.THRESHOLD) {
         this.takeSubviewHeader($subview, now);

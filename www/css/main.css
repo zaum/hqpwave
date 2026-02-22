@@ -121,7 +121,6 @@
   -ms-user-select: none;
   user-select: none;
   -o-user-select: none;
-  user-drag: none;
   -webkit-user-drag: none;
 }
 * :focus {
@@ -396,7 +395,6 @@ label {
   transition: background-color 0s linear;
   opacity: 1;
 }
-
 .viewHeader {
   position: absolute;
   display: flex;
@@ -872,7 +870,7 @@ html {
 }
 @media (max-width: 480px) {
   #mainArea {
-    top: 120px;
+    /* top: 52px; */
   }
 }
 
@@ -944,7 +942,7 @@ html {
 }
 @media (max-width: 480px) {
   #topBar {
-    height: 120px;
+    /* height: 120px; */
   }
 }
 #topBar.isAnimating {
@@ -3139,7 +3137,6 @@ html {
   margin-top: 12px;
   margin-left: 44px;
   display: flex;
-  align-item: center;
 }
 .settingsTheme .line span {
   padding-top: 2px;

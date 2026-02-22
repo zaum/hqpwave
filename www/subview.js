@@ -43,6 +43,7 @@ export default class Subview {
   }
 
   onScroll(e) {
+    // Delegate to TopBarUtil - animation lock in top-bar-util.js prevents double animations
     TopBarUtil.onSubviewScroll(this.$el);
   }
 }
