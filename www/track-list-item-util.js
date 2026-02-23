@@ -140,7 +140,7 @@ export default class TrackListItemUtil {
       const numViews = MetaUtil.getNumViewsFor(hash);
       s += `<div class="trackItemMeta">`;
       s += `  <div class="numViews">${numViews || ''}</div>`;
-      s += `  <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}"></div>`;
+      s += `  <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}"><div class="favoriteIcon"></div></div>`;
       s += `</div>`;
     }
     s += `  <div class="right"><div class="iconButton deleteButton"></div></div>`;
