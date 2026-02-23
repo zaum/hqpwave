@@ -1,0 +1,374 @@
+/* Settings View */
+#settingsView {
+  padding-bottom: 24px;
+}
+
+.settingsSubheading {
+  margin-bottom: 8px;
+}
+
+/* Close buttons in view headers */
+#settingsCloseButton,
+#hqpSettingsCloseButton {
+  margin-left: auto;
+}
+
+.settingsTheme {
+  margin-top: 32px;
+}
+
+.settingsTheme .line {
+  margin-top: 12px;
+  margin-left: 44px;
+  display: flex;
+}
+
+.settingsTheme .line span {
+  padding-top: 2px;
+  margin-left: 4px;
+}
+
+.settingsTheme .line #settingsThemeLightCheckbox {
+  margin-left: 12px;
+}
+
+.settingsHighlightColor {
+  margin-top: 32px;
+}
+
+.settingsHighlightColor .line {
+  margin-top: 12px;
+  margin-left: 44px;
+}
+
+.colorPicker {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.settingsMeta {
+  margin-top: 32px;
+}
+
+.settingsMeta .description {
+  margin-left: 44px;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.settingsMeta #metaDownload {
+  margin-left: 44px;
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--col-text-less);
+}
+
+.settingsMeta .line {
+  display: flex;
+  align-items: center;
+  margin-left: 44px;
+  margin-top: 12px;
+}
+
+.settingsMeta .line span {
+  margin-left: 6px;
+}
+
+#settingsHotkeys {
+  margin-top: 28px;
+}
+
+#settingsHotkeys table {
+  border-spacing: 0 0;
+}
+
+#settingsHotkeys .c1 {
+  text-align: right;
+  width: 100px;
+  padding-right: 10px;
+  border-right: 2px solid var(--col-highlight);
+}
+
+#settingsHotkeys .c2 {
+  padding-left: 8px;
+}
+
+#settingsHotkeys .hotkeysSecondTable {
+  margin-top: 12px;
+}
+
+#settingsVersion {
+  margin-top: 0;
+}
+
+#settingsProjectAnchor {
+  position: relative;
+  top: -6px;
+}
+
+#settingsInfoView {
+  margin-top: 32px;
+}
+
+#hqpVersion {
+  margin-left: 44px;
+  font-size: 14px;
+  color: var(--col-text-less);
+}
+
+/* HQP Settings View */
+.hqpSettingsInner {
+  margin-left: 32px;
+}
+
+@media (max-width: 768px) {
+  .hqpSettingsInner {
+    margin-left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hqpSettingsInner {
+    margin-left: 0;
+  }
+}
+
+#hqpFiltersView {
+  margin-top: 18px;
+  padding-bottom: 200px;
+}
+
+@media (max-width: 480px) {
+  #hqpFiltersView {
+    margin-top: 12px;
+  }
+}
+
+#outputBitrate {
+  margin-bottom: 16px;
+}
+
+/* Select Dropdowns */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--col-listitem);
+  border: none;
+  height: 36px;
+  padding: 0 8px;
+  margin: 0;
+  line-height: 36px;
+  cursor: pointer;
+  font-family: "Noto Sans TC", sans-serif;
+  font-size: 16px;
+}
+
+select option {
+  font-family: "Noto Sans TC", sans-serif;
+  font-size: 16px;
+}
+
+.settingsSelectOuter {
+  margin-bottom: 16px;
+}
+
+.settingsSelectOuter label {
+  display: inline-block;
+  text-align: right;
+  width: 75px;
+  margin-right: 8px;
+}
+
+@media (max-width: 480px) {
+  .settingsSelectOuter label {
+    width: 45px;
+  }
+}
+
+.settingsSelectOuter select {
+  width: 200px;
+}
+
+@media (max-width: 480px) {
+  .settingsSelectOuter select {
+    width: 150px;
+  }
+}
+
+.settingsSelectOuter select[name=modeSelect] {
+  font-weight: bold;
+}
+
+.settingsSelectOuter select[name=modeSelect] > option {
+  font-weight: normal;
+}
+
+#hqpFiltersInfo {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--col-text-less);
+}
+
+/* Presets */
+.presetsDivider {
+  width: 100%;
+  height: 1px;
+  margin-top: 32px;
+  margin-bottom: 24px;
+  background-color: var(--col-listitem);
+}
+
+.experimentalDivider {
+  width: 100%;
+  height: 1px;
+  margin-top: 32px;
+  margin-bottom: 24px;
+  background-color: var(--col-listitem);
+}
+
+#settingsExperimentalLine {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px;
+  margin-bottom: 16px;
+}
+
+#settingsExperimentalLine .text {
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--col-text-less);
+}
+
+#hqpPresetsView .presetLabel {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 480px) {
+  #hqpPresetsView .presetLabel {
+    margin-top: 10px;
+  }
+}
+
+#hqpPresetsView .savePresetLine {
+  display: flex;
+  margin-left: 75px;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  #hqpPresetsView .savePresetLine {
+    margin-left: 0;
+  }
+}
+
+#hqpPresetsView .loadPresets {
+  margin-top: 20px;
+}
+
+#hqpPresetsView .loadPresetLine {
+  margin-left: 75px;
+  margin-bottom: 8px;
+  display: flex;
+}
+
+@media (max-width: 480px) {
+  #hqpPresetsView .loadPresetLine {
+    margin-left: 0;
+  }
+}
+
+#hqpPresetsView .loadPresetLine .loadPresetButton {
+  flex: 0 0 36px;
+}
+
+#hqpPresetsView .loadPresetLine .loadPresetLabel {
+  flex: 1;
+  margin-left: 8px;
+  font-size: 14px;
+  line-height: 36px;
+  color: var(--col-text-less);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  -moz-user-select: text;
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  -o-user-select: text;
+}
+
+.presetsInfo {
+  margin-top: 8px;
+  margin-left: 75px;
+  font-size: 14px;
+  color: var(--col-text-least);
+}
+
+@media (max-width: 480px) {
+  .presetsInfo {
+    margin-left: 0;
+  }
+}
+
+/* Preset Rules */
+#hqpPresetRulesView {
+  display: none;
+}
+
+#hqpPresetRulesView.isVisible {
+  display: block;
+}
+
+.hqpPresetRulesInner {
+  margin-left: 44px;
+}
+
+@media (max-width: 480px) {
+  .hqpPresetRulesInner {
+    margin-left: 0;
+  }
+}
+
+.ruleItem {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 16px;
+}
+
+.ruleCheckbox {
+  flex-shrink: 0;
+}
+
+.ruleItemInner {
+  margin-left: 8px;
+}
+
+.ruleLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.ruleLineSmall {
+  margin-top: -4px;
+}
+
+.ruleLine span {
+  font-size: 14px;
+  color: var(--col-text);
+}
+
+/* Threshold Rule */
+#ruleThreshold select,
+#ruleAb select {
+  min-width: 80px;
+}

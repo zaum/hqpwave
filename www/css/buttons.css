@@ -1,0 +1,323 @@
+/* Icon Base Styles */
+.iconPseudo:before,
+.icon:before,
+.iconButton:before,
+.libraryGroupLabel:before,
+.libraryGroupLabel .icon:before,
+.loadItem:before,
+.dropdownItem.isSelected:before,
+#playlistRepeatButton:before {
+  content: " ";
+  display: block;
+  position: absolute;
+  opacity: 0.7;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 24px 24px;
+  filter: brightness(var(--icon-brightness));
+}
+
+.icon {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  position: relative;
+}
+
+/* Icon Button */
+.iconButton {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  background-color: transparent;
+  position: relative;
+}
+
+.iconButton:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  opacity: 0;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--col-listitem-less);
+  transition: opacity 400ms ease-out;
+}
+
+.iconButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+.iconButton.isDisabled {
+  pointer-events: none;
+}
+
+.iconButton.isDisabled:before {
+  opacity: 0.5;
+}
+
+/* Toggle Button */
+.toggleButton {
+  background-color: transparent;
+}
+
+.toggleButton:before {
+  opacity: 0.25;
+}
+
+.toggleButton:hover:before {
+  opacity: 0.7;
+}
+
+.toggleButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+.toggleButton.isSelected {
+  background-color: var(--col-listitem-selected);
+}
+
+.toggleButton.isSelected:before {
+  opacity: 0.7;
+}
+
+.toggleButton.isSelected:hover {
+  background-color: var(--col-listitem-selected-over);
+}
+
+/* Favorite Button */
+.favoriteButton {
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favoriteButton .favoriteIcon {
+  width: 24px;
+  height: 24px;
+  background-color: var(--col-text-least);
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
+  -webkit-mask-size: 24px 24px;
+  mask-size: 24px 24px;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  opacity: 0.25;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.favoriteButton:hover .favoriteIcon {
+  opacity: 0.7;
+}
+
+.favoriteButton:hover {
+  background-color: transparent;
+}
+
+.favoriteButton.isSelected {
+  background-color: transparent;
+}
+
+.favoriteButton.isSelected .favoriteIcon {
+  opacity: 1;
+  background-color: var(--col-highlight);
+}
+
+.favoriteButton.isSelected:hover {
+  background-color: transparent;
+}
+
+/* Specific Button Types */
+.moreButton {
+  background-color: transparent;
+}
+
+.moreButton:before {
+  background-image: url("./../img/icons/more_horiz_white_24dp.svg");
+}
+
+.moreButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+.deleteButton {
+  background-color: transparent;
+}
+
+.deleteButton:before {
+  background-image: url("./../img/icons/delete_white_24dp.svg");
+}
+
+.deleteButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+.dragHandleButton {
+  background-color: transparent;
+}
+
+.dragHandleButton:before {
+  background-image: url("./../img/icons/drag_handle_white_24dp.svg");
+}
+
+.dragHandleButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+.closeButton {
+  background-color: transparent;
+}
+
+.closeButton:before {
+  background-image: url("./../img/icons/close_white_24dp.svg");
+}
+
+.expandIcon:before {
+  background-image: url("./../img/icons/expand_more_white_24dp.svg");
+}
+
+.isExpanded .expandIcon:before {
+  background-image: url("./../img/icons/expand_less_white_24dp.svg");
+}
+
+/* Text Button */
+.textButton {
+  border-radius: 6px;
+  height: 36px;
+  padding-top: 8px;
+  padding-left: 12px;
+  padding-right: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: center;
+  background-color: var(--col-listitem);
+  cursor: pointer;
+}
+
+.textButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+.textButton.isDisabled {
+  pointer-events: none;
+  color: var(--col-text-least);
+}
+
+.buttonBlink:after {
+  transition: background-color 0s linear;
+  opacity: 1;
+}
+
+/* Checkbox */
+.checkbox {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--col-text-least);
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.checkbox:focus {
+  border: 3px solid var(--col-text-least);
+  outline-offset: 1px;
+}
+
+.checkbox.isChecked:before {
+  display: block;
+  content: "";
+  margin: 2px;
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
+  background-color: var(--col-text-least);
+}
+
+.checkbox .isDisabled {
+  cursor: default;
+}
+
+.checkboxSmaller {
+  width: 30px;
+  height: 30px;
+}
+
+/* Tab Button */
+.tabBar {
+  display: flex;
+}
+
+.tabButton {
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  height: 36px;
+  padding-top: 5px;
+  padding-left: 12px;
+  padding-right: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--col-text-least);
+  border-bottom: 1px solid var(--col-listitem-selected);
+  border-left: 1px solid var(--col-listitem-bg);
+  border-right: 1px solid var(--col-listitem-bg);
+  border-top: 1px solid var(--col-listitem-bg);
+  cursor: pointer;
+}
+
+.tabButton:hover {
+  color: var(--col-text-less);
+}
+
+.tabButton.isOn {
+  border-bottom: 1px solid var(--col-bg);
+  border-left: 1px solid var(--col-listitem-selected);
+  border-right: 1px solid var(--col-listitem-selected);
+  border-top: 1px solid var(--col-listitem-selected);
+  pointer-events: none;
+}
+
+.tabButton.isSelected {
+  color: var(--col-text);
+}
+
+@media (max-width: 480px) {
+  .tabButton {
+    font-size: 12px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}
+
+.tabBarSpacer {
+  flex: 1;
+  border-bottom: 1px solid var(--col-listitem-selected);
+}
+
+/* Spinner */
+.spinner:before {
+  content: " ";
+  display: block;
+  opacity: 0.7;
+  position: absolute;
+  left: -12px;
+  top: -12px;
+  width: 24px;
+  height: 24px;
+  background-size: 24px 24px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url("./../img/icons/hourglass_empty_white_24dp.svg");
+  animation: spinner 2s infinite;
+  filter: brightness(var(--icon-brightness));
+}

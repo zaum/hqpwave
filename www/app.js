@@ -387,7 +387,6 @@ export default class App {
   }
 
 	showSettingsView() {
-    TopBar.reshowLogo();
 		this.showSubview(this.settingsView);
 	}
 

@@ -1,0 +1,31 @@
+:root {
+  /* Dark theme (default) */
+  --col-bg: #181818;
+  --col-listitem-less: #202020;
+  --col-listitem: #282828;
+  --col-listitem-over: #323232;
+  --col-listitem-selected: #383838;
+  --col-listitem-selected-over: #424242;
+  --col-text-least: #666666;
+  --col-text-less: #999999;
+  --col-text: #cccccc;
+  --col-accent: #ff2200;
+  --col-highlight: #00ff00;
+  --icon-brightness: 100%;
+}
+
+:root.lightTheme {
+  /* Light theme */
+  --col-bg: #f0f0f0;
+  --col-listitem-less: #e9e9e9;
+  --col-listitem: #dcdcdc;
+  --col-listitem-over: #d0d0d0;
+  --col-listitem-selected: #c0c0c0;
+  --col-listitem-selected-over: #b0b0b0;
+  --col-text: #202020;
+  --col-text-less: #505050;
+  --col-text-least: #808080;
+  --col-accent: #ff2200;
+  --col-highlight: #00ff00;
+  --icon-brightness: 0%;
+}

@@ -1,0 +1,703 @@
+/* Top Level Layout */
+#page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+/* Main Area */
+#mainArea {
+  position: absolute;
+  width: 100%;
+  min-width: 320px;
+  top: 52px;
+  bottom: 100px;
+  overflow: hidden;
+  background-color: var(--col-bg);
+}
+
+/* Top Bar */
+#topBar {
+  position: absolute;
+  display: flex;
+  width: 100%;
+  height: 52px;
+  min-width: 320px;
+  top: 0;
+  left: 0;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 16px;
+  border-bottom: 2px solid var(--col-listitem);
+  background-color: var(--col-bg);
+  transition: margin-top 100ms ease-out;
+}
+
+#topBar.isAnimating {
+  transition: margin-top 400ms ease-out;
+}
+
+#appTitle {
+  color: var(--col-listitem-selected-over);
+}
+
+.lightTheme #appTitle {
+  color: var(--col-listitem-selected);
+}
+
+#topBarButtons {
+  margin-left: auto;
+}
+
+#hqpSettingsButton:before {
+  background-image: url("./../img/icons/sound-wave-1.svg");
+  opacity: 0.66;
+  background-size: 32px 32px;
+}
+
+#hqpSettingsButton {
+  background-color: transparent;
+}
+
+#hqpSettingsButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+#settingsButton:before {
+  background-image: url("./../img/icons/settings_white_24dp.svg");
+  opacity: 0.66;
+}
+
+#settingsButton {
+  background-color: transparent;
+}
+
+#settingsButton:hover {
+  background-color: var(--col-listitem-over);
+}
+
+.settingsView #settingsButton,
+.hqpSettingsView #settingsButton {
+  visibility: hidden;
+}
+
+.settingsView #hqpSettingsButton,
+.hqpSettingsView #hqpSettingsButton {
+  visibility: hidden;
+}
+
+/* Playbar View */
+#playbarView {
+  visibility: hidden;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100px;
+  min-width: 320px;
+  flex: 0 0 auto;
+  padding: 12px 0 0 0;
+  background-color: var(--col-bg);
+  z-index: 10001;
+}
+
+#playingText {
+  display: inline-block;
+  margin-left: 12px;
+  margin-top: auto;
+  padding-right: 32px;
+  height: 24px;
+  margin-bottom: auto;
+  max-width: calc(100% - 60px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  line-height: 24px;
+}
+
+#playingText:hover {
+  opacity: 0.8;
+}
+
+#playingText .playingArtist {
+  font-weight: bold;
+  margin-right: 8px;
+  display: inline;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  #playingText {
+    margin-top: 3px;
+    height: 24px;
+    margin-bottom: 9px;
+    max-width: calc(100% - 60px);
+    min-width: 0;
+    position: relative;
+  }
+}
+
+#playbarButtons {
+  display: flex;
+  align-items: center;
+  margin-left: 12px;
+  margin-right: 76px;
+}
+
+@media (max-width: 480px) {
+  #playbarButtons {
+    margin-right: 60px;
+  }
+}
+
+/* Playbar Buttons */
+#stopButton {
+  margin-right: 16px;
+}
+
+#stopButton:before {
+  background-image: url("./../img/icons/stop_white_24dp.svg");
+}
+
+@media (max-width: 768px) {
+  #stopButton {
+    margin-right: 8px;
+  }
+}
+
+.isStopped #stopButton {
+  pointer-events: none;
+}
+
+.isStopped #stopButton:before {
+  opacity: 0.5;
+}
+
+#playButton {
+  margin-right: 8px;
+  width: 72px;
+}
+
+#playButton:before {
+  background-image: url("./../img/icons/play_arrow_white_24dp.svg");
+}
+
+@media (max-width: 480px) {
+  #playButton {
+    width: 36px;
+  }
+}
+
+.isPlaying #playButton:before {
+  background-image: url("./../img/icons/pause_white_24dp.svg");
+}
+
+.isPaused #playButton:before {
+  background-image: url("./../img/icons/play_arrow_white_24dp.svg");
+}
+
+.isPlaylistEmpty #playButton:before {
+  background-image: url("./../img/icons/play_arrow_white_24dp.svg");
+}
+
+.isPlaylistEmpty #playButton {
+  pointer-events: none;
+}
+
+.isPlaylistEmpty #playButton:before {
+  opacity: 0.5;
+}
+
+#previousButton {
+  margin-right: 8px;
+}
+
+#previousButton:before {
+  background-image: url("./../img/icons/skip_previous_white_24dp.svg");
+}
+
+.isStopped #previousButton {
+  pointer-events: none;
+}
+
+.isStopped #previousButton:before {
+  opacity: 0.5;
+}
+
+#nextButton {
+  margin-right: 16px;
+}
+
+#nextButton:before {
+  background-image: url("./../img/icons/skip_next_white_24dp.svg");
+}
+
+@media (max-width: 480px) {
+  #nextButton {
+    margin-right: 12px;
+  }
+}
+
+.isStopped #nextButton {
+  pointer-events: none;
+}
+
+.isStopped #nextButton:before {
+  opacity: 0.5;
+}
+
+#seekBackwardButton {
+  margin-right: 8px;
+}
+
+#seekBackwardButton:before {
+  background-image: url("./../img/icons/replay_10_white_24dp.svg");
+}
+
+.isStopped #seekBackwardButton {
+  pointer-events: none;
+}
+
+.isStopped #seekBackwardButton:before {
+  opacity: 0.5;
+}
+
+#seekForwardButton:before {
+  background-image: url("./../img/icons/forward_10_white_24dp.svg");
+}
+
+#seekForwardButton {
+  margin-right: 16px;
+}
+
+.isStopped #seekForwardButton {
+  pointer-events: none;
+}
+
+.isStopped #seekForwardButton:before {
+  opacity: 0.5;
+}
+
+@media (max-width: 639px) {
+  #seekBackwardButton,
+  #seekForwardButton {
+    display: none;
+  }
+}
+
+/* Playing Track Area */
+#playingTrackArea {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+#playingTrackCurrentTime {
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  #playingTrackCurrentTime {
+    display: none;
+  }
+}
+
+#playingTrackLength {
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  #playingTrackLength {
+    display: none;
+  }
+}
+
+.isStopped #playingTrackCurrentTime,
+.isStopped #playingTrackLength {
+  color: var(--col-text-less);
+}
+
+/* Volume */
+#volumeToggleButton {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+}
+
+#volumeToggleButton.isSelected {
+  background-color: var(--col-listitem);
+}
+
+#volumeToggleButton:before {
+  background-image: url("./../img/icons/volume_up_white_24dp.svg");
+}
+
+#volumePanel {
+  visibility: hidden;
+  position: absolute;
+  width: 68px;
+  right: -2px;
+  bottom: 100%;
+  overflow-y: hidden;
+}
+
+#volumePanelInner {
+  position: relative;
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--col-listitem-less);
+  padding: 8px 8px 0 8px;
+  transition: top 166ms ease-out;
+}
+
+#volumeText {
+  line-height: 36px;
+  width: 52px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  background-color: var(--col-listitem);
+}
+
+.volumePanelButton {
+  border-radius: 0;
+  width: 52px;
+  text-align: center;
+  font-weight: normal;
+}
+
+.volumePanelButtonSpacer {
+  width: 52px;
+  height: 8px;
+  background: var(--col-listitem);
+}
+
+/* Progress */
+#playProgressView {
+  position: relative;
+  flex: 1;
+  height: 20px;
+  margin-left: 12px;
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  #playProgressView {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.isStopped #playProgressView,
+.isBusy #playProgressView {
+  pointer-events: none;
+}
+
+#playProgressInner {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--col-listitem);
+  border-radius: 2px;
+}
+
+#playProgressThumb {
+  position: absolute;
+  height: 100%;
+  left: 0;
+  top: 0;
+  cursor: pointer;
+  background-color: var(--col-highlight);
+  border-radius: 2px;
+  transition: width 0s linear;
+}
+
+#playProgressThumb.isAnimating {
+  transition: width 1s linear;
+}
+
+@media (max-width: 480px) {
+  #playProgressThumb {
+    transition: none;
+  }
+  #playProgressThumb.isAnimating {
+    transition: none;
+  }
+}
+
+.isStopped #playProgressThumb {
+  pointer-events: none;
+  width: 0 !important;
+}
+
+.isPaused #playProgressThumb {
+  opacity: 0.5;
+}
+
+.isBusy #playProgressThumb {
+  animation: thumbPulse 1.33s infinite;
+  pointer-events: none;
+  transition: background-color 0.15s linear;
+}
+
+#playbarStroke {
+  display: none;
+}
+
+/* Show Playlist Button */
+#showPlaylistButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  z-index: 10;
+}
+
+#showPlaylistButton:before {
+  background-image: url("./../img/icons/queue_music_white_24dp.svg");
+}
+
+.playlistView #showPlaylistButton {
+  background-color: var(--col-listitem-selected);
+}
+
+#playlistNumberAt,
+#playlistNumberStroke,
+#playlistNumberTotal {
+  display: none;
+}
+
+/* Bottom Elements */
+#bottomScrim {
+  position: absolute;
+  width: 100%;
+  height: 28px;
+  top: -28px;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0) 100%);
+}
+
+@media (max-width: 480px) {
+  #bottomScrim {
+    display: none;
+  }
+}
+
+.lightTheme #bottomScrim {
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0) 100%);
+}
+
+#bottomStroke {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  top: 0px;
+  background-color: var(--col-listitem);
+}
+
+/* Music Playing Animation */
+.music-playing {
+  display: inline-block;
+  margin-left: 12px;
+  margin-top: -6px;
+  height: 24px;
+  margin-bottom: 11px;
+  width: 24px;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.music-playing.isPlaying {
+  opacity: 1;
+}
+
+.music-playing.isPlaying .bar {
+  fill: var(--col-highlight);
+  animation: fluctuate 0.8s ease-in-out infinite alternate;
+}
+
+.music-playing.isPlaying .bar:nth-child(2) {
+  animation-delay: 0.1s;
+  animation-duration: 0.6s;
+}
+
+.music-playing.isPlaying .bar:nth-child(3) {
+  animation-delay: 0.3s;
+  animation-duration: 0.9s;
+}
+
+.music-playing.isPlaying .bar:nth-child(4) {
+  animation-delay: 0.2s;
+  animation-duration: 0.7s;
+}
+
+@media (max-width: 480px) {
+  .music-playing {
+    margin-top: -4px;
+    height: 24px;
+    margin-bottom: 9px;
+    width: 24px;
+  }
+}
+
+/* Toast */
+#toast {
+  visibility: hidden;
+  position: absolute;
+  width: 100%;
+  height: 36px;
+  top: -36px;
+  overflow: hidden;
+}
+
+#toast #toastInner {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 36px;
+  background: var(--col-bg);
+  border-top: 2px solid var(--col-listitem);
+  padding: 0 16px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 32px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: top 400ms cubic-bezier(0, 0.5, 0.3, 1);
+}
+
+@media (max-width: 480px) {
+  #toast #toastInner {
+    font-size: 12px;
+  }
+}
+
+/* Snack */
+#snack {
+  visibility: hidden;
+  position: absolute;
+  width: 100%;
+  height: 55px;
+  top: -55px;
+  overflow: hidden;
+}
+
+#snack #snackInner {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 55px;
+  background: #282828;
+  border-top: 2px solid #444;
+  line-height: 22px;
+  padding: 4px 16px 0 16px;
+  transition: top 400ms cubic-bezier(0, 0.5, 0.3, 1);
+}
+
+#snack #snackInner #snackIcon {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+}
+
+#snack #snackInner #snackIcon:before {
+  background-image: url("./../img/icons/error_outline_white_24dp.svg");
+}
+
+#snack #snackInner #snackIcon {
+  background-color: transparent;
+  cursor: default;
+}
+
+#snack #snackInner #snackClose {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+}
+
+#snack #snackInner #snackLine1 {
+  margin-left: 44px;
+  margin-right: 38px;
+  color: var(--col-accent);
+  font-weight: bold;
+}
+
+#snack #snackInner #snackLine2 {
+  margin-left: 44px;
+  margin-right: 38px;
+}
+
+/* Full Overlay */
+#fullOverlayScreen {
+  display: none;
+  position: absolute;
+  z-index: 9998;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  transition: opacity 400ms ease-in;
+}
+
+#fullOverlayImage {
+  display: none;
+  z-index: 9999;
+  position: absolute;
+  cursor: pointer;
+  transition: left 400ms ease-out, top 400ms ease-out, width 400ms ease-out, height 400ms ease-out;
+}
+
+/* Breakpoint Indicator */
+#breakpointIndicator {
+  position: absolute;
+  visibility: hidden;
+  height: 0;
+  width: 1px;
+}
+
+@media (max-width: 768px) {
+  #breakpointIndicator {
+    width: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  #breakpointIndicator {
+    width: 3px;
+  }
+}
+
+/* Debug */
+#debug {
+  display: none;
+  position: absolute;
+  z-index: 100000;
+  width: 400px;
+  height: 100px;
+  top: 10px;
+  left: 10px;
+  overflow-y: auto;
+  color: var(--col-highlight);
+  font-size: 16px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Album Overlay Image */
+#albumOverlayImage {
+  display: none;
+  position: absolute;
+  z-index: 10000;
+  transform-origin: top left;
+  transition: transform 400ms cubic-bezier(0, 0.5, 0.3, 1);
+}

@@ -458,7 +458,7 @@ export default class LibrarySearchList extends LibraryContentList {
 
   populateTrackGroupDiv($group, array) {
     const a = array.map(item => item['track']);
-    const items$ = TrackListItemUtil.populateList($group, a);
+    const items$ = TrackListItemUtil.populateList($group, a, false); // no delete button for search/favorites
 
     for (const $item of items$) {
       $item.find(".contextButton").on("click tap", this.onTrackListItemContextButton);

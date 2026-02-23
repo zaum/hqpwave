@@ -16,8 +16,9 @@ export default class TrackListItemUtil {
    *
    * @param $holder
    * @param array elements must have value for either @_uri, or @_hash/hash
+   * @param showDeleteButton whether to show the delete button (default: true)
    */
-  static populateList($holder, array) {
+  static populateList($holder, array, showDeleteButton = true) {
     const result = [];
 
     for (let i = 0; i < array.length; i++) {
@@ -28,7 +29,7 @@ export default class TrackListItemUtil {
         $albumLine.find('.albumLineButton').on('click tap', TrackListItemUtil.onAlbumButton);
       }
 
-      const $item = TrackListItemUtil.makeListItem(i, array, (i+1));
+      const $item = TrackListItemUtil.makeListItem(i, array, (i+1), showDeleteButton);
       $item.find(".favoriteButton").on("click tap", TrackListItemUtil.onFavoriteButtonClick);
       $holder.append($item);
       result.push($item);
@@ -62,7 +63,7 @@ export default class TrackListItemUtil {
       if (Object.keys(track).length == 0) {
         $item = TrackListItemUtil.makeNonLibraryHistoryItem(agoString);
       } else {
-        $item = TrackListItemUtil.makeListItem(i, tracks, agoString);
+        $item = TrackListItemUtil.makeListItem(i, tracks, agoString, false); // no delete button for history
         $item.find(".favoriteButton").on("click tap", TrackListItemUtil.onFavoriteButtonClick);
       }
 
@@ -95,8 +96,9 @@ export default class TrackListItemUtil {
    * @param index
    * @param array elements can be either playlist items or album track items
    * @param leftText
+   * @param showDeleteButton whether to show the delete button (default: true)
    */
-  static makeListItem(index, array, leftText="") {
+  static makeListItem(index, array, leftText="", showDeleteButton = true) {
 
     const item = array[index];
     const itemPrevious = (index > 0) ? array[index - 1] : null;
@@ -143,7 +145,9 @@ export default class TrackListItemUtil {
       s += `  <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}"><div class="favoriteIcon"></div></div>`;
       s += `</div>`;
     }
-    s += `  <div class="right"><div class="iconButton deleteButton"></div></div>`;
+    if (showDeleteButton) {
+      s += `  <div class="right"><div class="iconButton deleteButton"></div></div>`;
+    }
     s += `</div>`;
     return $(s);
   }

@@ -1,0 +1,394 @@
+/* Album View */
+#albumView {
+  padding-bottom: 0;
+  transition: transform 400ms cubic-bezier(0, 0.5, 0.3, 1), opacity 400ms ease-out;
+}
+
+#albumView.animIn {
+  border-top: 1px solid var(--col-listitem);
+}
+
+#albumCloseButton {
+  margin-left: auto;
+}
+
+#albumViewInfo {
+  display: flex;
+  margin-top: 16px;
+  margin-bottom: 24px;
+}
+
+.albumViewPictureOuter {
+  width: 50%;
+  max-height: 75vh;
+  transition: opacity 400ms ease-in;
+}
+
+.albumViewPictureOuter #albumViewPicture {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+#albumViewTexts {
+  width: 50%;
+  padding-left: 32px;
+  align-self: center;
+  display: flex;
+  align-items: center;
+}
+
+#albumViewTexts #albumViewTextsInner {
+  height: auto;
+  padding-bottom: 18px;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewArtist {
+  display: inline-block;
+  padding: 8px 12px;
+  margin: -12px;
+  border-radius: 6px;
+  background-color: var(--col-listitem-less);
+  cursor: pointer;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewArtist:hover {
+  background-color: var(--col-listitem);
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewTitle {
+  font-family: "Noto Serif SC", sans-serif;
+  font-size: 36px;
+  line-height: 42px;
+  margin-top: 10px;
+  word-break: break-word;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewPerformerComposer {
+  margin-top: 10px;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewPerformer,
+#albumViewTexts #albumViewTextsInner #albumViewComposer {
+  color: var(--col-text-less);
+  font-size: 14px;
+  max-height: 63px;
+  overflow: hidden;
+}
+
+#albumViewTexts #albumViewTextsInner .pseudoEllipse {
+  position: relative;
+  padding-right: 16px;
+}
+
+#albumViewTexts #albumViewTextsInner .pseudoEllipse:before {
+  content: "...";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 21px;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewStats {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewGenreButtons {
+  margin-top: 16px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewGenreButtons .genreButton {
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: #ffffff;
+  background-color: var(--col-text-least);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewGenreButtons .genreButton:hover {
+  color: #ffffff;
+  background-color: var(--col-text);
+}
+
+@media (max-width: 768px) {
+  #albumViewTexts #albumViewTextsInner #albumViewGenreButtons {
+    justify-content: center;
+  }
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewPath {
+  margin-top: 16px;
+  font-size: 12px;
+  word-break: break-word;
+  color: var(--col-text-least);
+}
+
+#albumViewTexts #albumViewTextsInner #albumViewButtons {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  #albumViewInfo {
+    flex-direction: column;
+  }
+  .albumViewPictureOuter {
+    width: 70%;
+    margin-left: 15%;
+    margin-right: 15%;
+  }
+  #albumViewTexts {
+    width: auto;
+    margin-top: 12px;
+    padding-left: 0;
+  }
+  #albumViewTexts #albumViewTextsInner {
+    text-align: center;
+    margin-left: 8px;
+    margin-right: 8px;
+    padding-bottom: 0;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewArtist {
+    padding: 6px;
+    margin: -6px;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewTitle {
+    margin-top: 10px;
+    font-size: 28px;
+    line-height: 33px;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewStats {
+    margin-top: 12px;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewButtons {
+    margin-top: 20px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  #albumViewPicture {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+  }
+  #albumViewTexts #albumViewTextsInner {
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewTitle {
+    margin-top: 10px;
+    font-size: 20px;
+    line-height: 23px;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewStats {
+    margin-top: 12px;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewPath {
+    display: none;
+  }
+  #albumViewTexts #albumViewTextsInner #albumViewButtons {
+    margin-top: 18px;
+  }
+}
+
+#albumQueueButton {
+  margin-left: 12px;
+}
+
+#albumFavoriteButton {
+  display: none;
+  margin-left: 12px;
+  border-radius: 6px;
+}
+
+#albumFavoriteButton .favoriteIcon {
+  width: 24px;
+  height: 24px;
+  background-color: var(--col-text-least);
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
+  -webkit-mask-size: 24px 24px;
+  mask-size: 24px 24px;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  opacity: 0.25;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+#albumFavoriteButton:hover .favoriteIcon {
+  opacity: 0.7;
+}
+
+#albumFavoriteButton.isSelected .favoriteIcon {
+  opacity: 1;
+  background-color: var(--col-highlight);
+}
+
+.isMetaEnabled #albumFavoriteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Album Item */
+.albumItem {
+  display: flex;
+  position: relative;
+  align-items: center;
+  padding: 12px 8px 12px 16px;
+  border-top: 1px solid var(--col-listitem);
+}
+
+@media (max-width: 480px) {
+  .albumItem {
+    left: 0;
+    padding: 8px 0 8px 8px;
+  }
+}
+
+.albumItemLeft {
+  margin-right: 16px;
+  min-width: 60px;
+  text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .albumItemLeft {
+    margin-right: 10px;
+  }
+}
+
+.albumItemLeft .indexText {
+  position: absolute;
+  right: 5px;
+  opacity: 1;
+  font-size: 14px;
+}
+
+.albumItemLeft .playButton {
+  position: absolute;
+  left: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--col-text-least);
+}
+
+.albumItemLeft .playButton:before {
+  content: "";
+  width: 24px;
+  height: 24px;
+  background-color: var(--col-text-least);
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="5,3 5,21 19,12"/></svg>');
+  mask-size: 24px 24px;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  transition: background-color 0.2s;
+}
+
+.albumItemLeft .playButton:hover {
+  color: var(--col-text);
+}
+
+.albumItemLeft .playButton:hover:before {
+  background-color: var(--col-text);
+}
+
+.albumItem.selected .albumItemLeft .playButton {
+  color: var(--col-highlight);
+}
+
+.albumItem.selected .albumItemLeft .playButton:before {
+  background-color: var(--col-highlight);
+}
+
+.albumItem.selected .indexText {
+  visibility: visible;
+}
+
+.albumItemMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.albumItemMain .caption {
+  text-transform: uppercase;
+  color: var(--col-text-least);
+  font-size: 12px;
+}
+
+.albumItemMain .song {
+  line-height: 20px;
+}
+
+.albumItemMain .song .albumItemDuration {
+  color: var(--col-text-less);
+}
+
+.albumItemMain .extra {
+  margin-top: 4px;
+}
+
+.albumItemMain .extra .extraLine {
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--col-text-least);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.albumItemContext {
+  height: 36px;
+}
+
+/* Text Selection */
+#albumViewTexts * {
+  -moz-user-select: text;
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  -o-user-select: text;
+}
+
+#albumPlayNowButton,
+#albumQueueButton,
+#albumFavoriteButton {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -o-user-select: none;
+}
+
+.albumItem * {
+  -moz-user-select: text;
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  -o-user-select: text;
+}
