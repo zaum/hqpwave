@@ -5,8 +5,8 @@ import Util from './util.js';
  */
 class Values {
 
-  PROJECT_URL = 'https://github.com/zeropointnine/hqpwv';
-  TROUBLESHOOTING_HREF = 'https://github.com/zeropointnine/hqpwv/blob/master/readme_enduser.md';
+  PROJECT_URL = 'https://github.com/zaum/hqpwave';
+  TROUBLESHOOTING_HREF = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
 
   ENDPOINTS_BASE_URL = window.location.origin + '/endpoints/'; // default
   COMMAND_ENDPOINT = this.ENDPOINTS_BASE_URL + "command";

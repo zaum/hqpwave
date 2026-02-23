@@ -10,7 +10,7 @@ const fastXmlParser = require('fast-xml-parser');
 
 const log = require('./log');
 
-const TROUBLESHOOTING_URL = 'https://github.com/zeropointnine/hqpwv/blob/master/readme_enduser.md';
+const TROUBLESHOOTING_URL = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
 const UDP_ADDRESS = "239.192.0.199";
 const PORT = 4321;
 const XML_HEADER = `<?xml version="1.0" encoding="UTF-8"?>`;

@@ -3276,10 +3276,12 @@ select {
   margin: 0;
   line-height: 36px;
   cursor: pointer;
+  font-family: "Noto Sans TC", sans-serif;
+  font-size: 16px;
 }
 
-select * {
-  font-family: "Noto Sans TC", serif;
+select option {
+  font-family: "Noto Sans TC", sans-serif;
   font-size: 16px;
 }
 
@@ -3336,6 +3338,7 @@ select * {
 
 #hqpFiltersView {
   margin-top: 18px;
+  padding-bottom: 200px;
 }
 @media (max-width: 480px) {
   #hqpFiltersView {
@@ -3601,7 +3604,7 @@ select * {
   position: fixed;
   top: 110px;
   bottom: 120px;
-  right: 0;
+  right: 14px;
   width: 60px;
   z-index: 10000;
   display: flex;
