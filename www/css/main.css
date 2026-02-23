@@ -2952,6 +2952,7 @@ html {
 #albumViewTexts #albumViewTextsInner #albumViewButtons {
   margin-top: 24px;
   display: flex;
+  align-items: center;
 }
 
 @media (max-width: 768px) {
@@ -3040,7 +3041,9 @@ html {
 }
 
 .isMetaEnabled #albumFavoriteButton {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .albumItem {
@@ -3585,14 +3588,6 @@ select * {
 }
 
 /* #endregion HQP Settings View */
-#albumFavoriteButton {
-  display: none;
-  margin-left: 12px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 #timelineMinimapContainer {
   position: fixed;
