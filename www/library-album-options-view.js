@@ -111,6 +111,27 @@ export default class LibraryAlbumOptionsView {
         item.hide();
       }
     }
+    
+    // Move dropdown to body to escape any overflow/transform containers
+    // Store original parent for moving back later
+    if (!dropdown.$el.data('originalParent')) {
+      dropdown.$el.data('originalParent', dropdown.$el.parent());
+    }
+    
+    // Move to body if not already there
+    if (dropdown.$el.parent()[0] !== document.body) {
+      dropdown.$el.appendTo('body');
+    }
+    
+    // Position the fixed dropdown at the button location
+    if ($button) {
+      const buttonRect = $button[0].getBoundingClientRect();
+      dropdown.$el.css({
+        'top': buttonRect.bottom + 'px',
+        'left': (buttonRect.left - 175 + 36) + 'px' // Align right edge of dropdown with button
+      });
+    }
+    
     dropdown.show();
 
     // Update dropdown item selection/s

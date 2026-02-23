@@ -2373,18 +2373,34 @@ html {
 #libraryGroupDropdown,
 #librarySortDropdown,
 #libraryFilterDropdown {
-  position: absolute;
-  left: -183px;
+  position: fixed;
+  z-index: 10002;
   width: 175px;
+  height: auto;
+  display: none;
   opacity: 0;
-  transform: translate(38px);
+  transform: translate(0, -10px);
   transition: transform 200ms cubic-bezier(0, 0.5, 0.3, 1), opacity 200ms linear;
+  /* left and top will be set by JavaScript */
 }
 #libraryGroupDropdown.animIn,
 #librarySortDropdown.animIn,
 #libraryFilterDropdown.animIn {
   opacity: 1;
-  transform: translate(0);
+  transform: translate(0, 0);
+}
+/* Hide title for library dropdowns, only show items */
+#libraryGroupDropdown .dropdownTitle,
+#librarySortDropdown .dropdownTitle,
+#libraryFilterDropdown .dropdownTitle {
+  display: none;
+}
+/* Library dropdown items start from top (no title above) */
+#libraryGroupDropdown .dropdownItems,
+#librarySortDropdown .dropdownItems,
+#libraryFilterDropdown .dropdownItems {
+  position: static;
+  width: 100%;
 }
 
 .librarySearchDivider {
