@@ -40,7 +40,11 @@ export default class LibraryAlbumOptionsView {
     this.filterDropdown = new Dropdown($('#libraryFilterDropdown'));
     this.dropdowns = [this.sortDropdown, this.groupDropdown, this.filterDropdown];
 
-    this.pointerUtil = new ModalPointerUtil(this.$el, () => this.hideDropdowns());
+    // Include dropdown elements in pointer util whitelist so they remain clickable
+    this.pointerUtil = new ModalPointerUtil(
+      [this.$el, this.sortDropdown.$el, this.groupDropdown.$el, this.filterDropdown.$el],
+      () => this.hideDropdowns()
+    );
 
     this.$expandCollapseButton.on('click tap', () => this.onExpandCollapseClick());
     this.$sortButton.on('click tap', e => this.toggleDropdown(this.sortDropdown));

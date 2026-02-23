@@ -2373,10 +2373,10 @@ html {
 #libraryGroupDropdown,
 #librarySortDropdown,
 #libraryFilterDropdown {
-  position: fixed;
-  z-index: 10002;
-  width: 175px;
-  height: auto;
+  position: fixed !important;
+  z-index: 10002 !important;
+  width: 175px !important;
+  height: auto !important;
   display: none;
   opacity: 0;
   transform: translate(0, -10px);
@@ -2399,8 +2399,16 @@ html {
 #libraryGroupDropdown .dropdownItems,
 #librarySortDropdown .dropdownItems,
 #libraryFilterDropdown .dropdownItems {
-  position: static;
+  position: static !important;
   width: 100%;
+  top: 0;
+}
+/* Ensure dropdown items are clickable */
+#libraryGroupDropdown .dropdownItem,
+#librarySortDropdown .dropdownItem,
+#libraryFilterDropdown .dropdownItem {
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .librarySearchDivider {
