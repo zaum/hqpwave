@@ -456,7 +456,6 @@
 #mainArea {
   grid-area: main;
   position: relative;
-  overflow: hidden;
   background-color: var(--bg);
   width: 100%;
   min-width: 320px;

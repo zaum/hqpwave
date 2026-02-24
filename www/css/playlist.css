@@ -105,7 +105,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 #playlistList {
-  padding: 0;
+  padding: 0 0 60px 0;
 }
 
 /* Track Item (used in playlist, history, search) */
