@@ -24,6 +24,7 @@ export default class LibraryView extends Subview {
   $title;
   $itemCount;
   $spinner;
+  $scrollEl;
 
   albumOptionsView; // dropdowns + search button
   $searchButton;
@@ -33,9 +34,10 @@ export default class LibraryView extends Subview {
 
   constructor() {
     super($("#libraryView"));
+    this.$scrollEl = this.$el.find('.library-main');
     this.$title = this.$el.find('#libraryTitle');
     this.$title.addClass('clickable');
-    this.$title.on('click tap', () => this.$el[0].scrollTop = 0);
+    this.$title.on('click tap', () => (this.$scrollEl[0] || this.$el[0]).scrollTop = 0);
     this.$itemCount = this.$el.find('#libraryNumbers');
     this.$searchButton = this.$el.find('#librarySearchButton');
     this.$searchCloseButton = this.$el.find('#librarySearchCloseButton');
@@ -249,8 +251,9 @@ export default class LibraryView extends Subview {
 
   /** Returns true if handled/'eaten' */
   onEscape() {
-    if (this.$el[0].scrollTop > 0) {
-      this.$el[0].scrollTop = 0;
+    const scrollEl = (this.$scrollEl[0] || this.$el[0]);
+    if (scrollEl.scrollTop > 0) {
+      scrollEl.scrollTop = 0;
       return true;
     }
     return false;
