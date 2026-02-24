@@ -577,6 +577,136 @@
   opacity: 1;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ALBUM ITEM (track items in album view)
+   ═══════════════════════════════════════════════════════════════ */
+
+.albumItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  min-height: 48px;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.albumItem:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.albumItem.selected {
+  background: var(--accent-bg);
+}
+
+.albumItemLeft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.albumItemLeft .playButton {
+  display: none;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.albumItem:hover .albumItemLeft .playButton {
+  display: flex;
+}
+
+.albumItem:hover .albumItemLeft .indexText {
+  display: none;
+}
+
+.albumItemLeft .indexText {
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.albumItemMain {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.albumItemMain .song {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.albumItemMain .albumItemDuration {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  margin-left: 8px;
+}
+
+.albumItemMain .extra {
+  margin-top: 2px;
+}
+
+.albumItemMain .extraLine {
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.albumItemMain .extraLine .caption {
+  color: var(--text-2);
+}
+
+.trackItemMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.trackItemMeta .numViews {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  min-width: 32px;
+  text-align: right;
+}
+
+.trackItemMeta .favoriteButton {
+  opacity: 0.6;
+}
+
+.trackItemMeta .favoriteButton:hover {
+  opacity: 1;
+}
+
+.trackItemMeta .favoriteButton.isSelected {
+  opacity: 1;
+}
+
+.albumItemContext {
+  width: 28px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.albumItem:hover .albumItemContext {
+  opacity: 1;
+}
+
 /* Album Track Item specific */
 .albumTrackItem .albumTrackItemNum {
   width: 36px;

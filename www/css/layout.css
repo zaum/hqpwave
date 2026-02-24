@@ -255,6 +255,42 @@
   padding: 0 20px 8px;
 }
 
+.sidebar-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 20px 6px;
+}
+
+.sidebar-label-row .sidebar-label {
+  padding: 0;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+}
+
+.sidebar-label-reset {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s;
+  display: flex;
+  align-items: center;
+  visibility: hidden;
+}
+
+.sidebar-label-reset.visible {
+  opacity: 0.4;
+  visibility: visible;
+}
+
+.sidebar-label-reset:hover {
+  opacity: 1;
+}
+
+.sidebar-label-reset svg {
+  width: 14px;
+  height: 14px;
+}
+
 .sidebar-item {
   display: flex;
   align-items: center;
@@ -299,7 +335,7 @@
 .sidebar-divider {
   height: 1px;
   background: var(--border);
-  margin: 4px 20px 16px;
+  margin: 0 20px 0;
 }
 
 .sidebar-reset {

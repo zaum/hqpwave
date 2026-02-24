@@ -61,7 +61,15 @@
 
       <!-- Browse Section -->
       <div class="sidebar-section">
-        <div class="sidebar-label">Browse</div>
+        <div class="sidebar-label-row">
+          <div class="sidebar-label">Browse</div>
+          <div class="sidebar-label-reset" id="resetBrowse" title="Reset browse filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+          </div>
+        </div>
         <div class="sidebar-item" data-filter="all-albums">All Albums <span class="sidebar-count" id="countAllAlbums">0</span></div>
         <div class="sidebar-item" data-filter="favorite-albums">Favorite Albums <span class="sidebar-count" id="countFavoriteAlbums">0</span></div>
         <div class="sidebar-item" data-filter="favorite-tracks">Favorite Tracks <span class="sidebar-count" id="countFavoriteTracks">0</span></div>
@@ -71,7 +79,15 @@
 
       <!-- Format Section -->
       <div class="sidebar-section">
-        <div class="sidebar-label">Format</div>
+        <div class="sidebar-label-row">
+          <div class="sidebar-label">Format</div>
+          <div class="sidebar-label-reset" id="resetFormat" title="Reset format filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+          </div>
+        </div>
         <div class="format-chips" id="formatFilters">
           <div class="fchip-section-label">PCM</div>
           <div class="fchip" data-format="PCM44">44 kHz</div>
@@ -94,7 +110,15 @@
 
       <!-- Genre Section -->
       <div class="sidebar-section">
-        <div class="sidebar-label">Genre</div>
+        <div class="sidebar-label-row">
+          <div class="sidebar-label">Genre</div>
+          <div class="sidebar-label-reset" id="resetGenre" title="Reset genre filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+          </div>
+        </div>
         <div class="genre-list" id="genreList">
           <!-- Populated dynamically -->
         </div>

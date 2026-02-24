@@ -62,6 +62,19 @@ class SidebarView {
       this.resetFilters();
     });
     
+    // Individual reset buttons
+    $('#resetBrowse').on('click', () => {
+      this.resetBrowseFilter();
+    });
+    
+    $('#resetFormat').on('click', () => {
+      this.resetFormatFilter();
+    });
+    
+    $('#resetGenre').on('click', () => {
+      this.resetGenreFilter();
+    });
+    
     // Listen for library updates to populate genre list
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
     
@@ -138,6 +151,19 @@ class SidebarView {
         </div>
       `);
       
+      // Hover handlers for genre items
+      $item.on('mouseenter', () => {
+        if (!this.activeGenres.has($item.data('genre'))) {
+          $item.find('.genre-name').css('color', 'var(--text)');
+        }
+      });
+      
+      $item.on('mouseleave', () => {
+        if (!this.activeGenres.has($item.data('genre'))) {
+          $item.find('.genre-name').css('color', 'var(--text-2)');
+        }
+      });
+      
       // Click handler for genre items
       $item.on('click', (e) => {
         // If shift is held, toggle multi-select mode
@@ -193,6 +219,7 @@ class SidebarView {
     // Clear genre filters
     this.activeGenres.clear();
     this.$genreList.find('.genre-item').removeClass('active');
+    this.$genreList.find('.genre-name').css('color', 'var(--text-2)');
     this.genreMultiSelect = false;
     
     // Reset browse to "All Albums"
@@ -205,11 +232,73 @@ class SidebarView {
   }
 
   /**
+   * Reset browse filter only.
+   */
+  resetBrowseFilter() {
+    this.$browseItems.removeClass('active');
+    this.$browseItems.filter('[data-filter="all-albums"]').addClass('active');
+    this.browseFilter = 'all-albums';
+    this.onFiltersChanged();
+  }
+
+  /**
+   * Reset format filter only.
+   */
+  resetFormatFilter() {
+    this.activeFormats.clear();
+    this.$formatChips.removeClass('active');
+    this.onFiltersChanged();
+  }
+
+  /**
+   * Reset genre filter only.
+   */
+  resetGenreFilter() {
+    this.activeGenres.clear();
+    this.$genreList.find('.genre-item').removeClass('active');
+    this.$genreList.find('.genre-name').css('color', 'var(--text-2)');
+    this.genreMultiSelect = false;
+    this.onFiltersChanged();
+  }
+
+  /**
    * Called when filters change.
    */
   onFiltersChanged() {
+    // Update visibility of reset icons based on active filters
+    this.updateResetIcons();
+    
     // Trigger custom event that library-view can listen to
     $(document).trigger('sidebar-filters-changed', [this.getFilterState()]);
+  }
+
+  /**
+   * Update visibility of reset icons based on active filters.
+   */
+  updateResetIcons() {
+    // Browse reset icon - visible when not "all-albums"
+    const $resetBrowse = $('#resetBrowse');
+    if (this.browseFilter !== 'all-albums') {
+      $resetBrowse.addClass('visible');
+    } else {
+      $resetBrowse.removeClass('visible');
+    }
+    
+    // Format reset icon - visible when any format is selected
+    const $resetFormat = $('#resetFormat');
+    if (this.activeFormats.size > 0) {
+      $resetFormat.addClass('visible');
+    } else {
+      $resetFormat.removeClass('visible');
+    }
+    
+    // Genre reset icon - visible when any genre is selected
+    const $resetGenre = $('#resetGenre');
+    if (this.activeGenres.size > 0) {
+      $resetGenre.addClass('visible');
+    } else {
+      $resetGenre.removeClass('visible');
+    }
   }
 
   /**
