@@ -518,13 +518,6 @@
 
     <!-- Playbar -->
     <footer id="playbarView">
-      <div class="pb-cover" id="playbarCover">
-        <img id="playbarCoverImg" alt="" src="">
-      </div>
-      <div id="playingText">
-        <div class="playingArtist" id="playingArtist">-</div>
-        <div class="playingTitle" id="playingTitle">-</div>
-      </div>
       <div id="musicPlaying" class="music-playing">
         <svg width="24" height="24" viewBox="0 0 24 24">
           <rect class="bar" x="2" y="10" width="3" height="10" rx="1" />
@@ -532,6 +525,13 @@
           <rect class="bar" x="12" y="10" width="3" height="10" rx="1" />
           <rect class="bar" x="17" y="10" width="3" height="10" rx="1" />
         </svg>
+      </div>
+      <div class="pb-cover" id="playbarCover">
+        <img id="playbarCoverImg" alt="" src="">
+      </div>
+      <div id="playingText">
+        <div class="playingArtist" id="playingArtist">-</div>
+        <div class="playingTitle" id="playingTitle">-</div>
       </div>
       <div id="playbarButtons">
         <div id="stopButton" class="iconButton"></div>
@@ -551,16 +551,11 @@
         </div>
       </div>
       <div class="pb-right">
-        <div id="volumeToggleButton" class="iconButton toggleButton"></div>
-        <div id="volumePanel">
-          <div id="volumePanelInner">
-            <div id="volumeUp3" class="textButton volumePanelButton">+3</div>
-            <div id="volumeUp1" class="textButton volumePanelButton">+1</div>
-            <div id="volumeText"></div>
-            <div id="volumeDown1" class="textButton volumePanelButton">-1</div>
-            <div id="volumeDown3" class="textButton volumePanelButton">-3</div>
-            <div class="volumePanelButtonSpacer"></div>
+        <div id="volumeInline" class="volume-inline">
+          <div id="volumeInlineTrack" class="volume-inline-track">
+            <div id="volumeInlineThumb" class="volume-inline-thumb"></div>
           </div>
+          <div id="volumeInlineText" class="volume-inline-text">0 dB</div>
         </div>
         <div id="showPlaylistButton" class="iconButton"></div>
         <div class="format-badge" id="formatBadge">-</div>

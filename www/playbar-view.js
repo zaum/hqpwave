@@ -14,8 +14,14 @@ import VolumePanel from './volume-panel.js';
 export default class PlaybarView {
   
   $el;
+  $cover;
+  $coverImg;
   progressView;
   volumePanel;
+  $volumeInline;
+  $volumeInlineTrack;
+  $volumeInlineThumb;
+  $volumeInlineText;
   pointerUtil;
 
   totalTracks = -1;
@@ -27,9 +33,12 @@ export default class PlaybarView {
   totalSecondsText;
   ratio;
   isVolumePanelShowing = false;
+  _coverUrl = '';
 
   constructor() {
   	this.$el = $("#playbarView");
+    this.$cover = this.$el.find('#playbarCover');
+    this.$coverImg = this.$el.find('#playbarCoverImg');
 
     // Rem, button states are mostly governed by css classes on root view.
     this.$playButton = this.$el.find("#playButton");
@@ -45,7 +54,10 @@ export default class PlaybarView {
     this.$showPlaylistButton = this.$el.find("#showPlaylistButton");
     this.$playlistNumberAt = this.$el.find("#playlistNumberAt");
     this.$playlistNumberTotal = this.$el.find("#playlistNumberTotal");
-    this.$volumeToggle = this.$el.find('#volumeToggleButton');
+    this.$volumeInline = this.$el.find('#volumeInline');
+    this.$volumeInlineTrack = this.$el.find('#volumeInlineTrack');
+    this.$volumeInlineThumb = this.$el.find('#volumeInlineThumb');
+    this.$volumeInlineText = this.$el.find('#volumeInlineText');
 
     this.progressView = new ProgressView();
     this.volumePanel = new VolumePanel(this.$el.find('#volumePanel'));
@@ -59,7 +71,8 @@ export default class PlaybarView {
 
     this.$showPlaylistButton.on("click tap", () => $(document).trigger('playbar-show-playlist'));
     this.$playingText.on("click tap", () => $(document).trigger('playbar-show-playlist'));
-    this.$volumeToggle.on('click tap', this.onVolumeToggle);
+    this.$cover.on("click tap", this.onCoverClick);
+    this.$volumeInlineTrack.on('click tap', this.onVolumeTrackClick);
 
     Util.addAppListener(this, 'model-playlist-updated', this.onModelPlaylistUpdated);
     Util.addAppListener(this, 'model-status-updated', this.onModelStatusUpdated);
@@ -68,7 +81,7 @@ export default class PlaybarView {
 
 
     this.pointerUtil = new ModalPointerUtil(
-        [this.$volumeToggle, this.volumePanel.$el],
+        [this.$volumeInline, this.volumePanel.$el],
         () => this.hideVolumePanel());
   }
 
@@ -223,11 +236,14 @@ export default class PlaybarView {
     this._updatePlaylistNumbers();
     this._updatePreviousNextButtons();
     this._updateMusicPlayingAnimation();
+    this._updateVolumeInline();
+    this._updateCoverArt();
   }
 
   onModelPlaylistUpdated(e) {
     this._updatePlaylistNumbers();
     this._updatePreviousNextButtons();
+    this._updateCoverArt();
   }
 
   onModelStateUpdated(e) {
@@ -255,22 +271,95 @@ export default class PlaybarView {
     this.$trackCurrentTime.text(s);
   }
 
-  onVolumeToggle = (e) => {
-    if (!this.volumePanel.isShowing) {
-      this.showVolumePanel();
-    } else {
-      this.hideVolumePanel();
+  onVolumeTrackClick = (e) => {
+    const trackWidth = this.$volumeInlineTrack.width();
+    if (!trackWidth) {
+      return;
     }
+    const offset = this.$volumeInlineTrack.offset();
+    const clientX = (e.clientX !== undefined) ? e.clientX : (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0] ? e.originalEvent.touches[0].clientX : null);
+    if (clientX === null) {
+      return;
+    }
+    let ratio = (clientX - offset.left) / trackWidth;
+    ratio = Math.max(0, Math.min(1, ratio));
+
+    const current = Model.status.volume;
+    if (isNaN(current)) {
+      return;
+    }
+    const target = Math.round((ratio * 80) - 40); // map 0–1 to approx -40..+40 dB
+    const delta = target - current;
+    if (delta === 0) {
+      return;
+    }
+    const step = delta > 0 ? 1 : -1;
+    const steps = Math.min(6, Math.abs(Math.round(delta))); // clamp to avoid huge bursts
+
+    const command = step > 0 ? Commands.volumeUp() : Commands.volumeDown();
+    const commands = [];
+    for (let i = 0; i < steps; i++) {
+      commands.push(command);
+    }
+    commands.push(Commands.status());
+    Service.queueCommandsFront(commands);
   };
 
   _updateMusicPlayingAnimation() {
     const $musicPlaying = this.$el.find("#musicPlaying");
-    if (Model.status.isPlaying) {
+    const shouldAnimate = Model.status.isPlaying && !Model.status.isStopped;
+    if (shouldAnimate) {
       $musicPlaying.addClass("isPlaying");
     } else {
       $musicPlaying.removeClass("isPlaying");
     }
   };
+
+  _getCurrentAlbum() {
+    // Status metadata is empty when stopped, so cover is blank then.
+    const meta = Model.status.metadata || {};
+    const uri = meta['@_uri'];
+    if (!uri || !Model.hasLibrary) {
+      return null;
+    }
+    return Model.library.getAlbumByTrackUri(uri) || null;
+  }
+
+  _updateCoverArt() {
+    const album = this._getCurrentAlbum();
+    if (!album) {
+      if (this._coverUrl) {
+        this._coverUrl = '';
+        this.$coverImg.attr('src', '');
+      }
+      return;
+    }
+    const url = DataUtil.getAlbumImageUrl(album);
+    if (url && url !== this._coverUrl) {
+      this._coverUrl = url;
+      this.$coverImg.attr('src', url);
+    }
+  }
+
+  onCoverClick = (e) => {
+    const album = this._getCurrentAlbum();
+    if (!album) {
+      return;
+    }
+    $(document).trigger('library-item-click', [album, null]);
+  };
+
+  _updateVolumeInline() {
+    const vol = Model.status.volume;
+    if (isNaN(vol)) {
+      return;
+    }
+    // Map roughly -40..+40 dB into 0..1
+    let ratio = (vol + 40) / 80;
+    ratio = Math.max(0, Math.min(1, ratio));
+    this.$volumeInlineThumb.css('width', (ratio * 100) + '%');
+    this.$volumeInlineText.text(`${vol} dB`);
+  }
 }
 
 
