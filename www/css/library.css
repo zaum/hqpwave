@@ -7,6 +7,7 @@
   overflow-x: hidden;
   z-index: 100;
   position: relative;
+  height: 100%;
 }
 
 #librarySpinner {
@@ -20,10 +21,29 @@
 
 /* Library Main Content */
 .library-main {
-  padding: 0 36px 60px 36px;
+  padding: 0 36px 80px 36px;
   overflow-y: auto;
+  overflow-x: hidden;
   height: 100%;
   padding-top: 0;
+  box-sizing: border-box;
+}
+
+.library-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.library-main::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.library-main::-webkit-scrollbar-thumb {
+  background: var(--border-md);
+  border-radius: 4px;
+}
+
+.library-main::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hi);
 }
 
 @media (max-width: 768px) {

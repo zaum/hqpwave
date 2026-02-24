@@ -3,8 +3,6 @@ import AppUtil from './app-util.js';
 import DataUtil from './data-util.js';
 import LibraryAlbumOptionsView from './library-album-options-view.js';
 import LibraryAlbumsList from './library-albums-list.js';
-import LibrarySearchPanel from './library-search-panel.js';
-import LibrarySearchList from './library-search-list.js';
 import LibraryDataUtil from './library-data-util.js';
 import LibraryGroupUtil from './library-group-util.js';
 import SidebarView from './sidebar-view.js';
@@ -31,9 +29,7 @@ export default class LibraryView extends Subview {
   $searchButton;
   $searchCloseButton;
 
-  searchPanel;
   albumsList;
-  searchList;
 
   constructor() {
     super($("#libraryView"));
@@ -56,8 +52,6 @@ export default class LibraryView extends Subview {
 
     this.albumOptionsView = new LibraryAlbumOptionsView(this.$el.find("#libraryAlbumOptionsView"));
     this.albumsList = new LibraryAlbumsList(this.$el.find('#libraryAlbumsList'));
-    this.searchPanel = new LibrarySearchPanel(this.$el.find("#librarySearchPanel"));
-    this.searchList = new LibrarySearchList(this.$el.find('#librarySearchList'));
 
     this.$searchButton.on('click tap', () => this.openSearch());
     this.$searchCloseButton.on('click tap', () => this.closeSearch());
@@ -171,9 +165,6 @@ export default class LibraryView extends Subview {
         () => this.updateHeaderText(false));
     Util.addAppListener(this, 'library-albums-list-populated',
         () => this.syncExpandCollapseButtonState());
-    Util.addAppListener(this, 'library-search-view-populated',
-        () => this.updateHeaderText(true));
-    Util.addAppListener(this, 'library-search', this.onSearch);
     Util.addAppListener(this, 'library-expand-all-groups', this.onExpandAllGroups);
     Util.addAppListener(this, 'library-collapse-all-groups', this.onCollapseAllGroups);
     
@@ -198,7 +189,6 @@ export default class LibraryView extends Subview {
     this.setSpinnerState(false);
     ViewUtil.setVisible(this.albumsList.$el, true);
 
-    this.searchList.hide();
     this.albumsList.show();
     this.albumsList.update();
 	}
@@ -207,102 +197,43 @@ export default class LibraryView extends Subview {
    * Animates in search view state.
    */
   openSearch() {
-    $(document).trigger('disable-user-input');
-    TopBarUtil.returnSubviewHeader(true)
-    this.albumsList.hide(false, () => {
-      this.updateHeaderText(true);
-      ViewUtil.setDisplayed(this.albumOptionsView.$el, false);
-      ViewUtil.setDisplayed(this.$searchCloseButton, true);
-      ViewUtil.setDisplayed(this.$headerSearchContainer, false);
-      this.searchPanel.show();
-      this.searchList.show();
-      $(document).trigger('enable-user-input');
-    });
+    // Search is now handled by top header filter
   }
 
   /**
    * Shows search view state synchronously, with list populated.
    */
   openSearchSync(searchType, value) {
-    TopBarUtil.returnSubviewHeader(true)
-    this.updateHeaderText(true);
-    ViewUtil.setDisplayed(this.albumOptionsView.$el, false);
-    ViewUtil.setDisplayed(this.$searchCloseButton, true);
-    ViewUtil.setDisplayed(this.$headerSearchContainer, false);
-    this.albumsList.hide(true);
-    this.searchPanel.show(searchType, value, true);
-    
-    // Sync header search input value to search panel input
-    if (value && value.trim() && this.$headerSearchInput.val() !== value) {
-      this.$headerSearchInput.val(value);
-    }
-    
-    // Simulate Enter key press to trigger search when external data is provided
-    if (value && value.trim()) {
-      this.searchPanel.$input.trigger($.Event('keyup', { keyCode: 13 }));
-    }
-    
-    this.searchList.setSearchTypeAndValue(searchType, value);
-    this.searchList.show(true);
+    // Search is now handled by top header filter
   }
   /**
    * Animates out search view state.
    */
   closeSearch() {
-    $(document).trigger('disable-user-input');
-    TopBarUtil.returnSubviewHeader(true)
-    this.searchList.hide();
-    this.searchPanel.hide(() => {
-      this.$el[0].scrollTop = 0;
-      ViewUtil.setDisplayed(this.$searchCloseButton, false);
-      ViewUtil.setDisplayed(this.albumOptionsView.$el, 'flex');
-      // Restore albums from model and show albums list
-      if (Model.library.albums) {
-        this.albumsList.albums = Model.library.albums;
-        this.albumsList.filteredSortedAlbumsDirty = true;
-        this.albumsList.groupsDirty = true;
-        this.albumsList.domDirty = true;
-      }
-      this.albumsList.setFilterType(Settings.libraryFilterType);
-      this.albumsList.update();
-      this.albumsList.show();
-      this.updateHeaderText(false);
-      // Clear the header search input
-      this.$headerSearchInput.val('');
-      // Show the header search container
-      ViewUtil.setDisplayed(this.$headerSearchContainer, true);
-      $(document).trigger('enable-user-input');
-    });
+    // Search is now handled by top header filter
   }
 
   onModelLibraryUpdated() {
     this.albumsList.setAlbums(Model.library.albums);
-    this.searchList.setAlbums(Model.library.albums);
   }
 
   onSearch(type, value) {
-    this.albumsList.clear();
-    this.albumsList.hide();
-    this.searchList.show();
-    this.searchList.setSearchTypeAndValue(type, value);
+    // Search is now handled by top header filter
   }
 
   onExpandAllGroups() {
-    const list = ViewUtil.isDisplayed(this.albumsList.$el) ? this.albumsList : this.searchList;
-    list.expandAllGroups();
+    this.albumsList.expandAllGroups();
   }
 
   onCollapseAllGroups() {
-    const list = ViewUtil.isDisplayed(this.albumsList.$el) ? this.albumsList : this.searchList;
-    list.collapseAllGroups();
+    this.albumsList.collapseAllGroups();
   }
 
   /**
    * Syncs the expand/collapse button state with the actual group states.
    */
   syncExpandCollapseButtonState() {
-    const list = ViewUtil.isDisplayed(this.albumsList.$el) ? this.albumsList : this.searchList;
-    const areAllCollapsed = list.areAllLabelsCollapsed;
+    const areAllCollapsed = this.albumsList.areAllLabelsCollapsed;
     
     if (areAllCollapsed === true) {
       // All groups are collapsed - button should show "expand" state (no isSelected)
@@ -318,46 +249,19 @@ export default class LibraryView extends Subview {
 
   /** Returns true if handled/'eaten' */
   onEscape() {
-    if (ViewUtil.isDisplayed(this.searchPanel.$el)) {
-      this.closeSearch();
+    if (this.$el[0].scrollTop > 0) {
+      this.$el[0].scrollTop = 0;
       return true;
-    } else { // is albums list
-      if (this.$el[0].scrollTop > 0) {
-        this.$el[0].scrollTop = 0;
-        return true;
-      }
     }
     return false;
   }
 
   updateHeaderText(isForSearch) {
-
-    const headingText = isForSearch ? 'Search' : 'Library';
-    this.$title.text(headingText);
-
-    let count;
-    if (isForSearch) {
-      const isEmpty = (this.searchList.$el[0].childNodes.length == 0);
-      count = isEmpty ? 0 : this.searchList.getItemCount();
-    } else {
-      count = this.albumsList.filteredSortedAlbums.length;
-    }
-
-    let countText;
-    if (isForSearch && count == 0) {
-      countText = '';
-    } else {
-      const isTracks = isForSearch &&
-          (this.searchList.getSearchType() == 'track' || this.searchList.getSearchType() == 'trackFavorites');
-      let suffix;
-      if (isTracks) {
-        suffix = (count == 1) ? ' track' : ' tracks';
-      } else {
-        suffix = (count == 1) ? ' album' : ' albums';
-      }
-      countText = count + suffix;
-    }
-    this.$itemCount.text(countText);
+    // isForSearch parameter is now ignored - search is done in-place
+    this.$title.text('Library');
+    const count = this.albumsList.filteredSortedAlbums.length;
+    const suffix = (count == 1) ? ' album' : ' albums';
+    this.$itemCount.text(count + suffix);
   }
 
   /**

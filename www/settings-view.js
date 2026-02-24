@@ -15,7 +15,7 @@ import ViewUtil from './view-util.js';
  */
 export default class SettingsView extends Subview {
 
-  $closeButton = $('#settingsCloseButton');
+  $closeButton;
   $themeDarkCheckbox;
   $themeLightCheckbox;
   $metaCheckbox;
@@ -24,9 +24,10 @@ export default class SettingsView extends Subview {
 
   constructor() {
     super($("#settingsView"));
+    this.$closeButton = this.$el.find('#settingsCloseButton');
     this.$metaCheckbox = this.$el.find('#settingsMetaCheckbox');
-    this.$themeDarkCheckbox = this.$el.find('#settingsThemeDarkCheckbox');
-    this.$themeLightCheckbox = this.$el.find('#settingsThemeLightCheckbox');
+    this.$themeDarkCheckbox = this.$el.find('#themeDark');
+    this.$themeLightCheckbox = this.$el.find('#themeLight');
     this.$closeButton.on('click tap', (e) => $(document).trigger('settings-view-close'));
     this.infoView = new SettingsInfoView(this.$el.find("#settingsInfoView"));
 
@@ -41,6 +42,8 @@ export default class SettingsView extends Subview {
   }
 
   show() {
+    super.show();
+    
     const $version = this.$el.find('#settingsVersion');
     $version.text(`v${Values.hqpwvVersion}`);
     const $anchor = this.$el.find("#settingsProjectAnchor");
@@ -99,7 +102,7 @@ export default class SettingsView extends Subview {
   };
 
   onThemeCheckbox = (e) => {
-    Settings.colorTheme = (e.currentTarget.id == 'settingsThemeDarkCheckbox') ? 'dark' : 'light';
+    Settings.colorTheme = (e.currentTarget.id == 'themeDark') ? 'dark' : 'light';
      this.updateThemeCheckbox();
     // And update the theme
     AppUtil.updateColorTheme();

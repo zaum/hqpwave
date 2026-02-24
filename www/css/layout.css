@@ -461,6 +461,8 @@
   min-width: 320px;
   height: calc(100vh - 80px - 70px);
   padding-top: 0;
+  overflow-y: hidden;
+  overflow-x: hidden;
 }
 
 @media (max-width: 768px) {
