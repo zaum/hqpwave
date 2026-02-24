@@ -133,7 +133,6 @@ class SidebarView {
     for (const [genre, count] of sortedGenres) {
       const $item = $(`
         <div class="genre-item" data-genre="${this.escapeHtml(genre)}">
-          <div class="genre-checkbox"></div>
           <span class="genre-name">${this.escapeHtml(genre)}</span>
           <span class="genre-count">${count}</span>
         </div>
@@ -143,6 +142,16 @@ class SidebarView {
       $item.on('click', (e) => {
         // If shift is held, toggle multi-select mode
         const isShiftClick = e.shiftKey;
+        const genreName = $item.data('genre');
+        const isAlreadySelected = this.activeGenres.has(genreName);
+        
+        // If clicking on an already selected genre in single-select mode, deselect it
+        if (!isShiftClick && !this.genreMultiSelect && isAlreadySelected) {
+          this.activeGenres.delete(genreName);
+          $item.removeClass('active');
+          this.onFiltersChanged();
+          return;
+        }
         
         if (!isShiftClick && !this.genreMultiSelect) {
           // Single select mode - clear other selections
@@ -151,7 +160,6 @@ class SidebarView {
         }
         
         // Toggle this genre
-        const genreName = $item.data('genre');
         if (this.activeGenres.has(genreName)) {
           this.activeGenres.delete(genreName);
           $item.removeClass('active');

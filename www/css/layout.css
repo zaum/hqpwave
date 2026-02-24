@@ -76,19 +76,6 @@
   margin-top: auto;
   align-items: flex-end;
 }
-+++++++ REPLACE</parameter>
-<task_progress>
-- [ ] Toolbar: logo és filter középre, view-k alulra
-- [ ] View-k highlight eltávolítása
-- [ ] Format/genre/browse feliratok kisebb
-- [ ] Genre filter toggle
-- [ ] Progress bar javítása
-- [ ] Format ikon eltávolítása
-- [ ] Borító kép megjelenítése
-- [ ] Track sorok formázása</task_progress>
-+++++++ REPLACE</parameter>
-<task_progress>- [ ] Toolbar nav igazítása alulra
-- [ ] Album kattintáskor váltson album view-ra</task_progress>
 
 .lightTheme #topBar {
   background: rgba(248,247,245,0.9);
@@ -127,14 +114,6 @@
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
-+++++++ REPLACE</parameter>
-<task_progress>- [x] Format ikon eltávolítása
-- [x] View-k highlight eltávolítása
-- [ ] Progress bar javítása
-- [ ] Track sorok formázása</task_progress>
-+++++++ REPLACE</parameter>
-<task_progress>- [x] Toolbar nav igazítása alulra
-- [ ] Album kattintáskor váltson album view-ra</task_progress>
 
 .nav-pill:hover {
   color: var(--text-2);
@@ -400,12 +379,13 @@
 .genre-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 8px 20px;
   font-size: 13px;
   font-weight: 300;
   color: var(--text-2);
   cursor: pointer;
-  transition: all 0.14s;
+  transition: color 0.14s, background 0.14s;
   border-left: 2px solid transparent;
   letter-spacing: 0.01em;
 }
@@ -419,11 +399,6 @@
   border-left-color: var(--accent);
   background: var(--accent-bg);
   font-weight: 400;
-}
-
-/* Genre elemek színezhetők legyenek mint a sidebar-item */
-.genre-item {
-  color: var(--text-2);
 }
 
 .genre-count {
@@ -723,11 +698,6 @@
   position: relative;
   z-index: 10;
 }
-+++++++ REPLACE</parameter>
-<task_progress>- [x] Format ikon eltávolítása
-- [x] View-k highlight eltávolítása
-- [x] Progress bar javítása
-- [ ] Track sorok formázása</task_progress>
 
 .isStopped #playProgressView,
 .isBusy #playProgressView {
@@ -851,8 +821,6 @@
 .format-badge {
   display: none;
 }
-+++++++ REPLACE</parameter>
-<task_progress>- [ ] Format ikon eltávolítása</task_progress>
 
 #showPlaylistButton {
   display: none;
@@ -1040,8 +1008,3 @@
   transform-origin: top left;
   transition: transform 400ms cubic-bezier(0, 0.5, 0.3, 1);
 }
-</parameter>
-<task_progress>- [x] Playlist ikon eltávolítása
-- [x] Genre filter checkboxok eltávolítása
-- [x] Hangerő ikon jobb oldalra</task_progress>
-</write_to_file>
