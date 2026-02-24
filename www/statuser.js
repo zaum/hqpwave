@@ -36,6 +36,13 @@ class Statuser {
     $(document).on('service-response-handled', this.onServiceResponseHandled);
   }
 
+  /**
+   * Returns true if connected to HQPlayer
+   */
+  get isConnected() {
+    return Service.isConnected;
+  }
+
   start() {
     this.doNext();
   }

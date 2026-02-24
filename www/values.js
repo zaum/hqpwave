@@ -5,7 +5,7 @@ import Util from './util.js';
  */
 class Values {
 
-  PROJECT_URL = 'https://github.com/zaum/hqpwave';
+  PROJECT_URL = 'http://https://github.com/zaum/hqpwave';
   TROUBLESHOOTING_HREF = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
 
   ENDPOINTS_BASE_URL = window.location.origin + '/endpoints/'; // default

@@ -440,6 +440,27 @@
   border-color: var(--accent);
 }
 
+/* Connection LED */
+.connection-led {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.connection-led.led-connected {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.connection-led.led-disconnected {
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    METADATA
    ═══════════════════════════════════════════════════════════════ */

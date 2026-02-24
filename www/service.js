@@ -29,6 +29,7 @@ class Service {
   serverErrorStartTime = 0;
   serverErrorCounter = 0;
   hasSentServerErrorEvent = false;
+  _isConnected = true;
 
 	/** The currently active command 'item', which is an object with an xml and callback properties. */
 	get currentItem() { return this.currentItem; }
@@ -37,6 +38,11 @@ class Service {
 
 	/** Queued 'commands' waiting to be processed. */
 	get queue() { return this.queue; }
+	
+	/** Returns true if connected to HQPlayer */
+	get isConnected() { 
+	  return this._isConnected; 
+	}
 
 	/**
    * Queues a command. If queue is empty, executes immediately.
@@ -142,6 +148,7 @@ class Service {
    * If too many consecutive errors, send an event (just once).
    */
   onError = (jqXHR, textStatus, errorThrown ) => {
+    this._isConnected = false;
     if (!this.hasSentServerErrorEvent) {
       if (this.serverErrorCounter == 0) {
         this.serverErrorStartTime = new Date().getTime();
@@ -166,6 +173,7 @@ class Service {
 	 *     Errors are represented like this: `{ error: "some_error" }`
 	 */
 	onSuccess = (data, textStatus, jqXHR) => {
+    this._isConnected = true;
     this.serverErrorCounter = 0;
     this.serverErrorStartTime = 0;
 
