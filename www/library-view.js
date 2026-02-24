@@ -7,6 +7,7 @@ import LibrarySearchPanel from './library-search-panel.js';
 import LibrarySearchList from './library-search-list.js';
 import LibraryDataUtil from './library-data-util.js';
 import LibraryGroupUtil from './library-group-util.js';
+import SidebarView from './sidebar-view.js';
 import Model from './model.js';
 import Service from './service.js';
 import Settings from './settings.js';
@@ -43,10 +44,15 @@ export default class LibraryView extends Subview {
     this.$searchButton = this.$el.find('#librarySearchButton');
     this.$searchCloseButton = this.$el.find('#librarySearchCloseButton');
     this.$spinner = this.$el.find('#librarySpinner');
+    // Topbar search input
     this.$headerSearchInput = this.$el.find('#libraryHeaderSearchInput');
     this.$headerSearchContainer = this.$el.find('#libraryHeaderSearchContainer');
     this.$headerSearchClearButton = this.$el.find('#libraryHeaderSearchClear');
     this.$headerView = this.$el.find('#libraryHeaderView');
+    
+    // Global search input in topbar
+    this.$globalSearchInput = $('#globalSearchInput');
+    this.$globalSearchClear = $('#globalSearchClear');
 
     this.albumOptionsView = new LibraryAlbumOptionsView(this.$el.find("#libraryAlbumOptionsView"));
     this.albumsList = new LibraryAlbumsList(this.$el.find('#libraryAlbumsList'));
@@ -107,6 +113,59 @@ export default class LibraryView extends Subview {
       this.clearHeaderSearchFilter();
       this.$headerSearchInput.focus();
     });
+    
+    // Global search input in topbar - filter albums as you type
+    if (this.$globalSearchInput.length > 0) {
+      this._globalSearchDebounceTimer = null;
+      
+      this.$globalSearchInput.on('input', (e) => {
+        if (this._globalSearchDebounceTimer) {
+          clearTimeout(this._globalSearchDebounceTimer);
+        }
+        
+        const value = this.$globalSearchInput.val().trim();
+        
+        // Update clear button visibility
+        if (this.$globalSearchClear) {
+          this.$globalSearchClear.css('display', value.length > 0 ? 'block' : 'none');
+        }
+        
+        if (value.length === 0) {
+          this.clearHeaderSearchFilter();
+          return;
+        }
+        
+        if (value.length >= this._headerSearchMinLength) {
+          this._globalSearchDebounceTimer = setTimeout(() => {
+            this.applyHeaderSearchFilter(value);
+          }, this._headerSearchDebounceDelay);
+        }
+      });
+      
+      this.$globalSearchInput.on('keyup', (e) => {
+        if (e.keyCode === 13) {
+          if (this._globalSearchDebounceTimer) {
+            clearTimeout(this._globalSearchDebounceTimer);
+            this._globalSearchDebounceTimer = null;
+          }
+          const value = this.$globalSearchInput.val().trim();
+          if (value.length === 0) {
+            this.clearHeaderSearchFilter();
+          } else if (value.length >= this._headerSearchMinLength) {
+            this.applyHeaderSearchFilter(value);
+          }
+        }
+      });
+      
+      if (this.$globalSearchClear) {
+        this.$globalSearchClear.on('click', () => {
+          this.$globalSearchInput.val('');
+          this.$globalSearchClear.css('display', 'none');
+          this.clearHeaderSearchFilter();
+          this.$globalSearchInput.focus();
+        });
+      }
+    }
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
     Util.addAppListener(this, 'library-albums-filter-changed library-albums-list-populated',
         () => this.updateHeaderText(false));
@@ -117,6 +176,11 @@ export default class LibraryView extends Subview {
     Util.addAppListener(this, 'library-search', this.onSearch);
     Util.addAppListener(this, 'library-expand-all-groups', this.onExpandAllGroups);
     Util.addAppListener(this, 'library-collapse-all-groups', this.onCollapseAllGroups);
+    
+    // Listen for sidebar filter changes
+    $(document).on('sidebar-filters-changed', (e, filterState) => {
+      this.applySidebarFilters(filterState);
+    });
   }
 
   setSpinnerState(b) {
@@ -297,6 +361,105 @@ export default class LibraryView extends Subview {
   }
 
   /**
+   * Apply sidebar filters to albums list.
+   */
+  applySidebarFilters(filterState) {
+    const { formats, genres, browse } = filterState;
+    
+    // Get all albums
+    let allAlbums = Model.library.albums;
+    if (!allAlbums) {
+      return;
+    }
+    
+    // Apply filters
+    let filteredAlbums = allAlbums.filter(album => {
+      // Browse filter
+      if (browse === 'favorite-albums') {
+        const albumHash = album['@_hash'];
+        if (!window.hqpwv || !window.hqpwv.MetaUtil || !window.hqpwv.MetaUtil.isAlbumFavoriteFor(albumHash)) {
+          return false;
+        }
+      } else if (browse === 'favorite-tracks') {
+        // Check if album has any favorite tracks
+        const tracks = album.track || [];
+        const hasFavoriteTrack = tracks.some(t => {
+          const trackHash = t['@_hash'];
+          return window.hqpwv && window.hqpwv.MetaUtil && window.hqpwv.MetaUtil.isTrackFavoriteFor(trackHash);
+        });
+        if (!hasFavoriteTrack) return false;
+      }
+      
+      // Format filter (OR logic)
+      if (formats && formats.length > 0) {
+        const albumFormat = this.getAlbumFormatKey(album);
+        if (!albumFormat || !formats.includes(albumFormat)) {
+          return false;
+        }
+      }
+      
+      // Genre filter (OR logic)
+      if (genres && genres.length > 0) {
+        const albumGenre = album['@_genre'];
+        if (!albumGenre || !genres.includes(albumGenre)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    // Update albums list
+    this.albumsList.albums = filteredAlbums;
+    this.albumsList.filteredSortedAlbumsDirty = true;
+    this.albumsList.groupsDirty = true;
+    this.albumsList.domDirty = true;
+    this.albumsList.setFilterType('none');
+    this.albumsList.update();
+    
+    // Update header to show filtered count
+    this.$title.text('Library');
+    const count = filteredAlbums.length;
+    const suffix = (count == 1) ? ' album' : ' albums';
+    this.$itemCount.text(count + suffix);
+    
+    // Update album count in toolbar
+    $('#albumCount').text(count);
+  }
+  
+  /**
+   * Get format key for album based on sample rate and bits.
+   */
+  getAlbumFormatKey(album) {
+    const rateHz = parseInt(album['@_rate']) || 0;
+    const bits = parseInt(album['@_bits']) || 0;
+    
+    // DSD
+    if (bits === 1 && rateHz > 0) {
+      const dsdRate = rateHz / 1000000; // Convert Hz to MHz
+      const dsdMultiple = Math.round(dsdRate / 2.8);
+      if (dsdMultiple >= 1) {
+        return 'DSD' + (dsdMultiple * 64);
+      }
+      return 'DSD';
+    }
+    
+    // PCM
+    const rateKHz = Math.round(rateHz / 1000);
+    switch (rateKHz) {
+      case 44: return 'PCM44';
+      case 48: return 'PCM48';
+      case 88: return 'PCM88';
+      case 96: return 'PCM96';
+      case 176: return 'PCM176';
+      case 192: return 'PCM192';
+      case 352: return 'PCM352';
+      case 384: return 'PCM384';
+      default: return rateKHz ? 'PCM' + rateKHz : null;
+    }
+  }
+
+  /**
    * Apply search filter to albums list - filters in place without showing search panel
    * Supports comma-separated AND search: "pink floyd, 1970, dsd" matches all three conditions
    */
@@ -346,6 +509,14 @@ export default class LibraryView extends Subview {
   clearHeaderSearchFilter() {
     // Clear the header search input
     this.$headerSearchInput.val('');
+    
+    // Also clear the global search input in topbar
+    if (this.$globalSearchInput) {
+      this.$globalSearchInput.val('');
+    }
+    if (this.$globalSearchClear) {
+      this.$globalSearchClear.css('display', 'none');
+    }
     
     // Hide clear button
     this.$headerSearchClearButton.hide();

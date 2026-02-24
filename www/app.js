@@ -231,6 +231,7 @@ import TopBarUtil from './top-bar-util.js';
 import Util from './util.js';
 import Values from './values.js';
 import ViewUtil from './view-util.js';
+import SidebarView from './sidebar-view.js';
 
 /**
  * Main class.
@@ -248,10 +249,13 @@ export default class App {
 	settingsView = new SettingsView();
   hqpSettingsView = new HqpSettingsView();
   subviews = [this.libraryView, this.albumView, this.playlistView, this.settingsView, this.hqpSettingsView];
+  
+  sidebarView = SidebarView;
 
   $pageHolder = $('#page');
   $settingsButton = $('#settingsButton');
   $hqpSettingsButton = $('#hqpSettingsButton');
+  $navPills = $('.nav-pill');
 
   instanceId = Math.floor(Math.random() * 99999999);
   lastKeyTime = 0;
@@ -271,10 +275,15 @@ export default class App {
     AppUtil.updateColorTheme();
     // Initialize highlight color CSS variable
     document.documentElement.style.setProperty('--col-highlight', Settings.highlightColor);
+    // Also set --accent to highlight color for new design
+    document.documentElement.style.setProperty('--accent', Settings.highlightColor);
     ViewUtil.setVisible($('html'), true);
 
     $(window).on('resize', this.onWindowResize);
     this.doWindowResize();
+    
+    // Initialize topbar navigation
+    this.initTopbarNav();
 
     Util.addAppListener(this, 'disable-user-input', this.onDisableUserInput);
     Util.addAppListener(this, 'enable-user-input', this.onUndisableUserInput);
@@ -301,8 +310,19 @@ export default class App {
 
     $(document).on('keydown', this.onKeydown);
 
-    this.$settingsButton.on("click", () => this.showSettingsView());
-    this.$hqpSettingsButton.on("click", () => this.showHqpSettingsView());
+    // Debug: Check if buttons exist
+    console.log('Settings button found:', this.$settingsButton.length > 0);
+    console.log('HQP Settings button found:', this.$hqpSettingsButton.length > 0);
+    
+    // Bind click handlers with debugging
+    this.$settingsButton.on("click", (e) => {
+      console.log('Settings clicked!');
+      this.showSettingsView();
+    });
+    this.$hqpSettingsButton.on("click", (e) => {
+      console.log('HQP Settings clicked!');
+      this.showHqpSettingsView();
+    });
     $("#appTitle").on("click", () => this.doAppTitleClick());
 
     App.instance = this; // yes really
@@ -322,6 +342,61 @@ export default class App {
 
     this.init();
 	}
+
+  /**
+   * Initialize topbar navigation.
+   */
+  initTopbarNav() {
+    this.$navPills.on('click', (e) => {
+      const $pill = $(e.currentTarget);
+      const view = $pill.data('view');
+      
+      // Update active state
+      this.$navPills.removeClass('active');
+      $pill.addClass('active');
+      
+      switch (view) {
+        case 'library':
+          // If another view is on top, hide it to return to library
+          const topSubview = this.getTopSubview();
+          if (topSubview && topSubview !== this.libraryView) {
+            this.hideSubview(topSubview);
+          }
+          break;
+        case 'album':
+          // Show currently playing album if available
+          this.showCurrentAlbum();
+          break;
+        case 'playlist':
+          this.showPlaylistCompoundView();
+          break;
+        case 'timeline':
+        case 'artist':
+          // These views are not yet implemented, just return to library
+          const top = this.getTopSubview();
+          if (top && top !== this.libraryView) {
+            this.hideSubview(top);
+          }
+          break;
+      }
+    });
+  }
+
+  /**
+   * Show currently playing album.
+   */
+  showCurrentAlbum() {
+    // Get current track from playlist
+    if (Model.playlist && Model.playlist.currentIndex >= 0) {
+      const track = Model.playlist.array[Model.playlist.currentIndex];
+      if (track && track.album) {
+        this.showAlbumView(track.album);
+        return;
+      }
+    }
+    // If no current track, show toast
+    ToastView.show('No album currently playing');
+  }
 
   /** Performs a series of required asynchronous calls. */
   init() {

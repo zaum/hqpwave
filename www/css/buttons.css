@@ -1,4 +1,7 @@
-/* Icon Base Styles */
+/* ═══════════════════════════════════════════════════════════════
+   ICON BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
 .iconPseudo:before,
 .icon:before,
 .iconButton:before,
@@ -23,36 +26,35 @@
 
 .icon {
   display: inline-block;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   position: relative;
 }
 
-/* Icon Button */
+/* ═══════════════════════════════════════════════════════════════
+   ICON BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
 .iconButton {
-  display: inline-block;
-  width: 36px;
-  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
   cursor: pointer;
-  background-color: transparent;
   position: relative;
-}
-
-.iconButton:after {
-  content: " ";
-  display: block;
-  position: absolute;
-  opacity: 0;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: var(--col-listitem-less);
-  transition: opacity 400ms ease-out;
+  transition: all 0.15s;
+  font-size: 13px;
 }
 
 .iconButton:hover {
-  background-color: var(--col-listitem-over);
+  color: var(--text);
+  border-color: var(--border-md);
+  background: var(--raised);
 }
 
 .iconButton.isDisabled {
@@ -63,56 +65,65 @@
   opacity: 0.5;
 }
 
-/* Toggle Button */
+/* ═══════════════════════════════════════════════════════════════
+   TOGGLE BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
 .toggleButton {
-  background-color: transparent;
+  background: transparent;
 }
 
 .toggleButton:before {
-  opacity: 0.25;
-}
-
-.toggleButton:hover:before {
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
 .toggleButton:hover {
-  background-color: var(--col-listitem-over);
+  background: var(--raised);
 }
 
 .toggleButton.isSelected {
-  background-color: var(--col-listitem-selected);
+  background: var(--accent-bg);
+  border-color: rgba(232,200,138,0.3);
+  color: var(--accent);
 }
 
 .toggleButton.isSelected:before {
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .toggleButton.isSelected:hover {
-  background-color: var(--col-listitem-selected-over);
+  background: var(--accent-hi);
 }
 
-/* Favorite Button */
+/* ═══════════════════════════════════════════════════════════════
+   FAVORITE BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
 .favoriteButton {
-  background-color: transparent;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
+}
+
+.favoriteButton:hover {
+  background: transparent;
 }
 
 .favoriteButton .favoriteIcon {
-  width: 24px;
-  height: 24px;
-  background-color: var(--col-text-least);
+  width: 20px;
+  height: 20px;
+  background-color: var(--text-3);
   -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>');
-  -webkit-mask-size: 24px 24px;
-  mask-size: 24px 24px;
+  -webkit-mask-size: 20px 20px;
+  mask-size: 20px 20px;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
-  opacity: 0.25;
+  opacity: 0.4;
   transition: opacity 0.2s ease, background-color 0.2s ease;
 }
 
@@ -120,26 +131,25 @@
   opacity: 0.7;
 }
 
-.favoriteButton:hover {
-  background-color: transparent;
-}
-
 .favoriteButton.isSelected {
-  background-color: transparent;
+  background: transparent;
 }
 
 .favoriteButton.isSelected .favoriteIcon {
   opacity: 1;
-  background-color: var(--col-highlight);
+  background-color: var(--accent);
 }
 
 .favoriteButton.isSelected:hover {
-  background-color: transparent;
+  background: transparent;
 }
 
-/* Specific Button Types */
+/* ═══════════════════════════════════════════════════════════════
+   SPECIFIC BUTTON TYPES
+   ═══════════════════════════════════════════════════════════════ */
+
 .moreButton {
-  background-color: transparent;
+  background: transparent;
 }
 
 .moreButton:before {
@@ -147,11 +157,11 @@
 }
 
 .moreButton:hover {
-  background-color: var(--col-listitem-over);
+  background: var(--raised);
 }
 
 .deleteButton {
-  background-color: transparent;
+  background: transparent;
 }
 
 .deleteButton:before {
@@ -159,11 +169,11 @@
 }
 
 .deleteButton:hover {
-  background-color: var(--col-listitem-over);
+  background: var(--raised);
 }
 
 .dragHandleButton {
-  background-color: transparent;
+  background: transparent;
 }
 
 .dragHandleButton:before {
@@ -171,11 +181,11 @@
 }
 
 .dragHandleButton:hover {
-  background-color: var(--col-listitem-over);
+  background: var(--raised);
 }
 
 .closeButton {
-  background-color: transparent;
+  background: transparent;
 }
 
 .closeButton:before {
@@ -190,28 +200,84 @@
   background-image: url("./../img/icons/expand_less_white_24dp.svg");
 }
 
-/* Text Button */
+/* ═══════════════════════════════════════════════════════════════
+   TEXT BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+
 .textButton {
-  border-radius: 6px;
-  height: 36px;
-  padding-top: 8px;
-  padding-left: 12px;
-  padding-right: 12px;
-  font-size: 13px;
-  font-weight: bold;
-  text-transform: uppercase;
-  text-align: center;
-  background-color: var(--col-listitem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  border: 1px solid var(--border-md);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  transition: all 0.18s;
 }
 
 .textButton:hover {
-  background-color: var(--col-listitem-over);
+  border-color: var(--border-hi);
+  color: var(--text);
 }
 
 .textButton.isDisabled {
   pointer-events: none;
-  color: var(--col-text-least);
+  color: var(--text-3);
+  opacity: 0.6;
+}
+
+/* Primary Button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hi);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-md);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
 }
 
 .buttonBlink:after {
@@ -219,28 +285,36 @@
   opacity: 1;
 }
 
-/* Checkbox */
+/* ═══════════════════════════════════════════════════════════════
+   CHECKBOX
+   ═══════════════════════════════════════════════════════════════ */
+
 .checkbox {
-  display: inline-block;
-  width: 36px;
-  height: 36px;
-  border: 2px solid var(--col-text-least);
-  margin-right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-md);
+  border-radius: 4px;
   cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .checkbox:focus {
-  border: 3px solid var(--col-text-least);
-  outline-offset: 1px;
+  border-color: var(--accent);
 }
 
-.checkbox.isChecked:before {
-  display: block;
-  content: "";
-  margin: 2px;
-  width: calc(100% - 4px);
-  height: calc(100% - 4px);
-  background-color: var(--col-text-least);
+.checkbox.isChecked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.checkbox.isChecked::after {
+  content: '✓';
+  font-size: 11px;
+  color: var(--bg);
 }
 
 .checkbox .isDisabled {
@@ -248,70 +322,83 @@
 }
 
 .checkboxSmaller {
-  width: 30px;
-  height: 30px;
+  width: 16px;
+  height: 16px;
 }
 
-/* Tab Button */
+/* ═══════════════════════════════════════════════════════════════
+   TAB BAR
+   ═══════════════════════════════════════════════════════════════ */
+
 .tabBar {
   display: flex;
+  gap: 2px;
 }
 
 .tabButton {
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  height: 36px;
-  padding-top: 5px;
-  padding-left: 12px;
-  padding-right: 12px;
-  font-size: 13px;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: var(--col-text-least);
-  border-bottom: 1px solid var(--col-listitem-selected);
-  border-left: 1px solid var(--col-listitem-bg);
-  border-right: 1px solid var(--col-listitem-bg);
-  border-top: 1px solid var(--col-listitem-bg);
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-3);
+  padding: 6px 14px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
 }
 
 .tabButton:hover {
-  color: var(--col-text-less);
+  color: var(--text-2);
+  background: rgba(255,255,255,0.04);
+}
+
+.lightTheme .tabButton:hover {
+  background: rgba(0,0,0,0.04);
 }
 
 .tabButton.isOn {
-  border-bottom: 1px solid var(--col-bg);
-  border-left: 1px solid var(--col-listitem-selected);
-  border-right: 1px solid var(--col-listitem-selected);
-  border-top: 1px solid var(--col-listitem-selected);
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
   pointer-events: none;
 }
 
+.lightTheme .tabButton.isOn {
+  background: rgba(0,0,0,0.06);
+}
+
 .tabButton.isSelected {
-  color: var(--col-text);
+  color: var(--accent);
+  background: var(--accent-bg);
 }
 
 @media (max-width: 480px) {
   .tabButton {
-    font-size: 12px;
-    padding-left: 6px;
-    padding-right: 6px;
+    font-size: 11px;
+    padding: 5px 10px;
   }
 }
 
 .tabBarSpacer {
   flex: 1;
-  border-bottom: 1px solid var(--col-listitem-selected);
 }
 
-/* Spinner */
+/* ═══════════════════════════════════════════════════════════════
+   SPINNER
+   ═══════════════════════════════════════════════════════════════ */
+
+.spinner {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
 .spinner:before {
   content: " ";
   display: block;
   opacity: 0.7;
   position: absolute;
-  left: -12px;
-  top: -12px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 24px;
   height: 24px;
   background-size: 24px 24px;
@@ -320,4 +407,27 @@
   background-image: url("./../img/icons/hourglass_empty_white_24dp.svg");
   animation: spinner 2s infinite;
   filter: brightness(var(--icon-brightness));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PLAY CIRCLE (Album hover)
+   ═══════════════════════════════════════════════════════════════ */
+
+.play-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--bg);
+  transform: scale(0.8);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 16px rgba(232,200,138,0.35);
+}
+
+.album-card:hover .play-circle {
+  transform: scale(1);
 }

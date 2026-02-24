@@ -25,98 +25,140 @@
   <div id="page">
     <div id="debug"></div>
 
+    <!-- Top Bar -->
     <header id="topBar">
-      <div class="viewHeader">
-        <div id="appTitle" class="title">HQPlayer Web Viewer</div>
+      <div class="brand">HQPlayer <em>Web Viewer</em></div>
+      <nav class="topbar-nav">
+        <div class="nav-pill active" data-view="library">Library</div>
+        <div class="nav-pill" data-view="album">Album</div>
+        <div class="nav-pill" data-view="playlist">Playlist</div>
+        <div class="nav-pill" data-view="timeline">Timeline</div>
+        <div class="nav-pill" data-view="artist">Artist</div>
+      </nav>
+      <div class="search-wrap">
+        <div class="search-icon">⌕</div>
+        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…" id="globalSearchInput">
+        <div class="search-clear" id="globalSearchClear">×</div>
+      </div>
+      <div class="topbar-right">
         <div id="topBarButtons">
-          <div id="hqpSettingsButton" class="iconButton"></div>
-          <div id="settingsButton" class="iconButton"></div>
+          <div id="hqpSettingsButton" class="iconButton" title="Upscaler"></div>
+          <div id="settingsButton" class="iconButton" title="Settings"></div>
         </div>
       </div>
     </header>
 
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <!-- Reset Filters -->
+      <div class="sidebar-reset" id="resetFilters" title="Reset all filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+        Reset filters
+      </div>
+
+      <!-- Browse Section -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Browse</div>
+        <div class="sidebar-item" data-filter="all-albums">All Albums <span class="sidebar-count" id="countAllAlbums">0</span></div>
+        <div class="sidebar-item" data-filter="favorite-albums">Favorite Albums <span class="sidebar-count" id="countFavoriteAlbums">0</span></div>
+        <div class="sidebar-item" data-filter="favorite-tracks">Favorite Tracks <span class="sidebar-count" id="countFavoriteTracks">0</span></div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Format Section -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Format</div>
+        <div class="format-chips" id="formatFilters">
+          <div class="fchip-section-label">PCM</div>
+          <div class="fchip" data-format="PCM44">44 kHz</div>
+          <div class="fchip" data-format="PCM48">48 kHz</div>
+          <div class="fchip" data-format="PCM88">88 kHz</div>
+          <div class="fchip" data-format="PCM96">96 kHz</div>
+          <div class="fchip" data-format="PCM176">176 kHz</div>
+          <div class="fchip" data-format="PCM192">192 kHz</div>
+          <div class="fchip" data-format="PCM352">352 kHz</div>
+          <div class="fchip" data-format="PCM384">384 kHz</div>
+          <div class="fchip-section-label">DSD</div>
+          <div class="fchip" data-format="DSD64">64×</div>
+          <div class="fchip" data-format="DSD128">128×</div>
+          <div class="fchip" data-format="DSD256">256×</div>
+          <div class="fchip" data-format="DSD512">512×</div>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Genre Section -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Genre</div>
+        <div class="genre-list" id="genreList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
     <main id="mainArea">
+      <!-- Library View -->
       <section id="libraryView" class="subview" tabindex="0">
-        <div id="libraryHeaderView" class="viewHeader">
-          <span id="libraryTitle" class="title">Library</span>
-          <span id="libraryNumbers" class="headerCountText"></span>
-          <div id="libraryHeaderSearchContainer">
-            <input id="libraryHeaderSearchInput" type="text" placeholder="Filter: artist, album, track, genre, year, 1970-1980, DSD64/128/256/512, 96/192... (comma = AND)">
-            <span id="libraryHeaderSearchClear" class="searchClearButton" style="display: none;">×</span>
-          </div>
-          <div id="libraryAlbumOptionsView">
-            <div id="librarySortDropdown" class="dropdown">
-              <div class="dropdownTitle">Sort by</div>
-              <div class="dropdownItems">
-                <div class="dropdownItem" data-value="artist">Artist</div>
-                <div class="dropdownItem" data-value="album">Album</div>
-                <div class="dropdownItem" data-value="random">Random</div>
+        <div class="library-main">
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <div class="count-text"><strong id="albumCount">0</strong> albums</div>
+            </div>
+            <div class="toolbar-right">
+              <button class="sort-btn" id="sortButton">Sort: Artist ↕</button>
+              <div class="view-toggle">
+                <button class="vt-btn active" title="Grid" data-view="grid">⊞</button>
+                <button class="vt-btn" title="List" data-view="list">☰</button>
               </div>
             </div>
-            <div id="libraryGroupDropdown" class="dropdown">
-              <div class="dropdownTitle">Group by</div>
-              <div class="dropdownItems">
-                <div class="dropdownItem" data-value="none">None (default)</div>
-                <div class="dropdownItem" data-value="artist">Artist</div>
-                <div class="dropdownItem" data-value="genre">Genre</div>
-                <div class="dropdownItem" data-value="year">Year</div>
-                <div class="dropdownItem" data-value="decade">Decade</div>
-                <div class="dropdownItem" data-value="path">Subdirectory</div>
-                <div class="dropdownItem" data-value="bitrate">Samplerate</div>
+          </div>
+
+          <!-- Hidden header for compatibility -->
+
+
+          <div id="librarySearchPanel">
+            <div class="tabBar">
+              <div id="allTabButton" class="tabButton" data-value="all"></div>
+              <div id="artistsTabButton" class="tabButton" data-value="artist"></div>
+              <div id="albumsTabButton" class="tabButton" data-value="album"></div>
+              <div id="genresTabButton" class="tabButton" data-value="genre"></div>
+              <div id="yearsTabButton" class="tabButton" data-value="year"></div>
+              <div id="tracksTabButton" class="tabButton" data-value="track"></div>
+              <div class="tabBarSpacer"></div>
+            </div>
+            <div id="searchTabContent">
+              <div class="inputLine">
+                <input id="librarySearchInput" name="librarySearchInput" type="text" required minlength="1" maxlength="64">
+                <span id="librarySearchClear" class="searchClearButton" style="display: none;">×</span>
+                <div id="librarySearchOkButton" class="textButton">OK</div>
               </div>
             </div>
-            <div id="libraryFilterDropdown" class="dropdown">
-              <div class="dropdownTitle">Filter by</div>
-              <div class="dropdownItems">
-                <div class="dropdownItem" data-value="none">None (default)</div>
-                <div class="dropdownItem" data-value="favorites">Favorites</div>
-              </div>
-            </div>
-            <div id="libraryOptionsButtons">
-              <div id="libraryExpandCollapseButton" class="iconButton toggleButton" title="Expand all"></div>
-              <div id="librarySortButton" class="iconButton toggleButton"></div>
-              <div id="libraryGroupButton" class="iconButton toggleButton"></div>
-            </div>
-            <div class="librarySearchDivider"></div>
-            <div id="librarySearchButton" class="iconButton toggleButton"></div>
-          </div>
-          <div id="librarySearchCloseButton" class="iconButton closeButton"></div>
-        </div>
-
-        <div id="librarySearchPanel">
-          <div class="tabBar">
-            <div id="allTabButton" class="tabButton" data-value="all"></div>
-            <div id="artistsTabButton" class="tabButton" data-value="artist"></div>
-            <div id="albumsTabButton" class="tabButton" data-value="album"></div>
-            <div id="genresTabButton" class="tabButton" data-value="genre"></div>
-            <div id="yearsTabButton" class="tabButton" data-value="year"></div>
-            <div id="tracksTabButton" class="tabButton" data-value="track"></div>
-            <div class="tabBarSpacer"></div>
-          </div>
-          <div id="searchTabContent">
-            <div class="inputLine">
-              <input id="librarySearchInput" name="librarySearchInput" type="text" required minlength="1" maxlength="64">
-              <span id="librarySearchClear" class="searchClearButton" style="display: none;">×</span>
-              <div id="librarySearchOkButton" class="textButton">OK</div>
+            <div class="searchFavoritesLine">
+              <div id="albumFavoritesButton" class="textButton"></div>
+              <div id="trackFavoritesButton" class="textButton"></div>
             </div>
           </div>
-          <div class="searchFavoritesLine">
-            <div id="albumFavoritesButton" class="textButton"></div>
-            <div id="trackFavoritesButton" class="textButton"></div>
+
+          <div id="librarySpinner" class="spinner"></div>
+
+          <div id="timelineView">
+            <div id="libraryAlbumsList"></div>
           </div>
+          <div id="timelineMinimapContainer">
+            <div id="timelineMinimap"></div>
+          </div>
+          <div id="librarySearchList"></div>
         </div>
-
-        <div id="librarySpinner" class="spinner"></div>
-
-        <div id="timelineView">
-          <div id="libraryAlbumsList"></div>
-        </div>
-        <div id="timelineMinimapContainer">
-          <div id="timelineMinimap"></div>
-        </div>
-        <div id="librarySearchList"></div>
       </section>
 
+      <!-- Album View -->
       <section id="albumView" class="subview" tabindex="0">
         <div class="viewHeader">
           <span class="title">Album</span>
@@ -152,6 +194,7 @@
         <div id="albumList"></div>
       </section>
 
+      <!-- Playlist View -->
       <section id="playlistView" class="subview" tabindex="0">
         <div id="playlistMainView" class="subview">
           <div class="viewHeader">
@@ -204,6 +247,7 @@
         </div>
       </section>
 
+      <!-- HQP Settings View -->
       <section id="hqpSettingsView" class="subview">
         <div class="viewHeader">
           <span class="title">Upscaler Settings</span>
@@ -333,67 +377,105 @@
         </div>
       </section>
 
+      <!-- Settings View -->
       <section id="settingsView" class="subview">
         <div class="viewHeader">
           <div class="title">Settings</div>
+          <div id="settingsVersion" class="title"></div>
           <div id="settingsCloseButton" class="iconButton closeButton"></div>
         </div>
 
-        <div id="settingsVersion" class="title"></div>
-        <a id="settingsProjectAnchor" class="colorTextLess"></a>
+        <div class="settings-content">
+          <a id="settingsProjectAnchor" class="colorTextLess"></a>
 
-        <div id="settingsHotkeys">
-          <div class="settingsSubheading">Hotkeys:</div>
-          <table>
-            <tr><td class="c1">p</td><td class="c2">play/pause</td></tr>
-            <tr><td class="c1">s</td><td class="c2">stop</td></tr>
-            <tr><td class="c1">j</td><td class="c2">previous track</td></tr>
-            <tr><td class="c1">k</td><td class="c2">next track</td></tr>
-            <tr><td class="c1">comma</td><td class="c2">seek -10s</td></tr>
-            <tr><td class="c1">period</td><td class="c2">seek +10s</td></tr>
-            <tr><td class="c1">plus</td><td class="c2">volume up</td></tr>
-            <tr><td class="c1">minus</td><td class="c2">volume down</td></tr>
-          </table>
-          <table class="hotkeysSecondTable">
-            <tr><td class="c1">q</td><td class="c2">show playlist</td></tr>
-            <tr><td class="c1">f</td><td class="c2">find/search</td></tr>
-            <tr><td class="c1">u</td><td class="c2">show upscaling settings</td></tr>
-            <tr><td class="c1">esc</td><td class="c2">close modal</td></tr>
-          </table>
-        </div>
-
-        <div class="settingsTheme">
-          <div>Color theme:</div>
-          <div class="line">
-            <div id="settingsThemeDarkCheckbox" class="checkbox checkboxSmaller ruleCheckbox" data-settings-value="meta"></div>
-            <span>Dark</span>
-            <div id="settingsThemeLightCheckbox" class="checkbox checkboxSmaller ruleCheckbox" data-settings-value="meta"></div>
-            <span>Light</span>
+          <div class="settings-section">
+            <div class="settings-label">Appearance</div>
+            <div class="settings-card">
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Color Theme</div>
+                  <div class="row-desc">Choose between dark and light interface</div>
+                </div>
+                <div class="row-right">
+                  <div class="theme-options">
+                    <div class="theme-chip active" id="themeDark">Dark</div>
+                    <div class="theme-chip" id="themeLight">Light</div>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Highlight Color</div>
+                  <div class="row-desc">Accent color used throughout the interface</div>
+                </div>
+                <div class="row-right">
+                  <input type="color" id="highlightColorPicker" value="#e8c88a" class="colorPicker">
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="settingsHighlightColor">
-          <div>Highlight color:</div>
-          <div class="line">
-            <input type="color" id="highlightColorPicker" value="#00ff00" class="colorPicker">
+          <div class="settings-section">
+            <div class="settings-label">Metadata</div>
+            <div class="settings-card">
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Enable HQPWV Metadata</div>
+                  <div class="row-desc">Tracks play count, likes, history, and custom playlists</div>
+                </div>
+                <div class="row-right">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="settingsMetaCheckbox" checked>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Backup Data</div>
+                  <div class="row-desc">Download a local copy of all your metadata</div>
+                </div>
+                <div class="row-right">
+                  <a href="#" id="metaDownload" class="textButton">Download backup</a>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="settingsMeta">
-          <span>HQPWV metadata:</span>
-          <div class="description">
-            Maintains and displays track play count, track and album likes, play history, and custom playlists.
+          <div class="settings-section">
+            <div class="settings-label">Keyboard Shortcuts</div>
+            <div class="settings-card">
+              <div class="hotkeys-grid">
+                <div class="hotkey-row"><span class="key-badge">P</span><span class="key-action">Play / Pause</span></div>
+                <div class="hotkey-row"><span class="key-badge">S</span><span class="key-action">Stop</span></div>
+                <div class="hotkey-row"><span class="key-badge">J</span><span class="key-action">Previous track</span></div>
+                <div class="hotkey-row"><span class="key-badge">K</span><span class="key-action">Next track</span></div>
+                <div class="hotkey-row"><span class="key-badge">,</span><span class="key-action">Seek −10s</span></div>
+                <div class="hotkey-row"><span class="key-badge">.</span><span class="key-action">Seek +10s</span></div>
+                <div class="hotkey-row"><span class="key-badge">+</span><span class="key-action">Volume up</span></div>
+                <div class="hotkey-row"><span class="key-badge">−</span><span class="key-action">Volume down</span></div>
+                <div class="hotkey-row"><span class="key-badge">Q</span><span class="key-action">Show playlist</span></div>
+                <div class="hotkey-row"><span class="key-badge">F</span><span class="key-action">Find / Search</span></div>
+                <div class="hotkey-row"><span class="key-badge">U</span><span class="key-action">Upscaler settings</span></div>
+                <div class="hotkey-row"><span class="key-badge">ESC</span><span class="key-action">Close modal</span></div>
+              </div>
+            </div>
           </div>
-          <a id="metaDownload" href="#">Download backup file</a>
-          <div class="line">
-            <div id="settingsMetaCheckbox" class="checkbox checkboxSmaller ruleCheckbox" data-settings-value="meta"></div>
-            <span>Enabled</span>
-          </div>
-        </div>
 
-        <div id="settingsInfoView">
-          <div class="settingsSubheading">Your HQPlayer version:</div>
-          <div id="hqpVersion"></div>
+          <div id="settingsInfoView">
+            <div class="settings-label">HQPlayer Connection</div>
+            <div class="info-block">
+              <div class="hqp-name" id="hqpVersion">HQPlayer Desktop</div>
+              <div class="hqp-version" id="hqpConnection">Connected</div>
+              <a href="#" class="hqp-link" id="hqpLink">signalyst.eu ↗</a>
+            </div>
+          </div>
+
+          <div class="settings-footer">
+            <span class="footer-brand">HQPlayer Web Viewer</span>
+            <a href="#" class="footer-project" id="footerProject">github / project ↗</a>
+          </div>
         </div>
       </section>
 
@@ -428,26 +510,15 @@
       <div id="breakpointIndicator"></div>
     </main>
 
+    <!-- Playbar -->
     <footer id="playbarView">
-      <div id="volumeToggleButton" class="iconButton toggleButton"></div>
-      <div id="showPlaylistButton" class="iconButton">
-        <div id="playlistNumberAt"></div>
-        <div id="playlistNumberStroke"></div>
-        <div id="playlistNumberTotal"></div>
+      <div class="pb-cover" id="playbarCover">
+        <img id="playbarCoverImg" alt="" src="">
       </div>
-      <div id="playbarStroke"></div>
-
-      <div id="volumePanel">
-        <div id="volumePanelInner">
-          <div id="volumeUp3" class="textButton volumePanelButton">+3</div>
-          <div id="volumeUp1" class="textButton volumePanelButton">+1</div>
-          <div id="volumeText"></div>
-          <div id="volumeDown1" class="textButton volumePanelButton">-1</div>
-          <div id="volumeDown3" class="textButton volumePanelButton">-3</div>
-          <div class="volumePanelButtonSpacer"></div>
-        </div>
+      <div id="playingText">
+        <div class="playingArtist" id="playingArtist">-</div>
+        <div class="playingTitle" id="playingTitle">-</div>
       </div>
-
       <div id="musicPlaying" class="music-playing">
         <svg width="24" height="24" viewBox="0 0 24 24">
           <rect class="bar" x="2" y="10" width="3" height="10" rx="1" />
@@ -456,8 +527,6 @@
           <rect class="bar" x="17" y="10" width="3" height="10" rx="1" />
         </svg>
       </div>
-      <div id="playingText"></div>
-
       <div id="playbarButtons">
         <div id="stopButton" class="iconButton"></div>
         <div id="previousButton" class="iconButton"></div>
@@ -475,12 +544,27 @@
           <div id="playingTrackLength"></div>
         </div>
       </div>
+      <div class="pb-right">
+        <div id="volumeToggleButton" class="iconButton toggleButton"></div>
+        <div id="volumePanel">
+          <div id="volumePanelInner">
+            <div id="volumeUp3" class="textButton volumePanelButton">+3</div>
+            <div id="volumeUp1" class="textButton volumePanelButton">+1</div>
+            <div id="volumeText"></div>
+            <div id="volumeDown1" class="textButton volumePanelButton">-1</div>
+            <div id="volumeDown3" class="textButton volumePanelButton">-3</div>
+            <div class="volumePanelButtonSpacer"></div>
+          </div>
+        </div>
+        <div id="showPlaylistButton" class="iconButton"></div>
+        <div class="format-badge" id="formatBadge">-</div>
+      </div>
 
       <div id="bottomScrim"></div>
       <div id="bottomStroke"></div>
 
       <div id="toast">
-        <div id="toastInner">Toast here preset 1 2 3 x</div>
+        <div id="toastInner">Toast here</div>
       </div>
 
       <div id="snack">

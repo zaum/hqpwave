@@ -17,11 +17,9 @@ export default class LibraryAlbumOptionsView {
   $buttonsHolder;
   $expandCollapseButton;
   $sortButton;
-  $groupButton;
   $filterButton;
 
   sortDropdown;
-  groupDropdown;
   filterDropdown;
   dropdowns;
   pointerUtil;
@@ -32,40 +30,25 @@ export default class LibraryAlbumOptionsView {
     this.$buttonsHolder = this.$el.find('#libraryOptionsButtons');
     this.$expandCollapseButton = this.$el.find('#libraryExpandCollapseButton');
     this.$sortButton = this.$el.find('#librarySortButton');
-    this.$groupButton = this.$el.find('#libraryGroupButton');
     this.$filterButton = this.$el.find('#libraryFilterButton');
 
     this.sortDropdown = new Dropdown($('#librarySortDropdown'));
-    this.groupDropdown = new Dropdown($('#libraryGroupDropdown'));
     this.filterDropdown = new Dropdown($('#libraryFilterDropdown'));
-    this.dropdowns = [this.sortDropdown, this.groupDropdown, this.filterDropdown];
+    this.dropdowns = [this.sortDropdown, this.filterDropdown];
 
     // Include dropdown elements in pointer util whitelist so they remain clickable
     this.pointerUtil = new ModalPointerUtil(
-      [this.$el, this.sortDropdown.$el, this.groupDropdown.$el, this.filterDropdown.$el],
+      [this.$el, this.sortDropdown.$el, this.filterDropdown.$el],
       () => this.hideDropdowns()
     );
 
     this.$expandCollapseButton.on('click tap', () => this.onExpandCollapseClick());
     this.$sortButton.on('click tap', e => this.toggleDropdown(this.sortDropdown));
-    this.$groupButton.on('click tap', e => this.toggleDropdown(this.groupDropdown));
     this.$filterButton.on('click tap', e => this.toggleDropdown(this.filterDropdown));
     $(document).on('dropdown-item-select', this.onDropdownItemSelect);
 
-    // Conditionally hide the expand/collapse button based on 'group by none' selection
-    const updateExpandCollapseVisibility = () => {
-      if (Settings.libraryGroupType === 'none') {
-        this.$expandCollapseButton.hide();
-      } else {
-        this.$expandCollapseButton.show();
-      }
-    };
-
-    // Initial visibility update
-    updateExpandCollapseVisibility();
-
-    // Trigger visibility update when the group type changes
-    $(document).on('library-albums-group-changed', updateExpandCollapseVisibility);
+    // Hide the expand/collapse button since we don't have groups anymore
+    this.$expandCollapseButton.hide();
   }
 
   onExpandCollapseClick() {
@@ -91,15 +74,11 @@ export default class LibraryAlbumOptionsView {
   selectDropdown(dropdown) {
     // Select corresponding button
     this.$sortButton.removeClass('isSelected');
-    this.$groupButton.removeClass('isSelected');
     this.$filterButton.removeClass('isSelected');
     let $button;
     switch (dropdown) {
       case this.sortDropdown:
         $button = this.$sortButton;
-        break;
-      case this.groupDropdown:
-        $button = this.$groupButton;
         break;
       case this.filterDropdown:
         $button = this.$filterButton;
@@ -144,9 +123,6 @@ export default class LibraryAlbumOptionsView {
       case this.sortDropdown:
         items = [Settings.librarySortType];
         break;
-      case this.groupDropdown:
-        items = [Settings.libraryGroupType];
-        break;
       case this.filterDropdown:
         items = [Settings.libraryFilterType];
         break;
@@ -161,7 +137,6 @@ export default class LibraryAlbumOptionsView {
   hideDropdowns() {
     this.$buttonsHolder.removeClass('isSelected');
     this.$sortButton.removeClass('isSelected');
-    this.$groupButton.removeClass('isSelected');
     this.$filterButton.removeClass('isSelected');
 
     for (const dropdown of this.dropdowns) {
@@ -176,10 +151,6 @@ export default class LibraryAlbumOptionsView {
       case 'librarySortDropdown':
         Settings.librarySortType = value;
         setTimeout(() => $(document).trigger('library-albums-sort-changed'), 16);
-        break;
-      case 'libraryGroupDropdown':
-        Settings.libraryGroupType = value;
-        setTimeout(() => $(document).trigger('library-albums-group-changed'), 16);
         break;
       case 'libraryFilterDropdown':
         Settings.libraryFilterType = value;

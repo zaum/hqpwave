@@ -1,31 +1,65 @@
 :root {
   /* Dark theme (default) */
-  --col-bg: #181818;
-  --col-listitem-less: #202020;
-  --col-listitem: #282828;
-  --col-listitem-over: #323232;
-  --col-listitem-selected: #383838;
-  --col-listitem-selected-over: #424242;
-  --col-text-least: #666666;
-  --col-text-less: #999999;
-  --col-text: #cccccc;
-  --col-accent: #ff2200;
-  --col-highlight: #00ff00;
+  --bg: #111112;
+  --surface: #171718;
+  --surface2: #1d1d1f;
+  --raised: #222224;
+  --border: rgba(255,255,255,0.07);
+  --border-md: rgba(255,255,255,0.11);
+  --border-hi: rgba(255,255,255,0.18);
+  --text: #f0efed;
+  --text-2: rgba(240,239,237,0.55);
+  --text-3: rgba(240,239,237,0.28);
+  --accent: #e8c88a;
+  --accent-bg: rgba(232,200,138,0.07);
+  --accent-hi: rgba(232,200,138,0.16);
+  --green: #52c27a;
+  --red: #e05858;
+  
+  /* Legacy mappings for compatibility */
+  --col-bg: var(--bg);
+  --col-listitem-less: var(--surface);
+  --col-listitem: var(--surface2);
+  --col-listitem-over: var(--raised);
+  --col-listitem-selected: rgba(255,255,255,0.08);
+  --col-listitem-selected-over: rgba(255,255,255,0.12);
+  --col-text: var(--text);
+  --col-text-less: var(--text-2);
+  --col-text-least: var(--text-3);
+  --col-accent: var(--accent);
+  --col-highlight: var(--accent);
   --icon-brightness: 100%;
 }
 
 :root.lightTheme {
   /* Light theme */
-  --col-bg: #f0f0f0;
-  --col-listitem-less: #e9e9e9;
-  --col-listitem: #dcdcdc;
-  --col-listitem-over: #d0d0d0;
-  --col-listitem-selected: #c0c0c0;
-  --col-listitem-selected-over: #b0b0b0;
-  --col-text: #202020;
-  --col-text-less: #505050;
-  --col-text-least: #808080;
-  --col-accent: #ff2200;
-  --col-highlight: #00ff00;
+  --bg: #f8f7f5;
+  --surface: #efeeec;
+  --surface2: #e5e4e2;
+  --raised: #dbdada;
+  --border: rgba(0,0,0,0.08);
+  --border-md: rgba(0,0,0,0.12);
+  --border-hi: rgba(0,0,0,0.18);
+  --text: #1a1a1c;
+  --text-2: rgba(26,26,28,0.55);
+  --text-3: rgba(26,26,28,0.35);
+  --accent: #c8a050;
+  --accent-bg: rgba(200,160,80,0.1);
+  --accent-hi: rgba(200,160,80,0.2);
+  --green: #3da85c;
+  --red: #d04848;
+  
+  /* Legacy mappings for light theme */
+  --col-bg: var(--bg);
+  --col-listitem-less: var(--surface);
+  --col-listitem: var(--surface2);
+  --col-listitem-over: var(--raised);
+  --col-listitem-selected: rgba(0,0,0,0.06);
+  --col-listitem-selected-over: rgba(0,0,0,0.1);
+  --col-text: var(--text);
+  --col-text-less: var(--text-2);
+  --col-text-least: var(--text-3);
+  --col-accent: var(--accent);
+  --col-highlight: var(--accent);
   --icon-brightness: 0%;
 }

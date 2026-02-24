@@ -85,32 +85,13 @@ export default class LibraryContentList {
       return;
     }
 
-    // Make labels and groups
+    // No grouping - just render all albums in a single grid
+    const $group = $(`<div class="${this.groupCssClass}"></div>`);
     for (let i = 0; i < this.groups.length; i++) {
-
-      const label = this.labels[i];
       const group = this.groups[i];
-
-      let $label;
-      if (label) {
-        $label = GroupLabelUtil.makeLabel(label, this.labelCssClass, group.length);
-        this.$el.append($label);
-      }
-
-      const $group = $(`<div class="${this.groupCssClass}"></div>`);
       this.populateGroupDiv($group, group);
-
-      if ($label) {
-        const s =  this.labelCssClass + ":" + encodeURIComponent(label.substr(0, 100));
-        const isCollapsed = Settings.isLibraryGroupCollapsed(s);
-        if (isCollapsed) {
-          $label.addClass('isCollapsed');
-          $group.addClass('isCollapsed');
-        }
-      }
-
-      this.$el.append($group);
     }
+    this.$el.append($group);
   }
 
   // override-able

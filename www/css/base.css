@@ -1,4 +1,7 @@
-/* Fonts */
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Geist:wght@200;300;400;500&family=Geist+Mono:wght@300;400&display=swap');
+
+/* Local Fonts */
 @font-face {
   font-family: "Noto Sans TC";
   font-style: normal;
@@ -44,10 +47,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Noto Sans TC", sans-serif;
-  font-size: 16px;
-  color: var(--col-text);
-  scrollbar-color: var(--col-text-less) var(--col-listitem-over);
+  font-family: 'Geist', "Noto Sans TC", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  scrollbar-color: var(--text-3) var(--surface);
   -webkit-tap-highlight-color: transparent;
   -moz-user-select: none;
   -webkit-user-select: none;
@@ -63,7 +66,7 @@
 
 @media (max-width: 480px) {
   * {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
@@ -75,7 +78,20 @@ html {
 
 body {
   overflow: hidden;
-  background-color: var(--col-bg);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Noise Overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 9999;
 }
 
 ul {
@@ -95,6 +111,25 @@ input::-moz-focus-inner {
   all: unset;
 }
 
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-md);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hi);
+}
+
 /* Utility Classes */
 .noTransition {
   transition: none !important;
@@ -103,20 +138,22 @@ input::-moz-focus-inner {
 label {
   display: block;
   text-transform: uppercase;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
 }
 
 .colorAccent {
-  color: var(--col-accent);
+  color: var(--accent);
 }
 
 .colorTextLess {
-  color: var(--col-text-less);
+  color: var(--text-2);
 }
 
 .fontSizeSmaller {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 @media (max-width: 480px) {
@@ -126,10 +163,26 @@ label {
 }
 
 .lowKeyCaption {
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--col-text-least);
+  color: var(--text-3);
+}
+
+/* Serif Text */
+.serif {
+  font-family: 'Playfair Display', serif;
+}
+
+.serif-italic {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+}
+
+/* Mono Text */
+.mono {
+  font-family: 'Geist Mono', monospace;
 }
 
 /* Subview Base */
@@ -138,20 +191,13 @@ label {
   width: 100%;
   height: 100%;
   overflow-y: scroll;
-  background-color: var(--col-bg);
+  background-color: var(--bg);
   transition: opacity 400ms cubic-bezier(0, 0.5, 0.3, 1);
   -webkit-overflow-scrolling: touch;
-  padding: 68px 16px 16px 16px;
 }
 
 .subview:focus {
   outline: none;
-}
-
-@media (max-width: 480px) {
-  .subview {
-    padding: 96px 12px 12px 12px;
-  }
 }
 
 /* View Header */
@@ -163,15 +209,15 @@ label {
   height: 52px;
   top: 0;
   left: 0;
-  padding: 16px 8px 16px 16px;
+  padding: 0 24px;
   z-index: 100;
-  background-color: var(--col-bg);
+  background-color: var(--bg);
   transition: top 132ms cubic-bezier(0, 0.5, 0.3, 1);
 }
 
 @media (max-width: 480px) {
   .viewHeader {
-    padding: 8px 12px;
+    padding: 0 16px;
     height: auto;
     min-height: 52px;
     flex-wrap: wrap;
@@ -180,7 +226,9 @@ label {
 }
 
 .viewHeader .title {
+  font-family: 'Playfair Display', serif;
   font-size: 16px;
+  font-weight: 400;
 }
 
 .viewHeader .title.clickable {
@@ -192,9 +240,16 @@ label {
 }
 
 .viewHeader .headerCountText {
-  margin-left: 6px;
-  font-size: 14px;
-  color: var(--col-text-least);
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'Geist Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
+.viewHeader .headerCountText strong {
+  color: var(--text-2);
+  font-weight: 400;
 }
 
 /* Animations */
@@ -219,5 +274,32 @@ label {
   to {
     height: 16px;
     y: 4px;
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

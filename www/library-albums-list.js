@@ -16,7 +16,7 @@ export default class LibraryAlbumsList extends LibraryContentList {
 
   filteredSortedAlbums;
   sortType;
-  groupType;
+  groupType = 'none'; // Always use 'none' - no grouping
   filterType;
 
   filteredSortedAlbumsDirty = true;
@@ -26,9 +26,9 @@ export default class LibraryAlbumsList extends LibraryContentList {
   constructor($el) {
     super($el);
     this.setSortType(Settings.librarySortType);
-    this.setGroupType(Settings.libraryGroupType);
+    // Force groupType to 'none' - no grouping
+    Settings.libraryGroupType = 'none';
     Util.addAppListener(this, 'library-albums-sort-changed', this.onSortChanged);
-    Util.addAppListener(this, 'library-albums-group-changed', this.onGroupChanged);
     Util.addAppListener(this, 'library-albums-filter-changed', this.onFilterChanged);
   }
 
