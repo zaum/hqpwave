@@ -108,6 +108,204 @@
   padding: 0;
 }
 
+/* Track Item (used in playlist, history, search) */
+.trackItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+  gap: 8px;
+}
+
+.trackItem:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.trackItem.selected {
+  background: var(--accent-bg);
+}
+
+.trackItem.isPlaying {
+  background: var(--accent-bg);
+}
+
+.trackItem .left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.trackItem .dragHandleButton {
+  opacity: 0;
+  cursor: grab;
+  width: 20px;
+  height: 20px;
+}
+
+.trackItem:hover .dragHandleButton {
+  opacity: 0.5;
+}
+
+.trackItem .dragHandleButton:hover {
+  opacity: 1;
+}
+
+.trackItem .left span,
+.trackItemNum {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  text-align: center;
+  flex: 1;
+}
+
+.trackItem .main {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.trackItem .trackText {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.trackItem .duration {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  margin-left: 8px;
+}
+
+.trackItem .extra {
+  margin-top: 2px;
+}
+
+.trackItem .extraLine {
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.trackItem .extraLine .caption {
+  color: var(--text-2);
+}
+
+.trackItem .nonLibraryInfo {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: 2px;
+}
+
+.trackItemMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.trackItemMeta .numViews {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  min-width: 32px;
+  text-align: right;
+}
+
+.trackItemMeta .favoriteButton {
+  opacity: 0.6;
+}
+
+.trackItemMeta .favoriteButton:hover {
+  opacity: 1;
+}
+
+.trackItemMeta .favoriteButton.isSelected {
+  opacity: 1;
+}
+
+.trackItem .right {
+  display: flex;
+  align-items: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.trackItem .right .deleteButton {
+  opacity: 0;
+  cursor: pointer;
+}
+
+.trackItem:hover .right .deleteButton {
+  opacity: 0.6;
+}
+
+.trackItem .right .deleteButton:hover {
+  opacity: 1;
+}
+
+/* Album header in playlist */
+.trackItemAlbumHeader {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  min-height: 64px;
+}
+
+.trackItemAlbumHeader .albumLineButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.trackItemAlbumHeader .albumLineButton img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.trackItemAlbumHeader .albumLineButton .text {
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trackItemAlbumHeader .albumLineButton .text div:first-child {
+  font-weight: 400;
+}
+
+.trackItemAlbumHeader .albumLineButton .text div:last-child {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 1px;
+}
+
+.trackItemAlbumHeader .statsText {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
 .playlistItem {
   display: flex;
   align-items: center;
