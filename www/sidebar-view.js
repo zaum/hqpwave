@@ -10,6 +10,9 @@ import ViewUtil from './view-util.js';
 class SidebarView {
 
   $el;
+  $page;
+  $scroll;
+  $toggle;
   $resetButton;
   $formatChips;
   $genreList;
@@ -23,6 +26,29 @@ class SidebarView {
 
   constructor() {
     this.$el = $('#sidebar');
+    this.$page = $('#page');
+
+    // Wrap existing content in a scroll container so the toggle
+    // can stay centered and not move with scroll.
+    this.$scroll = $('<div class="sidebar-scroll"></div>');
+    const $existingChildren = this.$el.children().detach();
+    this.$scroll.append($existingChildren);
+    this.$el.append(this.$scroll);
+
+    // Collapse/expand toggle
+    this.$toggle = $(`
+      <button type="button" id="sidebarToggle" aria-label="Collapse sidebar" title="Hide sidebar">
+        &lt;
+      </button>
+    `);
+    this.$el.append(this.$toggle);
+    this.$toggle.on('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.toggleCollapsed();
+    });
+    this.syncToggleIcon();
+
     this.$resetButton = $('#resetFilters');
     this.$formatChips = this.$el.find('.fchip');
     this.$genreList = $('#genreList');
@@ -85,6 +111,24 @@ class SidebarView {
     
     // Set initial active state for "All Albums"
     this.$browseItems.filter('[data-filter="all-albums"]').addClass('active');
+  }
+
+  toggleCollapsed() {
+    this.$page.toggleClass('isSidebarCollapsed');
+    this.syncToggleIcon();
+  }
+
+  syncToggleIcon() {
+    const isCollapsed = this.$page.hasClass('isSidebarCollapsed');
+    if (isCollapsed) {
+      this.$toggle.html('&gt;');
+      this.$toggle.attr('aria-label', 'Expand sidebar');
+      this.$toggle.attr('title', 'Show sidebar');
+    } else {
+      this.$toggle.html('&lt;');
+      this.$toggle.attr('aria-label', 'Collapse sidebar');
+      this.$toggle.attr('title', 'Hide sidebar');
+    }
   }
 
   /**

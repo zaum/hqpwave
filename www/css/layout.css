@@ -8,11 +8,25 @@
   height: 100vh;
   display: grid;
   grid-template-rows: 80px 1fr 70px;
-  grid-template-columns: 220px 1fr;
+  --sidebar-expanded: 220px;
+  --sidebar-collapsed: 0px;
+  --sidebar-toggle-w: 18px;
+  --sidebar-toggle-h: 34px;
+  --sidebar-w: 0px;
+  grid-template-columns: var(--sidebar-w) 1fr;
   grid-template-areas:
     "topbar topbar"
     "sidebar main"
     "playbar playbar";
+  transition: grid-template-columns 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#page.libraryView {
+  --sidebar-w: var(--sidebar-expanded);
+}
+
+#page.libraryView.isSidebarCollapsed {
+  --sidebar-w: var(--sidebar-collapsed);
 }
 
 @media (max-width: 768px) {
@@ -72,7 +86,7 @@
   display: flex;
   gap: 2px;
   padding-bottom: 2px;
-  margin-left: 220px;
+  margin-left: var(--sidebar-w);
   margin-top: auto;
   align-items: flex-end;
 }
@@ -223,17 +237,103 @@
   grid-area: sidebar;
   border-right: 1px solid var(--border);
   background: var(--surface);
-  padding: 24px 0 32px;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 80px;
   height: calc(100vh - 80px - 70px);
-  overflow-y: auto;
+  overflow: visible; /* allow toggle to hang outside */
+  width: var(--sidebar-expanded);
+  transform: translateX(calc(var(--sidebar-w) - var(--sidebar-expanded)));
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 150;
 }
 
-#sidebar::-webkit-scrollbar {
-  width: 0;
+#page:not(.libraryView) #sidebar {
+  display: none;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px 0 32px;
+  /* Keep scrollbar width stable (prevents content shifting). */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: transparent transparent; /* Firefox */
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px; /* stable width: no layout jump */
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.lightTheme .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.sidebar-scroll:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent; /* Firefox */
+}
+
+.lightTheme .sidebar-scroll:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.28) transparent; /* Firefox */
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.lightTheme .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.lightTheme .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+#sidebarToggle {
+  position: absolute;
+  right: calc(-1 * var(--sidebar-toggle-w)); /* fully outside sidebar */
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--sidebar-toggle-w);
+  height: var(--sidebar-toggle-h);
+  border-radius: 4px;
+  border: 1px solid var(--border-md);
+  background: rgba(17, 17, 18, 0.7);
+  color: var(--text-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+  user-select: none;
+}
+
+#sidebarToggle:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+  background: rgba(17, 17, 18, 0.72);
 }
 
 @media (max-width: 768px) {
@@ -247,9 +347,9 @@
 }
 
 .sidebar-label {
-  font-size:  font-weight: 400;
-  letter9px;
- -spacing: 0.2em;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--text-3);
   padding: 0 20px 8px;
