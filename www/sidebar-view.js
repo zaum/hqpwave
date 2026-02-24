@@ -133,7 +133,7 @@ class SidebarView {
     for (const [genre, count] of sortedGenres) {
       const $item = $(`
         <div class="genre-item" data-genre="${this.escapeHtml(genre)}">
-          <span class="genre-name">${this.escapeHtml(genre)}</span>
+          <span class="genre-name" style="color: var(--text-2)">${this.escapeHtml(genre)}</span>
           <span class="genre-count">${count}</span>
         </div>
       `);
@@ -149,6 +149,7 @@ class SidebarView {
         if (!isShiftClick && !this.genreMultiSelect && isAlreadySelected) {
           this.activeGenres.delete(genreName);
           $item.removeClass('active');
+          $item.find('.genre-name').css('color', 'var(--text-2)');
           this.onFiltersChanged();
           return;
         }
@@ -157,15 +158,18 @@ class SidebarView {
           // Single select mode - clear other selections
           this.activeGenres.clear();
           this.$genreList.find('.genre-item').removeClass('active');
+          this.$genreList.find('.genre-name').css('color', 'var(--text-2)');
         }
         
         // Toggle this genre
         if (this.activeGenres.has(genreName)) {
           this.activeGenres.delete(genreName);
           $item.removeClass('active');
+          $item.find('.genre-name').css('color', 'var(--text-2)');
         } else {
           this.activeGenres.add(genreName);
           $item.addClass('active');
+          $item.find('.genre-name').css('color', 'var(--text)');
         }
         
         // Enable multi-select if we have more than one active genre
