@@ -663,29 +663,29 @@
 .albumItemLeft {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
+  justify-content: flex-start;
+  width: 52px;
   flex-shrink: 0;
-  gap: 4px;
+  gap: 6px;
 }
 
 .albumItemLeft .playButton {
-  display: none;
-  width: 20px;
-  height: 20px;
+  display: flex;
+  width: 18px;
+  height: 18px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 11px;
-  color: var(--text);
+  opacity: 0.3;
+  transition: opacity 0.2s;
 }
 
 .albumItem:hover .albumItemLeft .playButton {
-  display: flex;
+  opacity: 1;
 }
 
 .albumItem:hover .albumItemLeft .indexText {
-  display: none;
+  display: block;
 }
 
 .albumItemLeft .indexText {

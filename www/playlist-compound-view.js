@@ -17,7 +17,7 @@ export default class PlaylistCompoundView extends Subview {
   loadView;
 
   constructor() {
-  	super($("#playlistView"));
+    super($("#playlistView"));
     this.mainView = new PlaylistMainView(this.$el.find('#playlistMainView'));
     this.historyView = new HistoryView(this.$el.find('#historyView'));
     this.loadView = new LoadPlaylistView(this.$el.find('#loadPlaylistView'));
@@ -30,13 +30,13 @@ export default class PlaylistCompoundView extends Subview {
   }
 
   show() {
-  	super.show();
+    super.show();
 
     this.$el.addClass('animIn');
 
-  	ViewUtil.animateCss(this.$el,
-  		() => this.$el.css("transform", `translateY(${this.$el.height()}px)`),
-  		() => this.$el.css('transform', 'translateY(0)'),
+    ViewUtil.animateCss(this.$el,
+      () => this.$el.css("transform", `translateY(${this.$el.height()}px)`),
+      () => this.$el.css('transform', 'translateY(0)'),
       () => {
         this.$el.removeClass('animIn');
       });
@@ -46,7 +46,7 @@ export default class PlaylistCompoundView extends Subview {
     ViewUtil.setVisible(this.mainView.$el, true);
     ViewUtil.setCssSync(this.mainView.$el, () => this.mainView.$el.css('left', '0%'));
     this.mainView.onShow();
-    
+
     // Enable user input immediately, not just after animation
     $(document).trigger('enable-user-input');
   }
@@ -56,15 +56,15 @@ export default class PlaylistCompoundView extends Subview {
       return;
     }
     ViewUtil.animateCss(this.$el,
-        null,
-        () => this.$el.css('transform', `translateY(${this.$el.outerHeight()}px)`),
-        () => {
-          ViewUtil.setVisible(this.$el, false);
-          ViewUtil.setVisible(this.historyView.$el, false);
-          ViewUtil.setVisible(this.loadView.$el, false);
-          ViewUtil.setVisible(this.mainView.$el, false);
-          $(document).trigger('enable-user-input');
-        });
+      null,
+      () => this.$el.css('transform', `translateY(${this.$el.outerHeight()}px)`),
+      () => {
+        ViewUtil.setVisible(this.$el, false);
+        ViewUtil.setVisible(this.historyView.$el, false);
+        ViewUtil.setVisible(this.loadView.$el, false);
+        ViewUtil.setVisible(this.mainView.$el, false);
+        $(document).trigger('enable-user-input');
+      });
     this.mainView.onHide();
     this.historyView.onHide();
     this.loadView.onHide();
@@ -93,13 +93,13 @@ export default class PlaylistCompoundView extends Subview {
     this.historyView.onShow();
 
     ViewUtil.animateCss(this.mainView.$el,
-        null,
-        () => this.mainView.$el.css('left', '-100%'),
-        () => ViewUtil.setVisible(this.mainView.$el, false));
+      null,
+      () => this.mainView.$el.css('left', '-100%'),
+      () => ViewUtil.setVisible(this.mainView.$el, false));
     ViewUtil.animateCss(this.historyView.$el,
-        () => { this.historyView.$el.css('left', '100%'); ViewUtil.setVisible(this.historyView.$el, true); },
-        () => this.historyView.$el.css('left', '0%'),
-        () => {});
+      () => { this.historyView.$el.css('left', '100%'); ViewUtil.setVisible(this.historyView.$el, true); },
+      () => this.historyView.$el.css('left', '0%'),
+      () => { });
   }
 
   historyToMainView() {
@@ -117,9 +117,10 @@ export default class PlaylistCompoundView extends Subview {
     ViewUtil.animateCss(this.mainView.$el,
       () => {
         this.mainView.$el.css('left', '-100%');
-        ViewUtil.setVisible(this.mainView.$el, true); },
+        ViewUtil.setVisible(this.mainView.$el, true);
+      },
       () => this.mainView.$el.css('left', '0%'),
-      () => {});
+      () => { });
   }
 
   mainToLoadView() {
@@ -127,13 +128,13 @@ export default class PlaylistCompoundView extends Subview {
     this.loadView.onShow();
 
     ViewUtil.animateCss(this.mainView.$el,
-        null,
-        () => this.mainView.$el.css('left', '-100%'),
-        () => ViewUtil.setVisible(this.mainView.$el, false));
+      null,
+      () => this.mainView.$el.css('left', '-100%'),
+      () => ViewUtil.setVisible(this.mainView.$el, false));
     ViewUtil.animateCss(this.loadView.$el,
-        () => { this.loadView.$el.css('left', '100%'); ViewUtil.setVisible(this.loadView.$el, true); },
-        () => this.loadView.$el.css('left', '0%'),
-        () => {});
+      () => { this.loadView.$el.css('left', '100%'); ViewUtil.setVisible(this.loadView.$el, true); },
+      () => this.loadView.$el.css('left', '0%'),
+      () => { });
   }
 
   loadToMainView() {
@@ -143,12 +144,12 @@ export default class PlaylistCompoundView extends Subview {
     Service.queueCommand(Commands.playlistGet());
 
     ViewUtil.animateCss(this.loadView.$el,
-        null,
-        () => this.loadView.$el.css('left', '100%'),
-        () => ViewUtil.setVisible(this.loadView.$el, false));
+      null,
+      () => this.loadView.$el.css('left', '100%'),
+      () => ViewUtil.setVisible(this.loadView.$el, false));
     ViewUtil.animateCss(this.mainView.$el,
-        () => { this.mainView.$el.css('left', '-100%'); ViewUtil.setVisible(this.mainView.$el, true); },
-        () => this.mainView.$el.css('left', '0%'),
-        () => {});
+      () => { this.mainView.$el.css('left', '-100%'); ViewUtil.setVisible(this.mainView.$el, true); },
+      () => this.mainView.$el.css('left', '0%'),
+      () => { });
   }
 }

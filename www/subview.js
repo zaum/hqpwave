@@ -11,7 +11,7 @@ export default class Subview {
   $el;
   $list;
 
-  constructor($el, $list=null) {
+  constructor($el, $list = null) {
     this.$el = $el;
     this.$list = $list;
     this.$el.on("scroll", e => this.onScroll(e));
@@ -30,16 +30,16 @@ export default class Subview {
   }
 
   // Override as needed
-  hide(callback=null) {
+  hide(callback = null) {
     ViewUtil.animateCss(this.$el,
-        null,
-        () => this.$el.css('opacity', 0),
-        () => {
-          ViewUtil.setVisible(this.$el, false);
-          if (callback) {
-            callback();
-          }
-        });
+      null,
+      () => this.$el.css('opacity', 0),
+      () => {
+        ViewUtil.setVisible(this.$el, false);
+        if (callback) {
+          callback();
+        }
+      });
   }
 
   onScroll(e) {

@@ -310,7 +310,7 @@ export default class AlbumView extends Subview {
     let s = '';
     s += `<div class="albumItem" data-index="${index}" data-hash="${hash}">`;
     s += `  <div class="albumItemLeft">`;
-    s += `    <div class="playButton" data-index="${index}" title="Play Track Now"></div>`;
+    s += `    <div class="playButton iconPlay" data-index="${index}" title="Play Track Now"></div>`;
     s += `    <span class="indexText">${index + 1}</span>`;
     s += `  </div>`;
     s += `  <div class="albumItemMain">`;

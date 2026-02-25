@@ -1,11 +1,11 @@
 import AppUtil from './app-util.js';
 import Commands from './commands.js';
-import MetaUtil from'./meta-util.js';
+import MetaUtil from './meta-util.js';
 import Model from './model.js';
 import Service from './service.js';
-import Settings from'./settings.js';
+import Settings from './settings.js';
 import SettingsInfoView from './settings-info-view.js';
-import Subview from'./subview.js';
+import Subview from './subview.js';
 import Util from './util.js';
 import Values from './values.js';
 import ViewUtil from './view-util.js';
@@ -49,7 +49,7 @@ export default class SettingsView extends Subview {
 
     Util.addAppListener(this, 'model-info-updated', () => this.infoView.update());
   }
-  
+
   setupColorPresets() {
     // Highlight color presets
     $('#highlightColorPresets').on('click', '.color-preset:not(.custom)', (e) => {
@@ -58,7 +58,7 @@ export default class SettingsView extends Subview {
       this.updateHighlightColorCSS();
       $('#highlightColorPicker').val(color);
     });
-    
+
     // Player background color presets
     $('#playerBackgroundColorPresets').on('click', '.color-preset:not(.custom)', (e) => {
       const color = $(e.currentTarget).data('color');
@@ -70,7 +70,7 @@ export default class SettingsView extends Subview {
 
   show() {
     super.show();
-    
+
     const $version = this.$el.find('#settingsVersion');
     $version.text(`v${Values.hqpwvVersion}`);
     const $anchor = this.$el.find("#settingsProjectAnchor");
@@ -82,7 +82,7 @@ export default class SettingsView extends Subview {
     this.updateMetaCheckbox();
 
     this.updateHighlightColorPicker();
-    
+
     this.updatePlayerBackgroundColorPicker();
 
     ViewUtil.doStockFadeIn(this.$el);
@@ -163,7 +163,7 @@ export default class SettingsView extends Subview {
 
   onThemeCheckbox = (e) => {
     Settings.colorTheme = (e.currentTarget.id == 'themeDark') ? 'dark' : 'light';
-     this.updateThemeCheckbox();
+    this.updateThemeCheckbox();
     // And update the theme
     AppUtil.updateColorTheme();
   };
