@@ -1,38 +1,38 @@
 // Timeline minimap rendering and interaction for group by year view
-window.renderTimelineMinimap = function(years) {
+window.renderTimelineMinimap = function (years) {
   const $container = $('#timelineMinimapContainer');
   const $minimap = $('#timelineMinimap');
   $minimap.empty();
   $minimap.css('display', 'block');
   if (!years || years.length === 0) return;
-  
+
   const firstYear = years[0];
   const lastYear = years[years.length - 1];
-  
+
   // Add top label (clickable)
   const $topLabel = $(`<div class="minimapYearLabel" style="top: 0;">${firstYear}</div>`);
-  $topLabel.on('click', function(e) {
+  $topLabel.on('click', function (e) {
     e.stopPropagation(); // Prevent container click
     scrollToYear(firstYear);
   });
   $minimap.append($topLabel);
-  
+
   // Minimap line
   const $line = $('<div class="minimapLine"></div>');
   $minimap.append($line);
-  
+
   // Add bottom label (clickable)
   const $bottomLabel = $(`<div class="minimapYearLabel" style="bottom: 0;">${lastYear}</div>`);
-  $bottomLabel.on('click', function(e) {
+  $bottomLabel.on('click', function (e) {
     e.stopPropagation(); // Prevent container click
     scrollToYear(lastYear);
   });
   $minimap.append($bottomLabel);
-  
+
   // Add dot
   const $dot = $('<div class="minimapDot"></div>');
   $minimap.append($dot);
-  
+
   // Helper function to scroll to year
   function scrollToYear(year) {
     const container = document.getElementById('libraryView');
@@ -48,70 +48,70 @@ window.renderTimelineMinimap = function(years) {
       container.scrollTop = $group[0].offsetTop;
     }
   }
-  
+
   // Store for scroll sync
   window._timelineYears = years;
   window._timelineDot = $dot;
   window._timelineLine = $line;
   window._timelineContainer = $container;
-  
+
   // Click on the entire container width
-  $container.off('click').on('click', function(e) {
+  $container.off('click').on('click', function (e) {
     const scrollContainer = document.getElementById('libraryView');
     if (!scrollContainer) return;
-    
+
     // Use $minimap for inner dimensions (same as dot positioning)
     const minimapRect = $minimap[0].getBoundingClientRect();
     const containerRect = $container[0].getBoundingClientRect();
-    
+
     // Get click position relative to minimap
     const y = e.clientY - minimapRect.top;
     const height = minimapRect.height;
-    
+
     // Apply the same margin logic as dot positioning (50px)
     const margin = 50;
     const dotSize = 14;
     const availableHeight = height - dotSize - (margin * 2);
-    
+
     // Adjust y to account for margin
     const adjustedY = y - margin;
     const percent = Math.max(0, Math.min(1, adjustedY / availableHeight));
-    
+
     // Scroll to the calculated percent position
     const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
     scrollContainer.scrollTop = percent * scrollHeight;
   });
-  
+
   // Sync dot position on scroll
   const scrollContainer = document.getElementById('libraryView');
   if (scrollContainer) {
-    scrollContainer.onscroll = function() {
+    scrollContainer.onscroll = function () {
       window.updateTimelineDot();
     };
     window.updateTimelineDot();
   }
-  
+
   // Make dot draggable
   window.makeTimelineDotDraggable();
 };
 
-window.updateTimelineDot = function() {
+window.updateTimelineDot = function () {
   const years = window._timelineYears;
   const $dot = window._timelineDot;
   const $container = $('#timelineMinimap');
   if (!years || !$dot || !$container) return;
   const scrollContainer = document.getElementById('libraryView');
   if (!scrollContainer) return;
-  
+
   // Get scroll progress (0 to 1)
   const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
   const scrollProgress = scrollHeight > 0 ? scrollContainer.scrollTop / scrollHeight : 0;
-  
+
   // Get container height and dot size
   const containerHeight = $container.height();
   const dotSize = 14;
   const margin = 50; // Same as CSS top/bottom on .minimapLine
-  
+
   // Position dot based on scroll progress, accounting for margins
   const availableHeight = containerHeight - dotSize - (margin * 2);
   const dotTop = margin + (scrollProgress * availableHeight);
@@ -119,88 +119,88 @@ window.updateTimelineDot = function() {
 };
 
 // Make timeline dot draggable (mouse and touch)
-window.makeTimelineDotDraggable = function() {
+window.makeTimelineDotDraggable = function () {
   const $dot = window._timelineDot;
   const $container = $('#timelineMinimap');
   if (!$dot || !$container) return;
-  
+
   let isDragging = false;
   let startPercent = 0;
   let startClientY = 0;
-  
+
   // Helper function to handle drag start
   function startDrag(clientY) {
     isDragging = true;
     startClientY = clientY;
-    
+
     const scrollContainer = document.getElementById('libraryView');
     if (scrollContainer) {
       const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
       startPercent = scrollHeight > 0 ? scrollContainer.scrollTop / scrollHeight : 0;
     }
   }
-  
+
   // Helper function to handle drag move
   function moveDrag(clientY) {
     if (!isDragging) return;
-    
+
     const scrollContainer = document.getElementById('libraryView');
     if (!scrollContainer) return;
-    
+
     const containerRect = $container[0].getBoundingClientRect();
     const containerHeight = containerRect.height;
     const dotSize = 14;
     const margin = 50;
     const availableHeight = containerHeight - dotSize - (margin * 2);
-    
+
     // Calculate delta from start position
     const deltaY = clientY - startClientY;
     const deltaPercent = deltaY / availableHeight;
-    
+
     // Apply delta to start percent
     let newPercent = startPercent + deltaPercent;
     newPercent = Math.max(0, Math.min(1, newPercent));
-    
+
     // Scroll to position
     const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
     scrollContainer.scrollTop = newPercent * scrollHeight;
   }
-  
+
   // Helper function to handle drag end
   function endDrag() {
     isDragging = false;
   }
-  
+
   // Mouse events
-  $dot.on('mousedown', function(e) {
+  $dot.on('mousedown', function (e) {
     startDrag(e.clientY);
     e.preventDefault();
     e.stopPropagation();
   });
-  
-  $(document).on('mousemove', function(e) {
+
+  $(document).on('mousemove', function (e) {
     moveDrag(e.clientY);
   });
-  
-  $(document).on('mouseup', function() {
+
+  $(document).on('mouseup', function () {
     endDrag();
   });
-  
+
   // Touch events
-  $dot.on('touchstart', function(e) {
+  $dot.on('touchstart', function (e) {
     const touch = e.touches[0];
     startDrag(touch.clientY);
     e.preventDefault();
     e.stopPropagation();
   });
-  
-  $(document).on('touchmove', function(e) {
+
+  $(document).on('touchmove', function (e) {
     const touch = e.touches[0];
     moveDrag(touch.clientY);
     e.preventDefault();
   });
-  
-  $(document).on('touchend', function() {
+
+  $(document).on('touchend', function () {
     endDrag();
   });
 };
@@ -242,14 +242,14 @@ export default class App {
 
   static instance;
 
-	playbarView = new PlaybarView();
-	libraryView = new LibraryView();
-	albumView = new AlbumView();
-	playlistView = new PlaylistCompoundView();
-	settingsView = new SettingsView();
+  playbarView = new PlaybarView();
+  libraryView = new LibraryView();
+  albumView = new AlbumView();
+  playlistView = new PlaylistCompoundView();
+  settingsView = new SettingsView();
   hqpSettingsView = new HqpSettingsView();
   subviews = [this.libraryView, this.albumView, this.playlistView, this.settingsView, this.hqpSettingsView];
-  
+
   sidebarView = SidebarView;
 
   $pageHolder = $('#page');
@@ -263,7 +263,7 @@ export default class App {
   resizeTimeoutId = 0;
   subviewZ = 100;
 
-	constructor() {
+  constructor() {
     if (!window.hqpwv) {
       window.hqpwv = {};
     }
@@ -277,11 +277,13 @@ export default class App {
     document.documentElement.style.setProperty('--col-highlight', Settings.highlightColor);
     // Also set --accent to highlight color for new design
     document.documentElement.style.setProperty('--accent', Settings.highlightColor);
+    // Initialize player background color
+    document.documentElement.style.setProperty('--player-bg', Settings.playerBackgroundColor);
     ViewUtil.setVisible($('html'), true);
 
     $(window).on('resize', this.onWindowResize);
     this.doWindowResize();
-    
+
     // Initialize topbar navigation
     this.initTopbarNav();
 
@@ -297,13 +299,13 @@ export default class App {
     Util.addAppListener(this, 'server-errors', this.showServerErrorsSnack);
     Util.addAppListener(this, 'service-response-handled', this.onServiceResponseHandled);
 
-		Util.addAppListener(this, 'library-item-click', this.showAlbumView);
-		Util.addAppListener(this, 'album-view-close-button', this.hideAlbumView);
+    Util.addAppListener(this, 'library-item-click', this.showAlbumView);
+    Util.addAppListener(this, 'album-view-close-button', this.hideAlbumView);
     Util.addAppListener(this, 'album-genre-button', this.onAlbumGenreButton);
     Util.addAppListener(this, 'album-artist-button', this.onAlbumArtistButton);
-		Util.addAppListener(this, 'playbar-show-playlist', this.togglePlaylistCompoundView);
-		Util.addAppListener(this, 'playlist-close-button', this.hidePlaylist);
-		Util.addAppListener(this, 'track-album-button-click', this.trackListItemToAlbum);
+    Util.addAppListener(this, 'playbar-show-playlist', this.togglePlaylistCompoundView);
+    Util.addAppListener(this, 'playlist-close-button', this.hidePlaylist);
+    Util.addAppListener(this, 'track-album-button-click', this.trackListItemToAlbum);
     Util.addAppListener(this, 'settings-view-close', this.hideSettingsView);
     Util.addAppListener(this, 'hqp-settings-view-close', this.hideHqpSettingsView);
     Util.addAppListener(this, 'app-do-escape', this.doEscape);
@@ -313,15 +315,25 @@ export default class App {
     // Debug: Check if buttons exist
     console.log('Settings button found:', this.$settingsButton.length > 0);
     console.log('HQP Settings button found:', this.$hqpSettingsButton.length > 0);
-    
+
     // Bind click handlers with debugging
     this.$settingsButton.on("click", (e) => {
       console.log('Settings clicked!');
-      this.showSettingsView();
+      // Toggle: if settings view is already open, close it and return to previous view
+      if (ViewUtil.isVisible(this.settingsView.$el)) {
+        this.hideSettingsView();
+      } else {
+        this.showSettingsView();
+      }
     });
     this.$hqpSettingsButton.on("click", (e) => {
       console.log('HQP Settings clicked!');
-      this.showHqpSettingsView();
+      // Toggle: if hqp settings view is already open, close it and return to previous view
+      if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
+        this.hideHqpSettingsView();
+      } else {
+        this.showHqpSettingsView();
+      }
     });
     $("#appTitle").on("click", () => this.doAppTitleClick());
 
@@ -333,7 +345,7 @@ export default class App {
     for (let subview of this.subviews) {
       ViewUtil.setVisible(subview.$el, false);
     }
-		this.libraryView.show();
+    this.libraryView.show();
     this.updatePageHolderSubviewClass(this.libraryView);
     ViewUtil.setVisible(this.playbarView.$el, true);
 
@@ -341,7 +353,7 @@ export default class App {
     FullAlbumOverlay.noop();
 
     this.init();
-	}
+  }
 
   /**
    * Initialize topbar navigation.
@@ -350,36 +362,59 @@ export default class App {
     this.$navPills.on('click', (e) => {
       const $pill = $(e.currentTarget);
       const view = $pill.data('view');
-      
+
+      // Close settings modals if they are open
+      if (ViewUtil.isVisible(this.settingsView.$el)) {
+        this.hideSettingsView();
+      }
+      if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
+        this.hideHqpSettingsView();
+      }
+
       // Update active state
       this.$navPills.removeClass('active');
       $pill.addClass('active');
-      
+
       switch (view) {
         case 'library':
-          // If another view is on top, hide it to return to library
-          const topSubview = this.getTopSubview();
-          if (topSubview && topSubview !== this.libraryView) {
-            this.hideSubview(topSubview);
+          // Hide all top views until we return to library
+          for (let sv of this.subviews) {
+            if (sv !== this.libraryView && sv !== this.settingsView && sv !== this.hqpSettingsView && ViewUtil.isVisible(sv.$el)) {
+              this.hideSubview(sv);
+            }
           }
           break;
         case 'album':
+          if ($pill.hasClass('isDisabled')) return;
           // Show currently playing album if available
           this.showCurrentAlbum();
           break;
         case 'playlist':
           this.showPlaylistCompoundView();
           break;
+        case 'history':
+          this.showHistoryView();
+          break;
         case 'timeline':
         case 'artist':
           // These views are not yet implemented, just return to library
-          const top = this.getTopSubview();
-          if (top && top !== this.libraryView) {
-            this.hideSubview(top);
+          for (let sv of this.subviews) {
+            if (sv !== this.libraryView && sv !== this.settingsView && sv !== this.hqpSettingsView && ViewUtil.isVisible(sv.$el)) {
+              this.hideSubview(sv);
+            }
           }
           break;
       }
     });
+  }
+
+  /**
+   * Show history view.
+   */
+  showHistoryView() {
+    this.showPlaylistCompoundView();
+    // Trigger history view switch
+    this.playlistView.mainToHistoryView();
   }
 
   /**
@@ -437,7 +472,7 @@ export default class App {
 
   // ---
   // subview concrete show/hide logic
-  
+
   togglePlaylistCompoundView() {
     if (this.getTopSubview() == this.playlistView) {
       this.hidePlaylist();
@@ -461,9 +496,9 @@ export default class App {
     this.showSubview(this.albumView, album, $libraryItem);
   }
 
-	showSettingsView() {
-		this.showSubview(this.settingsView);
-	}
+  showSettingsView() {
+    this.showSubview(this.settingsView);
+  }
 
   showHqpSettingsView() {
     this.showSubview(this.hqpSettingsView);
@@ -528,12 +563,12 @@ export default class App {
         break;
       default:
         if (subview) {
-          cl('not accounted for');
+          console.log('not accounted for');
         }
         break;
     }
   }
-  
+
   // ---
   // subview management
 
@@ -559,10 +594,10 @@ export default class App {
 
     this.updatePageHolderSubviewClassOnHide();
     subview.hide();
-    
+
     this.postHideHeaderAndFocus(subview.$el);
   }
-  
+
   /**
    * Updates page holder css classes related to play state.
    */
@@ -575,12 +610,29 @@ export default class App {
     } else {
       this.$pageHolder.addClass('isStopped').removeClass('isPlaying isPaused');
     }
-    
+
     // empty playlist
-    (Model.playlist.array.length > 0)
-        ? this.$pageHolder.removeClass('isPlaylistEmpty')
-        : this.$pageHolder.addClass('isPlaylistEmpty');
-    
+    if (Model.playlist.array.length > 0) {
+      this.$pageHolder.removeClass('isPlaylistEmpty');
+    } else {
+      this.$pageHolder.addClass('isPlaylistEmpty');
+    }
+
+    // Album tab disabled state
+    let hasCurrentAlbum = false;
+    if (Model.playlist && Model.playlist.currentIndex >= 0 && Model.playlist.currentIndex < Model.playlist.array.length) {
+      const track = Model.playlist.array[Model.playlist.currentIndex];
+      if (track && track.album) {
+        hasCurrentAlbum = true;
+      }
+    }
+
+    if (hasCurrentAlbum) {
+      this.$navPills.filter('[data-view="album"]').removeClass('isDisabled');
+    } else {
+      this.$navPills.filter('[data-view="album"]').addClass('isDisabled');
+    }
+
     this.updateBusyClass();
   }
 
@@ -613,7 +665,7 @@ export default class App {
   updatePageHolderSubviewClassOnHide() {
     const subviews = this.getVisibleSubviews();
     if (subviews.length < 2) {
-      cl('warning not enough visible subviews');
+      console.log('warning not enough visible subviews');
       return;
     }
     // The subview which is about to get exposed by the current subview's hide()
@@ -676,7 +728,7 @@ export default class App {
     for (let subview of this.subviews) {
       if (ViewUtil.isVisible(subview.$el)) {
         const z = subview.$el.css('z-index');
-        array.push( { subview: subview, z: z } );
+        array.push({ subview: subview, z: z });
       }
     }
     array.sort((a, b) => {
@@ -688,7 +740,7 @@ export default class App {
         return 0; // shdnthpn
       }
     });
-    return array.map(item => item.subview );
+    return array.map(item => item.subview);
   }
 
   // ---
@@ -704,7 +756,7 @@ export default class App {
     if (isFocusInput) {
       return;
     }
-    
+
     // Ignore keypresses if a modal popup is up (eg context menu, etc)
     // except for the following cases:
     if ($(document.body).css('pointer-events') == 'none') {
@@ -743,16 +795,17 @@ export default class App {
         this.minKeyDuration = long;
         break;
       case 'u':
-        if (!ViewUtil.isVisible(this.hqpSettingsView.$el)) {
-          this.$hqpSettingsButton.click();
-        } else {
+        // Toggle hqp settings view
+        if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
           this.hideHqpSettingsView();
+        } else {
+          this.showHqpSettingsView();
         }
         this.minKeyDuration = long;
         break;
       case 'f':
         if (this.getTopSubview() == this.libraryView
-            && ViewUtil.isDisplayed(this.libraryView.albumsList.$el) && Model.hasLibrary) {
+          && ViewUtil.isDisplayed(this.libraryView.albumsList.$el) && Model.hasLibrary) {
           e.preventDefault();
           this.libraryView.$searchButton.click();
         }

@@ -1,4 +1,6 @@
 import AlbumUtil from './album-util.js';
+import AppUtil from './app-util.js';
+import Commands from './commands.js';
 import DataUtil from './data-util.js';
 import GroupLabelUtil from './group-label-util.js';
 import LibraryGroupUtil from './library-group-util.js';
@@ -26,12 +28,12 @@ export default class LibraryContentList {
 
   constructor($el) {
     this.$el = $el;
-    const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0  };
+    const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0 };
     this.intersectionObs = new IntersectionObserver(this.onIntersection, config);
     $(document).on('album-favorite-changed', this.onAlbumFavoriteChanged);
   }
 
-  show(type=null, value=null) {
+  show(type = null, value = null) {
     ViewUtil.setDisplayed(this.$el, true);
   }
 
@@ -78,7 +80,7 @@ export default class LibraryContentList {
       return;
     }
     const isEmpty = (this.albums.length == 0) || (this.groups.length == 0)
-        || (this.groups.length == 1 && this.groups[0].length == 0);
+      || (this.groups.length == 1 && this.groups[0].length == 0);
     if (isEmpty) {
       const $item = LibraryContentList.makeListIsEmptyItem();
       this.$el.append($item);
@@ -234,15 +236,29 @@ export default class LibraryContentList {
     const isFavoriteClass = MetaUtil.isAlbumFavoriteFor(hash) ? 'isFavorite' : '';
 
     let s = `<div class="libraryItem ${isFavoriteClass}" data-hash="${hash}">`; /* tabindex="0" */
-    s +=      `<div class="libraryItemPicture"><img data-src=${imgPath} /></div>`;
-    s +=      `<div class="libraryItemText1">${artist}</div>`;
-    s +=      `<div class="libraryItemText2">${albumText}</div>`;
+    s += `<div class="libraryItemPicture">
+                 <img data-src="${imgPath}" />
+                 <div class="libraryItemPlayBtn" title="Play Album">
+                   <svg viewBox="0 0 24 24" fill="currentColor">
+                     <path d="M8 5v14l11-7z"/>
+                   </svg>
+                 </div>
+               </div>`;
+    s += `<div class="libraryItemText1">${artist}</div>`;
+    s += `<div class="libraryItemText2">${albumText}</div>`;
     if (bits) {
-      s +=    `<div class="libraryItemBits">${bits}</div>`;
+      s += `<div class="libraryItemBits">${bits}</div>`;
     }
-    s +=      `<div class="libraryItemFavorite"></div>`;
-    s +=    `</div>`; // todo fault
+    s += `<div class="libraryItemFavorite"></div>`;
+    s += `</div>`;
     const $item = $(s);
+
+    $item.find('.libraryItemPlayBtn').on('click tap', (e) => {
+      e.stopPropagation();
+      const commands = Commands.playlistAddUsingAlbumAndIndices(album, 0, -1);
+      AppUtil.doPlaylistAdds(commands, true, true);
+    });
+
     return $item;
   }
 }

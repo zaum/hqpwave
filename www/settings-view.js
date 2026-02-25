@@ -20,6 +20,7 @@ export default class SettingsView extends Subview {
   $themeLightCheckbox;
   $metaCheckbox;
   $highlightColorPicker;
+  $playerBackgroundColorPicker;
   infoView;
 
   constructor() {
@@ -36,9 +37,35 @@ export default class SettingsView extends Subview {
     this.$metaCheckbox.on('click tap', this.onMetaCheckbox);
     this.$highlightColorPicker = this.$el.find('#highlightColorPicker');
     this.$highlightColorPicker.on('change', this.onHighlightColorChange);
+    this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
+    this.$playerBackgroundColorPicker.on('change', this.onPlayerBackgroundColorChange);
     this.$el.find('#metaDownload').attr('href', Values.META_DOWNLOAD_LINK);
 
+    // Setup scroll detection for Settings label
+    this.$el.on('scroll', this.onSettingsScroll);
+
+    // Setup color preset click handlers
+    this.setupColorPresets();
+
     Util.addAppListener(this, 'model-info-updated', () => this.infoView.update());
+  }
+  
+  setupColorPresets() {
+    // Highlight color presets
+    $('#highlightColorPresets').on('click', '.color-preset:not(.custom)', (e) => {
+      const color = $(e.currentTarget).data('color');
+      Settings.highlightColor = color;
+      this.updateHighlightColorCSS();
+      $('#highlightColorPicker').val(color);
+    });
+    
+    // Player background color presets
+    $('#playerBackgroundColorPresets').on('click', '.color-preset:not(.custom)', (e) => {
+      const color = $(e.currentTarget).data('color');
+      Settings.playerBackgroundColor = color;
+      this.updatePlayerBackgroundColorCSS();
+      $('#playerBackgroundColorPicker').val(color);
+    });
   }
 
   show() {
@@ -55,6 +82,8 @@ export default class SettingsView extends Subview {
     this.updateMetaCheckbox();
 
     this.updateHighlightColorPicker();
+    
+    this.updatePlayerBackgroundColorPicker();
 
     ViewUtil.doStockFadeIn(this.$el);
     this.$el[0].scrollTop = 0;
@@ -92,6 +121,11 @@ export default class SettingsView extends Subview {
     this.updateHighlightColorCSS();
   }
 
+  updatePlayerBackgroundColorPicker() {
+    this.$playerBackgroundColorPicker.val(Settings.playerBackgroundColor);
+    this.updatePlayerBackgroundColorCSS();
+  }
+
   updateHighlightColorCSS() {
     document.documentElement.style.setProperty('--col-highlight', Settings.highlightColor);
     // Also update --accent for new design
@@ -101,6 +135,30 @@ export default class SettingsView extends Subview {
   onHighlightColorChange = () => {
     Settings.highlightColor = this.$highlightColorPicker.val();
     this.updateHighlightColorCSS();
+  };
+
+  onPlayerBackgroundColorChange = () => {
+    Settings.playerBackgroundColor = this.$playerBackgroundColorPicker.val();
+    this.updatePlayerBackgroundColorCSS();
+  };
+
+  updatePlayerBackgroundColorCSS() {
+    document.documentElement.style.setProperty('--player-bg', Settings.playerBackgroundColor);
+    // Also update playbar background
+    const playbar = document.getElementById('playbarView');
+    if (playbar) {
+      playbar.style.background = Settings.playerBackgroundColor;
+    }
+  }
+
+  onSettingsScroll = () => {
+    const scrollTop = this.$el[0].scrollTop;
+    const settingsLabel = this.$el.find('#settingsScrollLabel');
+    if (scrollTop > 50) {
+      settingsLabel.addClass('visible');
+    } else {
+      settingsLabel.removeClass('visible');
+    }
   };
 
   onThemeCheckbox = (e) => {

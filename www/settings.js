@@ -47,7 +47,8 @@ class Settings {
     }
 
     this._colorTheme = this.storage.getItem('colorTheme') || 'dark';
-    this._highlightColor = this.storage.getItem('highlightColor') || '#00ff00';
+    this._highlightColor = this.storage.getItem('highlightColor') || '#e8c88a';
+    this._playerBackgroundColor = this.storage.getItem('playerBackgroundColor') || '#111112';
 
     s = this.storage.getItem('presetsArray');
     try {
@@ -191,6 +192,15 @@ class Settings {
   set highlightColor(s) {
     this._highlightColor = s;
     this.storage.setItem('highlightColor', s);
+  }
+
+  get playerBackgroundColor() {
+    return this._playerBackgroundColor;
+  }
+
+  set playerBackgroundColor(s) {
+    this._playerBackgroundColor = s;
+    this.storage.setItem('playerBackgroundColor', s);
   }
 
   get presetsArray() {

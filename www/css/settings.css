@@ -25,21 +25,33 @@
   letter-spacing: -0.01em;
 }
 
-#settingsVersion {
-  font-family: 'Geist Mono', monospace;
-  font-size: 11px;
-  color: var(--text-3);
-  letter-spacing: 0.05em;
-  padding: 4px 10px;
+#settingsScrollLabel {
+  display: none;
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-2);
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: var(--bg);
+  padding: 8px 24px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  margin-left: auto;
-  align-self: center;
+}
+
+#settingsScrollLabel.visible {
+  display: block;
+}
+
+#settingsVersion {
+  display: none;
 }
 
 #settingsCloseButton {
-  align-self: center;
-  margin-left: 8px;
+  display: none;
 }
 
 #settingsProjectAnchor {
@@ -56,10 +68,11 @@
   color: var(--accent);
 }
 
-/* Settings Content */
+/* Settings Content - Centered */
 .settings-content {
   max-width: 640px;
   padding: 32px 48px 80px;
+  margin: 0 auto;
 }
 
 /* Section */
@@ -68,16 +81,28 @@
   animation: sectionIn 0.5s ease both;
 }
 
-.settings-section:nth-child(1) { animation-delay: 0.08s; }
-.settings-section:nth-child(2) { animation-delay: 0.14s; }
-.settings-section:nth-child(3) { animation-delay: 0.20s; }
-.settings-section:nth-child(4) { animation-delay: 0.26s; }
+.settings-section:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.settings-section:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.settings-section:nth-child(3) {
+  animation-delay: 0.20s;
+}
+
+.settings-section:nth-child(4) {
+  animation-delay: 0.26s;
+}
 
 @keyframes sectionIn {
   from {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -136,7 +161,7 @@
 }
 
 .settings-card-row:hover {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .settings-card-row .row-label {
@@ -178,7 +203,7 @@
 .toggle-track {
   position: absolute;
   inset: 0;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-md);
   border-radius: 11px;
   transition: all 0.25s;
@@ -195,12 +220,12 @@
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.toggle-switch input:checked ~ .toggle-track {
+.toggle-switch input:checked~.toggle-track {
   background: var(--accent-bg);
   border-color: var(--accent);
 }
 
-.toggle-switch input:checked ~ .toggle-thumb {
+.toggle-switch input:checked~.toggle-thumb {
   transform: translateX(18px);
   background: var(--accent);
 }
@@ -431,7 +456,7 @@
   color: var(--accent);
   text-decoration: none;
   letter-spacing: 0.04em;
-  border-bottom: 1px solid rgba(200,169,110,0.3);
+  border-bottom: 1px solid rgba(200, 169, 110, 0.3);
   padding-bottom: 1px;
   transition: border-color 0.2s;
 }
@@ -516,8 +541,8 @@
   margin-top: 24px;
 }
 
-.settingsTheme > div:first-child,
-.settingsHighlightColor > div:first-child {
+.settingsTheme>div:first-child,
+.settingsHighlightColor>div:first-child {
   font-size: 13px;
   color: var(--text);
   margin-bottom: 12px;
@@ -561,11 +586,6 @@
   position: absolute;
   top: 40px;
   right: 48px;
-}
-
-.hqpSettingsInner {
-  max-width: 640px;
-  padding: 24px 48px 80px;
 }
 
 #hqpFiltersView {
@@ -623,13 +643,6 @@
   font-style: italic;
 }
 
-.presetsDivider,
-.experimentalDivider {
-  height: 1px;
-  background: var(--border);
-  margin: 24px 0;
-}
-
 /* Presets */
 #hqpPresetsView {
   display: flex;
@@ -666,26 +679,6 @@
 .loadPresetLabel {
   font-size: 12px;
   color: var(--text-2);
-}
-
-/* Experimental */
-#settingsExperimentalLine {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 10px 0;
-}
-
-#settingsExperimentalLine .text {
-  font-size: 13px;
-  color: var(--text-2);
-}
-
-#hqpPresetRulesView {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
 }
 
 .hqpPresetRulesInner {
@@ -748,6 +741,50 @@
   font-size: 12px;
 }
 
+/* Color Presets */
+.color-presets {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-preset {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.color-preset:hover {
+  transform: scale(1.15);
+}
+
+.color-preset.active {
+  border-color: var(--text);
+}
+
+.color-preset.dark-preset {
+  border: 2px solid var(--border-md);
+}
+
+.color-preset.custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  border: 2px solid var(--border-md);
+}
+
+.color-preset.custom .colorPickerInput {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
 /* Footer */
 .settings-footer {
   margin-top: 56px;
@@ -782,7 +819,7 @@
 #generalDialogOuter {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   display: none;
   align-items: center;
   justify-content: center;

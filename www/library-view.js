@@ -43,11 +43,11 @@ export default class LibraryView extends Subview {
     this.$searchCloseButton = this.$el.find('#librarySearchCloseButton');
     this.$spinner = this.$el.find('#librarySpinner');
     // Topbar search input
-    this.$headerSearchInput = this.$el.find('#libraryHeaderSearchInput');
-    this.$headerSearchContainer = this.$el.find('#libraryHeaderSearchContainer');
-    this.$headerSearchClearButton = this.$el.find('#libraryHeaderSearchClear');
+    this.$headerSearchInput = this.$el.find('#librarySearchInput');
+    this.$headerSearchContainer = this.$el.find('#librarySearchPanel');
+    this.$headerSearchClearButton = this.$el.find('#librarySearchClear');
     this.$headerView = this.$el.find('#libraryHeaderView');
-    
+
     // Global search input in topbar
     this.$globalSearchInput = $('#globalSearchInput');
     this.$globalSearchClear = $('#globalSearchClear');
@@ -57,29 +57,29 @@ export default class LibraryView extends Subview {
 
     this.$searchButton.on('click tap', () => this.openSearch());
     this.$searchCloseButton.on('click tap', () => this.closeSearch());
-    
+
     // Header search input functionality - filter albums in place (search as you type)
     this._headerSearchDebounceTimer = null;
     this._headerSearchMinLength = 2;
     this._headerSearchDebounceDelay = 300;
-    
+
     this.$headerSearchInput.on('input', (e) => {
       // Clear any existing debounce timer
       if (this._headerSearchDebounceTimer) {
         clearTimeout(this._headerSearchDebounceTimer);
       }
-      
+
       const value = this.$headerSearchInput.val().trim();
-      
+
       // Update clear button visibility
       this.updateHeaderSearchClearButtonVisibility();
-      
+
       if (value.length === 0) {
         // Clear search filter and show all albums
         this.clearHeaderSearchFilter();
         return;
       }
-      
+
       // Start new debounce timer for search-as-you-type filtering
       if (value.length >= this._headerSearchMinLength) {
         this._headerSearchDebounceTimer = setTimeout(() => {
@@ -87,7 +87,7 @@ export default class LibraryView extends Subview {
         }, this._headerSearchDebounceDelay);
       }
     });
-    
+
     this.$headerSearchInput.on('keyup', (e) => {
       if (e.keyCode === 13) { // Enter key - cancel debounce and filter immediately
         if (this._headerSearchDebounceTimer) {
@@ -103,41 +103,41 @@ export default class LibraryView extends Subview {
         }
       }
     });
-    
+
     // Clear button click handler
     this.$headerSearchClearButton.on('click', () => {
       this.clearHeaderSearchFilter();
       this.$headerSearchInput.focus();
     });
-    
+
     // Global search input in topbar - filter albums as you type
     if (this.$globalSearchInput.length > 0) {
       this._globalSearchDebounceTimer = null;
-      
+
       this.$globalSearchInput.on('input', (e) => {
         if (this._globalSearchDebounceTimer) {
           clearTimeout(this._globalSearchDebounceTimer);
         }
-        
+
         const value = this.$globalSearchInput.val().trim();
-        
+
         // Update clear button visibility
         if (this.$globalSearchClear) {
           this.$globalSearchClear.css('display', value.length > 0 ? 'block' : 'none');
         }
-        
+
         if (value.length === 0) {
           this.clearHeaderSearchFilter();
           return;
         }
-        
+
         if (value.length >= this._headerSearchMinLength) {
           this._globalSearchDebounceTimer = setTimeout(() => {
             this.applyHeaderSearchFilter(value);
           }, this._headerSearchDebounceDelay);
         }
       });
-      
+
       this.$globalSearchInput.on('keyup', (e) => {
         if (e.keyCode === 13) {
           if (this._globalSearchDebounceTimer) {
@@ -152,7 +152,7 @@ export default class LibraryView extends Subview {
           }
         }
       });
-      
+
       if (this.$globalSearchClear) {
         this.$globalSearchClear.on('click', () => {
           this.$globalSearchInput.val('');
@@ -164,12 +164,12 @@ export default class LibraryView extends Subview {
     }
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
     Util.addAppListener(this, 'library-albums-filter-changed library-albums-list-populated',
-        () => this.updateHeaderText(false));
+      () => this.updateHeaderText(false));
     Util.addAppListener(this, 'library-albums-list-populated',
-        () => this.syncExpandCollapseButtonState());
+      () => this.syncExpandCollapseButtonState());
     Util.addAppListener(this, 'library-expand-all-groups', this.onExpandAllGroups);
     Util.addAppListener(this, 'library-collapse-all-groups', this.onCollapseAllGroups);
-    
+
     // Listen for sidebar filter changes
     $(document).on('sidebar-filters-changed', (e, filterState) => {
       this.applySidebarFilters(filterState);
@@ -193,7 +193,7 @@ export default class LibraryView extends Subview {
 
     this.albumsList.show();
     this.albumsList.update();
-	}
+  }
 
   /**
    * Animates in search view state.
@@ -236,7 +236,7 @@ export default class LibraryView extends Subview {
    */
   syncExpandCollapseButtonState() {
     const areAllCollapsed = this.albumsList.areAllLabelsCollapsed;
-    
+
     if (areAllCollapsed === true) {
       // All groups are collapsed - button should show "expand" state (no isSelected)
       this.albumOptionsView.$expandCollapseButton.removeClass('isSelected');
@@ -268,20 +268,32 @@ export default class LibraryView extends Subview {
   }
 
   /**
-   * Apply sidebar filters to albums list.
+   * Unifies and applies all current filters (sidebar + header search).
    */
-  applySidebarFilters(filterState) {
-    const { formats, genres, browse } = filterState;
-    
+  applyAllFilters() {
     // Get all albums
     let allAlbums = Model.library.albums;
     if (!allAlbums) {
       return;
     }
-    
+
+    const { formats, genres, periods, browse } = SidebarView.getFilterState();
+
+    // Get search value from either input (they should be synced)
+    let searchValue = '';
+    if (this.$globalSearchInput && this.$globalSearchInput.length > 0 && this.$globalSearchInput.val().trim()) {
+      searchValue = this.$globalSearchInput.val().trim();
+    } else if (this.$headerSearchInput && this.$headerSearchInput.length > 0) {
+      searchValue = this.$headerSearchInput.val().trim();
+    }
+
+    // Split search input by comma for AND search
+    // "pink floyd, 1970, dsd" -> ["pink floyd", "1970", "dsd"]
+    const searchTerms = searchValue.split(/,\s*/).map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+
     // Apply filters
     let filteredAlbums = allAlbums.filter(album => {
-      // Browse filter
+      // 1. Sidebar: Browse filter
       if (browse === 'favorite-albums') {
         const albumHash = album['@_hash'];
         if (!window.hqpwv || !window.hqpwv.MetaUtil || !window.hqpwv.MetaUtil.isAlbumFavoriteFor(albumHash)) {
@@ -296,51 +308,88 @@ export default class LibraryView extends Subview {
         });
         if (!hasFavoriteTrack) return false;
       }
-      
-      // Format filter (OR logic)
+
+      // 2. Sidebar: Format filter (OR logic)
       if (formats && formats.length > 0) {
         const albumFormat = this.getAlbumFormatKey(album);
         if (!albumFormat || !formats.includes(albumFormat)) {
           return false;
         }
       }
-      
-      // Genre filter (OR logic)
+
+      // 3. Sidebar: Genre filter (OR logic)
       if (genres && genres.length > 0) {
         const albumGenre = album['@_genre'];
         if (!albumGenre || !genres.includes(albumGenre)) {
           return false;
         }
       }
-      
+
+      // 4. Sidebar: Period filter (OR logic)
+      if (periods && periods.length > 0) {
+        const albumYear = parseInt(album['year'] || album['@_year']);
+        let inPeriod = false;
+        if (!isNaN(albumYear)) {
+          for (const period of periods) {
+            if (albumYear >= period.start && albumYear <= period.end) {
+              inPeriod = true;
+              break;
+            }
+          }
+        }
+        if (!inPeriod) {
+          return false;
+        }
+      }
+
+      // 5. Header Search Filter (AND logic)
+      if (searchTerms.length > 0) {
+        // For each search term, check if album matches
+        // ALL terms must match for the album to be included
+        const matchesAllSearchTerms = searchTerms.every(searchVal => this.albumMatchesSearchTerm(album, searchVal));
+        if (!matchesAllSearchTerms) {
+          return false;
+        }
+      }
+
       return true;
     });
-    
-    // Update albums list
+
+    // Make sure albums list is visible
+    ViewUtil.setDisplayed(this.albumsList.$el, true);
+
+    // Set filtered albums to albums list and force dirty flags to rebuild
     this.albumsList.albums = filteredAlbums;
     this.albumsList.filteredSortedAlbumsDirty = true;
     this.albumsList.groupsDirty = true;
     this.albumsList.domDirty = true;
     this.albumsList.setFilterType('none');
     this.albumsList.update();
-    
+
     // Update header to show filtered count
     this.$title.text('Library');
     const count = filteredAlbums.length;
     const suffix = (count == 1) ? ' album' : ' albums';
     this.$itemCount.text(count + suffix);
-    
+
     // Update album count in toolbar
     $('#albumCount').text(count);
   }
-  
+
+  /**
+   * Apply sidebar filters to albums list.
+   */
+  applySidebarFilters(filterState) {
+    this.applyAllFilters();
+  }
+
   /**
    * Get format key for album based on sample rate and bits.
-   */
+ */
   getAlbumFormatKey(album) {
     const rateHz = parseInt(album['@_rate']) || 0;
     const bits = parseInt(album['@_bits']) || 0;
-    
+
     // DSD
     if (bits === 1 && rateHz > 0) {
       const dsdRate = rateHz / 1000000; // Convert Hz to MHz
@@ -350,7 +399,7 @@ export default class LibraryView extends Subview {
       }
       return 'DSD';
     }
-    
+
     // PCM
     const rateKHz = Math.round(rateHz / 1000);
     switch (rateKHz) {
@@ -371,43 +420,15 @@ export default class LibraryView extends Subview {
    * Supports comma-separated AND search: "pink floyd, 1970, dsd" matches all three conditions
    */
   applyHeaderSearchFilter(value) {
-    // Get all albums
-    let allAlbums = Model.library.albums;
-    if (!allAlbums) {
-      return;
+    // Sync search values between global and local inputs
+    if (this.$globalSearchInput && this.$globalSearchInput.length > 0) {
+      this.$globalSearchInput.val(value);
     }
-    
-    // Split by comma (with optional space) for AND search
-    // "pink floyd, 1970, dsd" -> ["pink floyd", "1970", "dsd"]
-    const searchTerms = value.split(/,\s*/).map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
-    
-    if (searchTerms.length === 0) {
-      return;
+    if (this.$headerSearchInput && this.$headerSearchInput.length > 0) {
+      this.$headerSearchInput.val(value);
     }
-    
-    // Filter albums that match ALL search terms (AND logic)
-    const filteredAlbums = allAlbums.filter(album => {
-      // For each search term, check if album matches
-      // ALL terms must match for the album to be included
-      return searchTerms.every(searchValue => this.albumMatchesSearchTerm(album, searchValue));
-    });
-    
-    // Make sure albums list is visible
-    ViewUtil.setDisplayed(this.albumsList.$el, true);
-    
-    // Set filtered albums to albums list and force dirty flags to rebuild
-    this.albumsList.albums = filteredAlbums;
-    this.albumsList.filteredSortedAlbumsDirty = true;
-    this.albumsList.groupsDirty = true;
-    this.albumsList.domDirty = true;
-    this.albumsList.setFilterType('none');
-    this.albumsList.update();
-    
-    // Update header to show filtered count
-    this.$title.text('Library');
-    const count = filteredAlbums.length;
-    const suffix = (count == 1) ? ' album' : ' albums';
-    this.$itemCount.text(count + suffix);
+
+    this.applyAllFilters();
   }
 
   /**
@@ -415,8 +436,10 @@ export default class LibraryView extends Subview {
    */
   clearHeaderSearchFilter() {
     // Clear the header search input
-    this.$headerSearchInput.val('');
-    
+    if (this.$headerSearchInput) {
+      this.$headerSearchInput.val('');
+    }
+
     // Also clear the global search input in topbar
     if (this.$globalSearchInput) {
       this.$globalSearchInput.val('');
@@ -424,28 +447,13 @@ export default class LibraryView extends Subview {
     if (this.$globalSearchClear) {
       this.$globalSearchClear.css('display', 'none');
     }
-    
+
     // Hide clear button
-    this.$headerSearchClearButton.hide();
-    
-    // Make sure albums list is visible
-    ViewUtil.setDisplayed(this.albumsList.$el, true);
-    
-    // Restore all albums from model and force rebuild
-    if (Model.library.albums) {
-      this.albumsList.albums = Model.library.albums;
-      this.albumsList.filteredSortedAlbumsDirty = true;
-      this.albumsList.groupsDirty = true;
-      this.albumsList.domDirty = true;
+    if (this.$headerSearchClearButton) {
+      this.$headerSearchClearButton.hide();
     }
-    this.albumsList.setFilterType(Settings.libraryFilterType);
-    this.albumsList.update();
-    
-    // Update header to show total count
-    this.$title.text('Library');
-    const count = this.albumsList.filteredSortedAlbums ? this.albumsList.filteredSortedAlbums.length : 0;
-    const suffix = (count == 1) ? ' album' : ' albums';
-    this.$itemCount.text(count + suffix);
+
+    this.applyAllFilters();
   }
 
   updateHeaderSearchClearButtonVisibility() {
@@ -474,11 +482,11 @@ export default class LibraryView extends Subview {
       // Check for range with dash: "1970-1980", "1990-", "-2000"
       if (token.includes('-')) {
         const parts = token.split('-');
-        
+
         if (parts.length === 2) {
           const startYear = parts[0] ? AppUtil.getValidYear(parts[0]) : null;
           const endYear = parts[1] ? AppUtil.getValidYear(parts[1]) : null;
-          
+
           // "1970-1980" - both years specified
           if (startYear && endYear && endYear >= startYear) {
             result.push([startYear, endYear]);
@@ -513,7 +521,7 @@ export default class LibraryView extends Subview {
     if (!yearArray || yearArray.length === 0) {
       return false;
     }
-    
+
     const year = AppUtil.getValidYear(albumYear);
     if (!year) {
       return false;
@@ -545,33 +553,33 @@ export default class LibraryView extends Subview {
     const artist = album['@_artist'] ? album['@_artist'].toLowerCase() : '';
     const albumName = album['@_album'] ? album['@_album'].toLowerCase() : '';
     const genre = album['@_genre'] ? album['@_genre'].toLowerCase() : '';
-    
-    if (artist.includes(searchValue) || 
-        albumName.includes(searchValue) || 
-        genre.includes(searchValue)) {
+
+    if (artist.includes(searchValue) ||
+      albumName.includes(searchValue) ||
+      genre.includes(searchValue)) {
       return true;
     }
-    
+
     // Check year with range support
     const yearArray = this.parseYearSearch(searchValue);
     const isYearSearch = yearArray.length > 0;
-    
+
     const albumYear = album['year'];
     if (isYearSearch && albumYear && this.isYearMatch(albumYear, yearArray)) {
       return true;
     }
-    
+
     // Also check raw year field for simple year searches
     const yearRaw = album['@_year'] ? album['@_year'].toLowerCase() : '';
     if (!isYearSearch && yearRaw && yearRaw.includes(searchValue)) {
       return true;
     }
-    
+
     // Check sample rate formats
     const rateHz = parseInt(album['@_rate']) || 0;
     const bits = parseInt(album['@_bits']) || 0;
     const isDsd = bits === 1;
-    
+
     if (rateHz > 0) {
       const rateKHz = rateHz / 1000;
       const sampleRateFormats = [
@@ -586,12 +594,12 @@ export default class LibraryView extends Subview {
       if (rateKHz === Math.floor(rateKHz)) {
         sampleRateFormats.push(String(Math.floor(rateKHz)));
       }
-      
+
       if (sampleRateFormats.some(fmt => fmt.includes(searchValue))) {
         return true;
       }
     }
-    
+
     // Check DSD formats
     if (isDsd && rateHz > 0) {
       const dsdRate = rateHz / 1000000; // Convert Hz to MHz for DSD
@@ -601,12 +609,12 @@ export default class LibraryView extends Subview {
         dsdFormats.push('dsd' + (dsdMultiple * 64));
         dsdFormats.push('dsd ' + (dsdMultiple * 64));
       }
-      
+
       if (dsdFormats.some(fmt => fmt.includes(searchValue))) {
         return true;
       }
     }
-    
+
     // Check track-level fields
     const tracks = AlbumUtil.getTracksOf(album);
     for (const track of tracks) {
@@ -615,7 +623,7 @@ export default class LibraryView extends Subview {
         return true;
       }
     }
-    
+
     return false;
   }
 }

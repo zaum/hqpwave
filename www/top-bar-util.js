@@ -14,7 +14,7 @@ class TopBarUtil {
 
   $subview;
   $header;
-  
+
   // Track state to prevent unnecessary operations
   isHeaderTaken = false;
   // Animation lock to prevent double animations
@@ -26,7 +26,7 @@ class TopBarUtil {
     this.$libraryView = $('#libraryView');
     this.$libraryHeader = this.$libraryView.find('.viewHeader');
     // Set initial padding to accommodate the visible header
-    this.$libraryView.css('padding-top', this.VIEW_HEADER_HEIGHT + 'px');
+    this.$libraryView.css('padding-top', '');
   }
 
   /**
@@ -37,18 +37,18 @@ class TopBarUtil {
     if (this.isHeaderTaken || this.isAnimating) {
       return;
     }
-    
+
     const $h = $subview.find('.viewHeader');
     if ($h.length == 0) {
       return;
     }
     this.$subview = $subview;
     this.$header = $h;
-    
+
     this.isHeaderTaken = true;
     this.isAnimating = true;
 
-    TopBar.hideButtons();
+    // TopBar.hideButtons(); // Disabled - keep top bar visible
 
     TopBar.$el.append(this.$header);
     $subview.css('padding-top', '8px');
@@ -58,9 +58,9 @@ class TopBarUtil {
       this.isAnimating = false;
     } else {
       ViewUtil.animateCss(this.$header,
-          () => { this.$header.css('top', (this.VIEW_HEADER_HEIGHT - 8)) },
-          () => { this.$header.css('top', 0)},
-          () => { this.isAnimating = false; });
+        () => { this.$header.css('top', (this.VIEW_HEADER_HEIGHT - 8)) },
+        () => { this.$header.css('top', 0) },
+        () => { this.isAnimating = false; });
     }
   }
 
@@ -72,11 +72,11 @@ class TopBarUtil {
     if (!this.isHeaderTaken || this.isAnimating) {
       return;
     }
-    
+
     if (!this.$header) {
       return;
     }
-    
+
     this.isHeaderTaken = false;
     this.isAnimating = true;
 
@@ -90,9 +90,9 @@ class TopBarUtil {
       this.isAnimating = false;
     } else {
       ViewUtil.animateCss(this.$header,
-          () => { this.$header.css('top', -(this.VIEW_HEADER_HEIGHT - 16)) },
-          () => { this.$header.css('top', 0)},
-          () => { this.isAnimating = false; });
+        () => { this.$header.css('top', -(this.VIEW_HEADER_HEIGHT - 16)) },
+        () => { this.$header.css('top', 0) },
+        () => { this.isAnimating = false; });
     }
 
     this.$subview = null;
@@ -106,7 +106,7 @@ class TopBarUtil {
    */
   updateFor($subview, now) {
     const y = $subview[0].scrollTop;
-    
+
     if (!this.$subview) {
       if (y > this.THRESHOLD) {
         this.takeSubviewHeader($subview, now);

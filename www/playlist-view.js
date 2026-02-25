@@ -18,7 +18,6 @@ import ViewUtil from './view-util.js';
 export default class PlaylistView extends Subview {
 
   $repeatButton;
-  $historyButton;
   $loadButton;
   $saveButton;
   savePanel;
@@ -36,7 +35,6 @@ export default class PlaylistView extends Subview {
 
   	this.$list = this.$el.find("#playlistList");
     this.$repeatButton = this.$el.find('#playlistRepeatButton');
-    this.$historyButton = this.$el.find('#playlistHistoryButton');
     this.$loadButton = this.$el.find('#playlistLoadButton');
     this.$saveButton = this.$el.find('#playlistSaveButton');
 
@@ -45,9 +43,6 @@ export default class PlaylistView extends Subview {
 
   	this.$el.find("#playlistCloseButton").on("click tap", () => $(document).trigger('playlist-close-button'));
 		this.$el.find("#playlistClearButton").on("click tap", this.onClearButton);
-
-    this.$historyButton.addClass('isDisabled');
-    this.$historyButton.on("click tap", () => $(document).trigger('playlist-history-button'));
 
     this.$loadButton.on("click tap", () => $(document).trigger('playlist-load-button'));
     this.$saveButton.on("click tap", this.onSaveButton);
@@ -390,7 +385,6 @@ export default class PlaylistView extends Subview {
   };
 
   onModelLibraryUpdated() {
-    this.$historyButton.removeClass('isDisabled');
     this.populate();
   }
 

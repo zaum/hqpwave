@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
@@ -21,6 +22,7 @@
     });
   </script>
 </head>
+
 <body>
   <div id="page">
     <div id="debug"></div>
@@ -32,12 +34,14 @@
         <div class="nav-pill active" data-view="library">Library</div>
         <div class="nav-pill" data-view="album">Album</div>
         <div class="nav-pill" data-view="playlist">Playlist</div>
+        <div class="nav-pill" data-view="history">History</div>
         <div class="nav-pill" data-view="timeline">Timeline</div>
         <div class="nav-pill" data-view="artist">Artist</div>
       </nav>
       <div class="search-wrap">
-        <div class="search-icon">⌕</div>
-        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…" id="globalSearchInput">
+        <div class="search-icon"></div>
+        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…"
+          id="globalSearchInput">
         <div class="search-clear" id="globalSearchClear">×</div>
       </div>
       <div class="topbar-right">
@@ -50,29 +54,31 @@
 
     <!-- Sidebar -->
     <aside id="sidebar">
-      <!-- Reset Filters -->
-      <div class="sidebar-reset" id="resetFilters" title="Reset all filters">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-          <path d="M3 3v5h5"/>
-        </svg>
-        Reset filters
-      </div>
-
-      <!-- Browse Section -->
+      <!-- Browse Section with Global Reset -->
       <div class="sidebar-section">
+        <!-- Global Reset Filters -->
+        <div class="sidebar-reset" id="resetFilters" title="Reset all filters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          Reset All
+        </div>
         <div class="sidebar-label-row">
           <div class="sidebar-label">Browse</div>
           <div class="sidebar-label-reset" id="resetBrowse" title="Reset browse filter">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
             </svg>
           </div>
         </div>
-        <div class="sidebar-item" data-filter="all-albums">All Albums <span class="sidebar-count" id="countAllAlbums">0</span></div>
-        <div class="sidebar-item" data-filter="favorite-albums">Favorite Albums <span class="sidebar-count" id="countFavoriteAlbums">0</span></div>
-        <div class="sidebar-item" data-filter="favorite-tracks">Favorite Tracks <span class="sidebar-count" id="countFavoriteTracks">0</span></div>
+        <div class="sidebar-item" data-filter="all-albums">All Albums <span class="sidebar-count"
+            id="countAllAlbums">0</span></div>
+        <div class="sidebar-item" data-filter="favorite-albums">Favorite Albums <span class="sidebar-count"
+            id="countFavoriteAlbums">0</span></div>
+        <div class="sidebar-item" data-filter="favorite-tracks">Favorite Tracks <span class="sidebar-count"
+            id="countFavoriteTracks">0</span></div>
       </div>
 
       <div class="sidebar-divider"></div>
@@ -83,8 +89,8 @@
           <div class="sidebar-label">Format</div>
           <div class="sidebar-label-reset" id="resetFormat" title="Reset format filter">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
             </svg>
           </div>
         </div>
@@ -96,8 +102,6 @@
           <div class="fchip" data-format="PCM96">96 kHz</div>
           <div class="fchip" data-format="PCM176">176 kHz</div>
           <div class="fchip" data-format="PCM192">192 kHz</div>
-          <div class="fchip" data-format="PCM352">352 kHz</div>
-          <div class="fchip" data-format="PCM384">384 kHz</div>
           <div class="fchip-section-label">DSD</div>
           <div class="fchip" data-format="DSD64">64×</div>
           <div class="fchip" data-format="DSD128">128×</div>
@@ -114,13 +118,78 @@
           <div class="sidebar-label">Genre</div>
           <div class="sidebar-label-reset" id="resetGenre" title="Reset genre filter">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
             </svg>
           </div>
         </div>
         <div class="genre-list" id="genreList">
           <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Period Section -->
+      <div class="sidebar-section">
+        <div class="sidebar-label-row">
+          <div class="sidebar-label">Period</div>
+          <div class="sidebar-label-reset" id="resetPeriod" title="Reset period filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </div>
+        </div>
+        <div class="period-list" id="periodList">
+          <div class="period-item" data-start="500" data-end="1400">
+            <span class="period-name">Medieval</span>
+            <span class="period-years">500–1400</span>
+          </div>
+          <div class="period-item" data-start="1400" data-end="1600">
+            <span class="period-name">Renaissance</span>
+            <span class="period-years">1400–1600</span>
+          </div>
+          <div class="period-item" data-start="1600" data-end="1750">
+            <span class="period-name">Baroque</span>
+            <span class="period-years">1600–1750</span>
+          </div>
+          <div class="period-item" data-start="1750" data-end="1820">
+            <span class="period-name">Classical</span>
+            <span class="period-years">1750–1820</span>
+          </div>
+          <div class="period-item" data-start="1820" data-end="1900">
+            <span class="period-name">Romantic</span>
+            <span class="period-years">1820–1900</span>
+          </div>
+          <div class="period-item" data-start="1900" data-end="1949">
+            <span class="period-name">Early 20th C.</span>
+            <span class="period-years">1900–1949</span>
+          </div>
+          <div class="period-item" data-start="1950" data-end="1959">
+            <span class="period-name">50s</span>
+            <span class="period-years">1950–1959</span>
+          </div>
+          <div class="period-item" data-start="1960" data-end="1969">
+            <span class="period-name">60s</span>
+            <span class="period-years">1960–1969</span>
+          </div>
+          <div class="period-item" data-start="1970" data-end="1979">
+            <span class="period-name">70s</span>
+            <span class="period-years">1970–1979</span>
+          </div>
+          <div class="period-item" data-start="1980" data-end="1989">
+            <span class="period-name">80s</span>
+            <span class="period-years">1980–1989</span>
+          </div>
+          <div class="period-item" data-start="1990" data-end="1999">
+            <span class="period-name">90s</span>
+            <span class="period-years">1990–1999</span>
+          </div>
+          <div class="period-item" data-start="2000" data-end="2100">
+            <span class="period-name">2000s–</span>
+            <span class="period-years">2000–</span>
+          </div>
         </div>
       </div>
     </aside>
@@ -140,7 +209,8 @@
           <div id="librarySearchPanel">
             <div id="searchTabContent">
               <div class="inputLine">
-                <input id="librarySearchInput" name="librarySearchInput" type="text" required minlength="1" maxlength="64">
+                <input id="librarySearchInput" name="librarySearchInput" type="text" required minlength="1"
+                  maxlength="64">
                 <span id="librarySearchClear" class="searchClearButton" style="display: none;">×</span>
                 <div id="librarySearchOkButton" class="textButton">OK</div>
               </div>
@@ -165,10 +235,6 @@
 
       <!-- Album View -->
       <section id="albumView" class="subview" tabindex="0">
-        <div class="viewHeader">
-          <span class="title">Album</span>
-          <div id="albumCloseButton" class="iconButton closeButton"></div>
-        </div>
 
         <div id="albumViewInfo">
           <div class="albumViewPictureOuter">
@@ -202,17 +268,13 @@
       <!-- Playlist View -->
       <section id="playlistView" class="subview" tabindex="0">
         <div id="playlistMainView" class="subview">
-          <div class="viewHeader">
-            <span class="title">Playlist</span>
-            <div id="playlistRepeatButton" class="textButton">Repeat none</div>
-            <div id="playlistCloseButton" class="iconButton closeButton"></div>
-          </div>
 
           <div class="playlistButtons">
             <div id="playlistClearButton" class="textButton">Clear</div>
             <div id="playlistLoadButton" class="textButton">Load</div>
             <div id="playlistSaveButton" class="textButton">Save</div>
-            <div id="playlistHistoryButton" class="textButton">History</div>
+            <div id="playlistRepeatButton" class="textButton">Repeat none</div>
+
           </div>
 
           <div id="playlistSaver">
@@ -221,7 +283,8 @@
               <div id="playlistSaveCloseButton" class="iconButton closeButton"></div>
               <label for="playlistSaveInput">Save playlist:</label>
               <div class="inputLine">
-                <input id="playlistSaveInput" name="playlistSaveInput" type="text" required minlength="1" maxlength="64">
+                <input id="playlistSaveInput" name="playlistSaveInput" type="text" required minlength="1"
+                  maxlength="64">
                 <div id="playlistSaveOkayButton" class="textButton">OK</div>
               </div>
             </div>
@@ -232,19 +295,10 @@
         </div>
 
         <div id="historyView" class="subview">
-          <div class="viewHeader">
-            <span class="title">History</span>
-            <span id="historyCount" class="headerCountText"></span>
-            <div id="historyCloseButton" class="iconButton closeButton"></div>
-          </div>
           <div id="historyList"></div>
         </div>
 
         <div id="loadPlaylistView" class="subview">
-          <div id="loadHeader" class="viewHeader">
-            <span class="title">Load Playlist</span>
-            <div id="loadCloseButton" class="iconButton closeButton"></div>
-          </div>
           <div class="loadListCustomSubheader">Custom Playlists</div>
           <div id="loadCustomList"></div>
           <div class="loadListHqpSubheader">HQPlayer Library Playlists</div>
@@ -254,69 +308,80 @@
 
       <!-- HQP Settings View -->
       <section id="hqpSettingsView" class="subview">
-        <div class="viewHeader">
-          <span class="title">Upscaler Settings</span>
-          <div id="hqpSettingsCloseButton" class="iconButton closeButton"></div>
-        </div>
+        <div class="settings-content">
 
-        <div class="hqpSettingsInner">
-          <div id="hqpFiltersView">
-            <div id="outputBitrate">Current output bitrate: <span id="outputBitrateValue"></span></div>
-
-            <div class="settingsSelectOuter">
-              <label for="modeSelect">Mode:</label>
-              <select name="modeSelect" id="modeSelect"></select>
-            </div>
-
-            <div class="settingsSelectOuter">
-              <label for="filterSelect">Filter:</label>
-              <select name="filterSelect" id="filterSelect"></select>
-            </div>
-
-            <div class="settingsSelectOuter">
-              <label for="shaperSelect">Shaper:</label>
-              <select name="shaperSelect" id="shaperSelect"></select>
-            </div>
-
-            <div id="hqpFiltersInfo">* Changing upscaler settings will stop playback.</div>
-
-            <div class="presetsDivider"></div>
-
-            <div id="hqpPresetsView">
-              <div class="savePresets">
-                <div class="presetLabel">Save to preset</div>
-                <div class="savePresetLine">
-                  <span id="savePreset1" class="textButton">1</span>
-                  <span id="savePreset2" class="textButton">2</span>
-                  <span id="savePreset3" class="textButton">3</span>
+          <div class="settings-section">
+            <div class="settings-label">Filter Settings</div>
+            <div class="settings-card" id="hqpFiltersView">
+              <div class="settings-card-row">
+                <div class="row-label">Current output bitrate</div>
+                <div class="row-right">
+                  <span id="outputBitrateValue"
+                    style="color: var(--accent); font-family: 'Geist Mono', monospace;"></span>
                 </div>
               </div>
-              <div class="loadPresets">
-                <div class="presetLabel">Apply preset</div>
-                <div class="loadPresetLine">
-                  <div id="loadPreset1" class="textButton loadPresetButton">1</div>
-                  <div id="loadPreset1Text" class="loadPresetLabel"></div>
+              <div class="settings-card-row">
+                <div class="row-label">Mode</div>
+                <div class="row-right">
+                  <div class="settingsSelectOuter" style="margin-bottom:0;"><select name="modeSelect"
+                      id="modeSelect"></select></div>
                 </div>
-                <div class="loadPresetLine">
-                  <div id="loadPreset2" class="textButton loadPresetButton">2</div>
-                  <div id="loadPreset2Text" class="loadPresetLabel"></div>
+              </div>
+              <div class="settings-card-row">
+                <div class="row-label">Filter</div>
+                <div class="row-right">
+                  <div class="settingsSelectOuter" style="margin-bottom:0;"><select name="filterSelect"
+                      id="filterSelect"></select></div>
                 </div>
-                <div class="loadPresetLine">
-                  <div id="loadPreset3" class="textButton loadPresetButton">3</div>
-                  <div id="loadPreset3Text" class="loadPresetLabel"></div>
+              </div>
+              <div class="settings-card-row">
+                <div class="row-label">Shaper</div>
+                <div class="row-right">
+                  <div class="settingsSelectOuter" style="margin-bottom:0;"><select name="shaperSelect"
+                      id="shaperSelect"></select></div>
+                </div>
+              </div>
+              <div class="settings-card-row">
+                <div class="row-desc" id="hqpFiltersInfo" style="margin-top:0;">* Changing upscaler settings will stop
+                  playback.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-label">Presets</div>
+            <div class="settings-card">
+              <div class="settings-card-row" id="hqpPresetsView" style="align-items: flex-start;">
+                <div class="savePresets">
+                  <div class="presetLabel">Save to preset</div>
+                  <div class="savePresetLine">
+                    <span id="savePreset1" class="textButton">1</span>
+                    <span id="savePreset2" class="textButton">2</span>
+                    <span id="savePreset3" class="textButton">3</span>
+                  </div>
+                </div>
+                <div class="loadPresets">
+                  <div class="presetLabel">Apply preset</div>
+                  <div class="loadPresetLine">
+                    <div id="loadPreset1" class="textButton loadPresetButton">1</div>
+                    <div id="loadPreset1Text" class="loadPresetLabel"></div>
+                  </div>
+                  <div class="loadPresetLine">
+                    <div id="loadPreset2" class="textButton loadPresetButton">2</div>
+                    <div id="loadPreset2Text" class="loadPresetLabel"></div>
+                  </div>
+                  <div class="loadPresetLine">
+                    <div id="loadPreset3" class="textButton loadPresetButton">3</div>
+                    <div id="loadPreset3Text" class="loadPresetLabel"></div>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="experimentalDivider"></div>
-
-            <div id="settingsExperimentalLine">
-              <div class="iconButton expandIcon"></div>
-              <span class="text">Experimental</span>
-            </div>
-
-            <div id="hqpPresetRulesView">
-              <div class="settingsSubheading">Preset rules</div>
+          <div class="settings-section">
+            <div class="settings-label">Experimental</div>
+            <div class="settings-card" id="hqpPresetRulesView" style="border: none; background: transparent;">
               <div class="hqpPresetRulesInner">
                 <div id="ruleThreshold" class="ruleItem">
                   <div id="ruleThresholdCheckbox" class="checkbox ruleCheckbox" data-settings-value="threshold"></div>
@@ -379,20 +444,14 @@
               </div>
             </div>
           </div>
+
         </div>
       </section>
 
       <!-- Settings View -->
       <section id="settingsView" class="subview">
-        <div class="viewHeader">
-          <div class="title">Settings</div>
-          <div id="settingsVersion" class="title"></div>
-          <div id="settingsCloseButton" class="iconButton closeButton"></div>
-        </div>
 
         <div class="settings-content">
-          <a id="settingsProjectAnchor" class="colorTextLess"></a>
-
           <div class="settings-section">
             <div class="settings-label">Appearance</div>
             <div class="settings-card">
@@ -414,7 +473,35 @@
                   <div class="row-desc">Accent color used throughout the interface</div>
                 </div>
                 <div class="row-right">
-                  <input type="color" id="highlightColorPicker" value="#e8c88a" class="colorPicker">
+                  <div class="color-presets" id="highlightColorPresets">
+                    <div class="color-preset" data-color="#e8c88a" style="background: #e8c88a;" title="Gold"></div>
+                    <div class="color-preset" data-color="#4ade80" style="background: #4ade80;" title="Green"></div>
+                    <div class="color-preset" data-color="#f97316" style="background: #f97316;" title="Orange"></div>
+                    <div class="color-preset" data-color="#60a5fa" style="background: #60a5fa;" title="Soft Blue"></div>
+                    <div class="color-preset" data-color="#c4b5fd" style="background: #c4b5fd;" title="Soft Purple">
+                    </div>
+                    <div class="color-preset custom" id="highlightColorCustom" title="Custom">
+                      <input type="color" id="highlightColorPicker" value="#e8c88a" class="colorPickerInput">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Player Background</div>
+                  <div class="row-desc">Background color for the player bar</div>
+                </div>
+                <div class="row-right">
+                  <div class="color-presets" id="playerBackgroundColorPresets">
+                    <div class="color-preset" data-color="#111112" style="background: #111112;" title="Dark"></div>
+                    <div class="color-preset" data-color="#0f172a" style="background: #0f172a;" title="Navy"></div>
+                    <div class="color-preset" data-color="#1e1b4b" style="background: #1e1b4b;" title="Indigo"></div>
+                    <div class="color-preset" data-color="#14532d" style="background: #14532d;" title="Forest"></div>
+                    <div class="color-preset" data-color="#451a03" style="background: #451a03;" title="Sepia"></div>
+                    <div class="color-preset custom" id="playerBackgroundColorCustom" title="Custom">
+                      <input type="color" id="playerBackgroundColorPicker" value="#111112" class="colorPickerInput">
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -452,18 +539,25 @@
             <div class="settings-label">Keyboard Shortcuts</div>
             <div class="settings-card">
               <div class="hotkeys-grid">
-                <div class="hotkey-row"><span class="key-badge">P</span><span class="key-action">Play / Pause</span></div>
+                <div class="hotkey-row"><span class="key-badge">P</span><span class="key-action">Play / Pause</span>
+                </div>
                 <div class="hotkey-row"><span class="key-badge">S</span><span class="key-action">Stop</span></div>
-                <div class="hotkey-row"><span class="key-badge">J</span><span class="key-action">Previous track</span></div>
+                <div class="hotkey-row"><span class="key-badge">J</span><span class="key-action">Previous track</span>
+                </div>
                 <div class="hotkey-row"><span class="key-badge">K</span><span class="key-action">Next track</span></div>
                 <div class="hotkey-row"><span class="key-badge">,</span><span class="key-action">Seek −10s</span></div>
                 <div class="hotkey-row"><span class="key-badge">.</span><span class="key-action">Seek +10s</span></div>
                 <div class="hotkey-row"><span class="key-badge">+</span><span class="key-action">Volume up</span></div>
-                <div class="hotkey-row"><span class="key-badge">−</span><span class="key-action">Volume down</span></div>
-                <div class="hotkey-row"><span class="key-badge">Q</span><span class="key-action">Show playlist</span></div>
-                <div class="hotkey-row"><span class="key-badge">F</span><span class="key-action">Find / Search</span></div>
-                <div class="hotkey-row"><span class="key-badge">U</span><span class="key-action">Upscaler settings</span></div>
-                <div class="hotkey-row"><span class="key-badge">ESC</span><span class="key-action">Close modal</span></div>
+                <div class="hotkey-row"><span class="key-badge">−</span><span class="key-action">Volume down</span>
+                </div>
+                <div class="hotkey-row"><span class="key-badge">Q</span><span class="key-action">Show playlist</span>
+                </div>
+                <div class="hotkey-row"><span class="key-badge">F</span><span class="key-action">Find / Search</span>
+                </div>
+                <div class="hotkey-row"><span class="key-badge">U</span><span class="key-action">Upscaler
+                    settings</span></div>
+                <div class="hotkey-row"><span class="key-badge">ESC</span><span class="key-action">Close modal</span>
+                </div>
               </div>
             </div>
           </div>
@@ -479,8 +573,9 @@
           </div>
 
           <div class="settings-footer">
-            <span class="footer-brand">HQPlayer Web Viewer</span>
-            <a href="#" class="footer-project" id="footerProject">github / project ↗</a>
+            <span class="footer-brand">HQPlayer Web Viewer <span id="footerVersion"></span></span>
+            <a href="https://github.com/zaum/hqpwave" class="footer-project" id="footerProject" target="_blank">github /
+              zaum/hqpwave ↗</a>
           </div>
         </div>
       </section>
@@ -589,4 +684,5 @@
     </div>
   </div>
 </body>
+
 </html>

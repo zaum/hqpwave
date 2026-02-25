@@ -504,3 +504,40 @@
 #loadHqpList {
   padding: 0;
 }
+
+/* Center the playlist content */
+#playlistMainView {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 48px 80px;
+}
+
+#playlistList {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* History View - Centered */
+#historyView .viewHeader {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 48px;
+}
+
+#historyList {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Load Playlist View - Centered */
+#loadPlaylistView .viewHeader {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 48px;
+}
+
+#loadCustomList,
+#loadHqpList {
+  max-width: 800px;
+  margin: 0 auto;
+}

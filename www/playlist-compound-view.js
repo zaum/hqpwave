@@ -39,7 +39,6 @@ export default class PlaylistCompoundView extends Subview {
   		() => this.$el.css('transform', 'translateY(0)'),
       () => {
         this.$el.removeClass('animIn');
-        $(document).trigger('enable-user-input');
       });
 
     ViewUtil.setVisible(this.historyView.$el, false);
@@ -47,6 +46,9 @@ export default class PlaylistCompoundView extends Subview {
     ViewUtil.setVisible(this.mainView.$el, true);
     ViewUtil.setCssSync(this.mainView.$el, () => this.mainView.$el.css('left', '0%'));
     this.mainView.onShow();
+    
+    // Enable user input immediately, not just after animation
+    $(document).trigger('enable-user-input');
   }
 
   hide() {

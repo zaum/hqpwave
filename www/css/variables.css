@@ -1,6 +1,7 @@
 :root {
   /* Dark theme (default) */
   --bg: #111112;
+  --player-bg: #111112;
   --surface: #171718;
   --surface2: #1d1d1f;
   --raised: #222224;

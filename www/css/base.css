@@ -1,13 +1,15 @@
 /* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Geist:wght@200;300;400;500&family=Geist+Mono:wght@300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Doto:wght@500&display=swap');
 
 /* Local Fonts */
+
 @font-face {
   font-family: "Noto Sans TC";
   font-style: normal;
   font-weight: 400;
   src: url("../fonts/noto-sans-tc-v11-latin-regular.woff2") format("woff2"),
-       url("../fonts/noto-sans-tc-v11-latin-regular.woff") format("woff");
+    url("../fonts/noto-sans-tc-v11-latin-regular.woff") format("woff");
 }
 
 @font-face {
@@ -15,7 +17,7 @@
   font-style: normal;
   font-weight: 700;
   src: url("../fonts/noto-sans-tc-v11-latin-700.woff2") format("woff2"),
-       url("../fonts/noto-sans-tc-v11-latin-700.woff") format("woff");
+    url("../fonts/noto-sans-tc-v11-latin-700.woff") format("woff");
 }
 
 @font-face {
@@ -23,7 +25,7 @@
   font-style: normal;
   font-weight: 900;
   src: url("../fonts/noto-sans-tc-v11-latin-900.woff2") format("woff2"),
-       url("../fonts/noto-sans-tc-v11-latin-900.woff") format("woff");
+    url("../fonts/noto-sans-tc-v11-latin-900.woff") format("woff");
 }
 
 @font-face {
@@ -31,7 +33,7 @@
   font-style: normal;
   font-weight: 300;
   src: url("../fonts/noto-serif-sc-v8-latin-300.woff2") format("woff2"),
-       url("../fonts/noto-serif-sc-v8-latin-300.woff") format("woff");
+    url("../fonts/noto-serif-sc-v8-latin-300.woff") format("woff");
 }
 
 @font-face {
@@ -39,7 +41,7 @@
   font-style: normal;
   font-weight: 400;
   src: url("../fonts/noto-serif-sc-v8-latin-regular.woff2") format("woff2"),
-       url("../fonts/noto-serif-sc-v8-latin-regular.woff") format("woff");
+    url("../fonts/noto-serif-sc-v8-latin-regular.woff") format("woff");
 }
 
 /* Reset & Base */
@@ -98,6 +100,12 @@ ul {
   list-style: none;
   margin-left: 0;
   padding-left: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 li:before {
@@ -254,16 +262,35 @@ label {
 
 /* Animations */
 @keyframes thumbPulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes spinner {
-  0% { rotate: 0deg; }
-  33% { rotate: 120deg; }
-  66% { rotate: 240deg; }
-  100% { rotate: 360deg; }
+  0% {
+    rotate: 0deg;
+  }
+
+  33% {
+    rotate: 120deg;
+  }
+
+  66% {
+    rotate: 240deg;
+  }
+
+  100% {
+    rotate: 360deg;
+  }
 }
 
 @keyframes fluctuate {
@@ -271,6 +298,7 @@ label {
     height: 4px;
     y: 16px;
   }
+
   to {
     height: 16px;
     y: 4px;
@@ -282,6 +310,7 @@ label {
     opacity: 0;
     transform: translateY(8px) scale(0.97);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -289,8 +318,13 @@ label {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -298,6 +332,7 @@ label {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
