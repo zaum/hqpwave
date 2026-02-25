@@ -211,12 +211,6 @@
   color: var(--col-text-least);
 }
 
-.playlistDropPlaceholder {
-  height: 0;
-  border-top: 2px solid var(--col-accent);
-  margin: 0 0 0 48px;
-}
-
 .isPaused #playlistList .trackItem.selected:before {
   opacity: 0.5;
 }
@@ -234,30 +228,8 @@
   transition: left 400ms ease-in-out;
 }
 
-#historyHeader {
-  margin-bottom: 8px;
-}
-
 #historyCloseButton {
   margin-left: auto;
-}
-
-.historyItem {
-  cursor: default;
-}
-
-.historyItem:hover {
-  background-color: var(--col-listitem-less);
-}
-
-.historyItem .left {
-  min-width: 18px;
-  text-align: right;
-  color: var(--col-text-least);
-}
-
-.historyItem .right {
-  margin-left: 16px;
 }
 
 #historyList .deleteButton,
@@ -265,17 +237,8 @@
   display: none;
 }
 
-.historyItem .moreButton.isDisabled {
-  opacity: 0.4;
-}
-
 #historyList {
   margin-top: 24px;
-}
-
-.historyItemAgo {
-  color: var(--col-text-less);
-  font-size: 14px;
 }
 
 /* Track Item Meta */
@@ -593,15 +556,6 @@
   background-image: url("./../img/icons/featured_play_list_white_24dp.svg");
 }
 
-.loadItem .numTracks {
-  display: inline-block;
-  margin-left: 6px;
-  font-size: 14px;
-  color: var(--col-text-less);
-  line-height: 36px;
-  padding-top: 2px;
-}
-
 .loadItem .moreButton {
   margin-left: auto;
 }
@@ -623,14 +577,6 @@
 .loadFyiItem {
   font-size: 14px;
   color: var(--col-text-less);
-}
-
-#trackListItemContextAlbum {
-  border-top: 1px solid var(--col-listitem);
-}
-
-#loadContextAlbum {
-  border-top: 1px solid var(--col-listitem);
 }
 
 .playHisNonItem {

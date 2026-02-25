@@ -203,7 +203,7 @@ select option {
   font-weight: bold;
 }
 
-.settingsSelectOuter select[name=modeSelect] > option {
+.settingsSelectOuter select[name=modeSelect]>option {
   font-weight: normal;
 }
 
@@ -304,18 +304,7 @@ select option {
   -o-user-select: text;
 }
 
-.presetsInfo {
-  margin-top: 8px;
-  margin-left: 75px;
-  font-size: 14px;
-  color: var(--col-text-least);
-}
 
-@media (max-width: 480px) {
-  .presetsInfo {
-    margin-left: 0;
-  }
-}
 
 /* Preset Rules */
 #hqpPresetRulesView {

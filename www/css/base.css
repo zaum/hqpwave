@@ -115,22 +115,7 @@ label {
   color: var(--col-text-less);
 }
 
-.fontSizeSmaller {
-  font-size: 14px;
-}
 
-@media (max-width: 480px) {
-  .fontSizeSmaller {
-    font-size: 12px;
-  }
-}
-
-.lowKeyCaption {
-  font-size: 14px;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: var(--col-text-least);
-}
 
 /* Subview Base */
 .subview {
