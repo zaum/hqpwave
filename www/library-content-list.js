@@ -244,12 +244,11 @@ export default class LibraryContentList {
                    </svg>
                  </div>
                </div>`;
-    s += `<div class="libraryItemText1">${artist}</div>`;
-    s += `<div class="libraryItemText2">${albumText}</div>`;
-    if (bits) {
-      s += `<div class="libraryItemBits">${bits}</div>`;
-    }
-    s += `<div class="libraryItemFavorite"></div>`;
+    s += `<div class="libraryItemTexts">
+                  <div class="libraryItemFavorite"></div>
+                  <div class="libraryItemText1">${artist}</div>
+                  <div class="libraryItemText2">${albumText}</div>
+                </div>`;
     s += `</div>`;
     const $item = $(s);
 

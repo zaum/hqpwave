@@ -1,5 +1,5 @@
-import Values from'./values.js';
-import Util from'./util.js';
+import Values from './values.js';
+import Util from './util.js';
 import DataUtil from './data-util.js';
 import Model from './model.js';
 import ViewUtil from './view-util.js'
@@ -60,7 +60,7 @@ export default class AlbumUtil {
     }
     ViewUtil.setDisplayed($holder, 'flex');
     for (const genre of album['genres']) {
-      const s = `<span class="genreButton" data-value="${genre}">${genre}</span>`;
+      const s = `<span class="genre-tag" data-value="${genre}">${genre}</span>`;
       const $button = $(s);
       $button.on('click tap', AlbumUtil.onGenreButtonClick);
       $holder.append($button);
@@ -96,7 +96,7 @@ export default class AlbumUtil {
     if (!(rate > 0) || !(bits > 0)) {
       return '';
     }
-    return `${Math.floor(rate/1000)}/${bits}`;
+    return `${Math.floor(rate / 1000)}/${bits}`;
   }
 
   /** Returns album total duration display text, or empty string if fail. */

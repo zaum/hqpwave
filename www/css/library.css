@@ -484,11 +484,11 @@
 /* Play Button Overlay */
 .libraryItemPlayBtn {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.9);
-  width: 44px;
-  height: 44px;
+  top: 10px;
+  left: 10px;
+  transform: scale(0.9);
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: var(--accent);
   color: #111;
@@ -511,26 +511,31 @@
 
 .libraryItem:hover .libraryItemPlayBtn {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: scale(1);
 }
 
 .libraryItemPlayBtn:hover {
-  transform: translate(-50%, -50%) scale(1.1) !important;
+  transform: scale(1.1) !important;
   background: var(--accent-hover, var(--accent));
 }
 
 /* Favorite Dot */
 .fav-dot,
 .libraryItemFavorite {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font-size: 14px;
-  opacity: 0;
-  transition: opacity 0.15s;
-  color: var(--accent);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
+  display: none;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  --favorite-color: var(--accent);
+  background-color: var(--favorite-color);
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>');
+  -webkit-mask-size: 18px 18px;
+  mask-size: 18px 18px;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .album-card:hover .fav-dot,
@@ -540,25 +545,8 @@
   opacity: 1;
 }
 
-.libraryItemFavorite {
-  --favorite-color: var(--accent);
-  display: none;
-  width: 20px;
-  height: 20px;
-  background-color: var(--favorite-color);
-  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>');
-  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>');
-  -webkit-mask-size: 20px 20px;
-  mask-size: 20px 20px;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-}
-
 .isMetaEnabled .libraryItem.isFavorite .libraryItemFavorite {
   display: block;
-  opacity: 1;
 }
 
 /* Format Pill */
@@ -581,10 +569,10 @@
 }
 
 .libraryItemBits {
-  right: 8px;
+  right: 48px;
   left: auto;
   bottom: auto;
-  top: 8px;
+  top: 10px;
 }
 
 .album-card:hover .format-pill,
@@ -594,9 +582,27 @@
 
 /* Album Info */
 .album-info,
-.libraryItemText1,
-.libraryItemText2 {
+.libraryItemTexts {
   padding: 10px 2px 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "fav text1"
+    "fav text2";
+  column-gap: 8px;
+  align-items: center;
+}
+
+.libraryItemFavorite {
+  grid-area: fav;
+}
+
+.libraryItemText1 {
+  grid-area: text1;
+}
+
+.libraryItemText2 {
+  grid-area: text2;
 }
 
 .libraryItemText1 {

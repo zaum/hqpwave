@@ -283,21 +283,23 @@
 
 #albumViewGenreButtons .genre-tag,
 .tag {
-  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 9.5px;
   font-weight: 300;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border: 1px solid var(--border-md);
-  border-radius: 20px;
+  border-radius: 4px;
   color: var(--text-3);
   cursor: pointer;
   transition: all 0.15s;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 #albumViewGenreButtons .genre-tag:hover,
 .tag:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--border-hi);
+  color: var(--text-2);
 }
 
 #albumViewPath {
@@ -329,6 +331,23 @@
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconPlay {
+  width: 18px;
+  height: 18px;
+  background-color: currentColor;
+  -webkit-mask-image: url("./../img/icons/play_arrow_white_24dp.svg");
+  mask-image: url("./../img/icons/play_arrow_white_24dp.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 #albumPlayNowButton:hover {
