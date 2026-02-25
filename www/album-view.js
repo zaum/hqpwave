@@ -58,7 +58,7 @@ export default class AlbumView extends Subview {
     this.$picture.on('click tap', () => $(document).trigger('album-picture-click', this.$picture));
   }
 
-  show(album, $libraryItem = null) {
+show(album, $libraryItem = null) {
 
     cl('album', album)
 
@@ -71,80 +71,38 @@ export default class AlbumView extends Subview {
 
     super.show();
 
+    // Add scroll handler to keep cover art visible
+    this.$el.on('scroll', this.onScroll);
+
     $(document).on('model-status-updated', this.updateHighlightedTrack);
     $(document).on('new-track', this.onNewTrack);
     $(document).on('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
 
     if (this.$libraryItemImage) {
-      this.animateInOverlay(this.onShowComplete);
-      this.animateInThis(); // must come second!
+      this.onShowComplete();
     } else {
-      this.animateInThis(true);
+      this.onShowComplete();
     }
-  }
-
-  animateInThis(isStandalone = false) {
-
-    if (isStandalone) {
-      ViewUtil.setVisible(this.$picture, '');
-      ViewUtil.setVisible(this.$pictureBlur, '');
-    } else {
-      ViewUtil.setVisible(this.$picture, false);
-      ViewUtil.setVisible(this.$pictureBlur, false);
-      // Fade in the picture holder (looks better)
-      ViewUtil.animateCss(this.$pictureHolder,
-        () => this.$pictureHolder.css('opacity', 0),
-        () => this.$pictureHolder.css('opacity', 1));
-    }
-
-    this.$el.addClass('animIn');
-
-    // Fade in + slide up album view
-    ViewUtil.animateCss(this.$el,
-      () => {
-        this.$el.css('opacity', 0);
-        this.$el.css("transform", `translateY(${this.$el.height()}px)`);
-      },
-      () => {
-        this.$el.css('opacity', 1);
-        this.$el.css('transform', 'translateY(0)');
-      },
-      () => {
-        this.$el.removeClass('animIn');
-        if (isStandalone) {
-          this.onShowComplete();
-        }
-      });
-  }
-
-  animateInOverlay() {
-    // get overlay image's start and end rects
-    const rectStart = this.getLibraryItemImageRect();
-    ViewUtil.setCssSync(this.$el, () => this.$el.css('top', '0')); // bc view must be in its end-state to get rectEnd
-    const rectEnd = this.getAlbumViewImageRect();
-
-    ViewUtil.setVisible(this.$libraryItemImage, false);
-    ViewUtil.setDisplayed(this.$overlayImage, true);
-    this.$overlayImage.css('transform', 'translate(0,0) scale(1,1)');
-    this.$overlayImage.attr('src', this.$libraryItemImage.attr('src'));
-
-    ViewUtil.animateCss(this.$overlayImage,
-      () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...rectStart),
-      () => this.setTransformUsing(this.$overlayImage, rectStart, rectEnd),
-      () => {
-        ViewUtil.setVisible(this.$libraryItemImage, '');
-        ViewUtil.setVisible(this.$picture, '');
-        ViewUtil.setVisible(this.$pictureBlur, '');
-        this.onShowComplete();
-      });
   }
 
   onShowComplete = () => {
-    ViewUtil.setDisplayed(this.$overlayImage, false);
     $(document).trigger('enable-user-input');
   };
 
-  hide() {
+  onScroll = () => {
+    // Keep cover art visible when scrolling
+    const scrollTop = this.$el[0].scrollTop;
+    const heroHeight = this.$el.find('.album-hero').height();
+    const pictureHeight = this.$picture.height();
+
+    if (scrollTop < heroHeight - pictureHeight) {
+      this.$picture.css('transform', `translateY(${scrollTop}px)`);
+    } else {
+      this.$picture.css('transform', `translateY(${heroHeight - pictureHeight}px)`);
+    }
+  };
+
+hide() {
     this.contextMenu.hide();
     $(document).off('model-status-updated', this.updateHighlightedTrack);
     $(document).off('new-track', this.onNewTrack);
@@ -157,45 +115,6 @@ export default class AlbumView extends Subview {
       this.$pictureBlur.attr('src', '');
     });
 
-    if (this.$libraryItemImage) {
-      this.animateOutOverlay();
-    } else {
-      $(document).trigger('enable-user-input');
-    }
-  }
-
-  animateOutOverlay() {
-    // get overlay image's start and end rects
-    const rectStart = this.getAlbumViewImageRect();
-    const rectEnd = this.getLibraryItemImageRect();
-
-    const rectEndY = rectEnd[1];
-    const rectEndH = rectEnd[3];
-    const inBounds = (rectEndY >= 0 - rectEndH && rectEndY <= this.$el.height() + rectEndH);
-    if (!inBounds) {
-      // target is out of bounds; note too that y/h can be NaN in this case
-      $(document).trigger('enable-user-input');
-      return;
-    }
-
-    // animate overlay image
-    ViewUtil.setVisible(this.$picture, false);
-    ViewUtil.setVisible(this.$pictureBlur, false);
-    ViewUtil.setVisible(this.$libraryItemImage, false);
-    ViewUtil.setDisplayed(this.$overlayImage, true);
-    this.$overlayImage.css('transform', 'translate(0,0) scale(1,1)');
-
-    ViewUtil.animateCss(this.$overlayImage,
-      () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...rectStart),
-      () => this.setTransformUsing(this.$overlayImage, rectStart, rectEnd),
-      this.animateOutOverlayContinued);
-  }
-
-  animateOutOverlayContinued = () => {
-    ViewUtil.setDisplayed(this.$overlayImage, false);
-    ViewUtil.setVisible(this.$picture, '');
-    ViewUtil.setVisible(this.$pictureBlur, '');
-    ViewUtil.setVisible(this.$libraryItemImage, true);
     $(document).trigger('enable-user-input');
   };
 

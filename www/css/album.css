@@ -22,19 +22,24 @@
   display: flex;
   gap: 48px;
   align-items: flex-end;
-  animation: heroIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: heroIn 0.3s ease-out;
 }
 
 @keyframes heroIn {
   from {
-    opacity: 0;
-    transform: translateY(16px);
+    opacity: 1;
+    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+#albumView {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 @media (max-width: 768px) {
@@ -164,7 +169,7 @@
 
 .cover-favorite:hover {
   background: rgba(17, 17, 18, 0.9);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -393,13 +398,13 @@
 #albumList,
 .track-section {
   padding: 0 64px 60px;
-  animation: listIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+  animation: listIn 0.3s ease-out 0.1s both;
 }
 
 @keyframes listIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
   }
 
   to {
@@ -468,7 +473,7 @@
 
 .track-item:hover,
 .albumTrackItem:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .track-item.playing {
@@ -489,6 +494,19 @@
 
 .track-item:hover .track-play {
   display: flex;
+  animation: playButtonIn 0.2s ease-out;
+}
+
+@keyframes playButtonIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 768px) {
@@ -544,7 +562,7 @@
   width: 2.5px;
   background: var(--accent);
   border-radius: 1px;
-  animation: barAnim 0.8s ease-in-out infinite alternate;
+  animation: barAnim 0.4s ease-in-out infinite alternate;
 }
 
 .bar:nth-child(1) {
@@ -554,22 +572,22 @@
 
 .bar:nth-child(2) {
   height: 100%;
-  animation-delay: 0.15s;
+  animation-delay: 0.1s;
 }
 
 .bar:nth-child(3) {
   height: 40%;
-  animation-delay: 0.3s;
+  animation-delay: 0.2s;
 }
 
 .bar:nth-child(4) {
   height: 80%;
-  animation-delay: 0.1s;
+  animation-delay: 0s;
 }
 
 @keyframes barAnim {
   from {
-    transform: scaleY(0.4);
+    transform: scaleY(0.5);
   }
 
   to {
@@ -636,6 +654,19 @@
 
 .track-item:hover .track-more {
   opacity: 1;
+  animation: moreButtonIn 0.2s ease-out;
+}
+
+@keyframes moreButtonIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -653,7 +684,18 @@
 }
 
 .albumItem:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
+  animation: albumItemHover 0.2s ease-out;
+}
+
+@keyframes albumItemHover {
+  from {
+    background: rgba(255, 255, 255, 0.0);
+  }
+
+  to {
+    background: rgba(255, 255, 255, 0.03);
+  }
 }
 
 .albumItem.selected {
@@ -677,11 +719,12 @@
   justify-content: center;
   cursor: pointer;
   opacity: 0.3;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
 }
 
 .albumItem:hover .albumItemLeft .playButton {
   opacity: 1;
+  animation: playButtonIn 0.2s ease-out;
 }
 
 .albumItem:hover .albumItemLeft .indexText {
@@ -761,11 +804,24 @@
   width: 28px;
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity 0.12s;
+  transition: opacity 0.1s;
 }
 
 .albumItem:hover .albumItemContext {
   opacity: 1;
+  animation: contextButtonIn 0.2s ease-out;
+}
+
+@keyframes contextButtonIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Album Track Item specific */
