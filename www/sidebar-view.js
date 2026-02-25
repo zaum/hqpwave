@@ -147,6 +147,7 @@ class SidebarView {
   onModelLibraryUpdated() {
     this.updateCounts();
     this.populateGenreList();
+    this.updatePeriodCounts();
   }
 
   /**
@@ -260,6 +261,27 @@ class SidebarView {
 
       this.$genreList.append($item);
     }
+  }
+
+  /**
+   * Update counts for period items.
+   */
+  updatePeriodCounts() {
+    const albums = Model.library.albums || [];
+    const $periodItems = this.$periodList.find('.period-item');
+
+    $periodItems.each((i, el) => {
+      const $item = $(el);
+      const start = parseInt($item.data('start')) || 0;
+      const end = parseInt($item.data('end')) || 9999;
+
+      const count = albums.filter(album => {
+        const year = album.year;
+        return year >= start && year <= end;
+      }).length;
+
+      $item.find('.period-count').text(count);
+    });
   }
 
   /**

@@ -1,18 +1,18 @@
 import AlbumContextMenu from './album-context-menu.js';
 import AlbumUtil from './album-util.js'
-import App from'./app.js';
+import App from './app.js';
 import AppUtil from './app-util.js'
 import Commands from './commands.js';
 import DataUtil from './data-util.js';
 import MetaUtil from './meta-util.js'
 import Model from './model.js';
 import Service from './service.js';
-import Subview from'./subview.js';
+import Subview from './subview.js';
 import TopBar from './top-bar.js';
 import TopBarUtil from './top-bar-util.js';
 import TrackListItemUtil from './track-list-item-util.js';
-import Util from'./util.js';
-import Values from'./values.js';
+import Util from './util.js';
+import Values from './values.js';
 import ViewUtil from './view-util.js'
 
 /**
@@ -41,6 +41,7 @@ export default class AlbumView extends Subview {
     super($("#albumView"));
     this.$pictureHolder = this.$el.find('.albumViewPictureOuter');
     this.$picture = this.$el.find('#albumViewPicture');
+    this.$pictureBlur = this.$el.find('#albumViewPictureBlur');
     this.$albumFavoriteButton = this.$el.find('#albumFavoriteButton');
     this.$list = this.$el.find('#albumList');
     this.$overlayImage = $('#albumOverlayImage');
@@ -57,7 +58,7 @@ export default class AlbumView extends Subview {
     this.$picture.on('click tap', () => $(document).trigger('album-picture-click', this.$picture));
   }
 
-  show(album, $libraryItem=null) {
+  show(album, $libraryItem = null) {
 
     cl('album', album)
 
@@ -82,36 +83,38 @@ export default class AlbumView extends Subview {
     }
   }
 
-  animateInThis(isStandalone=false) {
+  animateInThis(isStandalone = false) {
 
     if (isStandalone) {
       ViewUtil.setVisible(this.$picture, '');
+      ViewUtil.setVisible(this.$pictureBlur, '');
     } else {
       ViewUtil.setVisible(this.$picture, false);
+      ViewUtil.setVisible(this.$pictureBlur, false);
       // Fade in the picture holder (looks better)
       ViewUtil.animateCss(this.$pictureHolder,
-          () => this.$pictureHolder.css('opacity', 0),
-          () => this.$pictureHolder.css('opacity', 1));
+        () => this.$pictureHolder.css('opacity', 0),
+        () => this.$pictureHolder.css('opacity', 1));
     }
 
     this.$el.addClass('animIn');
 
     // Fade in + slide up album view
     ViewUtil.animateCss(this.$el,
-        () => {
-          this.$el.css('opacity', 0);
-          this.$el.css("transform", `translateY(${this.$el.height()}px)`);
-        },
-        () => {
-          this.$el.css('opacity', 1);
-          this.$el.css('transform', 'translateY(0)');
-        },
-        () => {
-          this.$el.removeClass('animIn');
-          if (isStandalone) {
-            this.onShowComplete();
-          }
-        });
+      () => {
+        this.$el.css('opacity', 0);
+        this.$el.css("transform", `translateY(${this.$el.height()}px)`);
+      },
+      () => {
+        this.$el.css('opacity', 1);
+        this.$el.css('transform', 'translateY(0)');
+      },
+      () => {
+        this.$el.removeClass('animIn');
+        if (isStandalone) {
+          this.onShowComplete();
+        }
+      });
   }
 
   animateInOverlay() {
@@ -126,13 +129,14 @@ export default class AlbumView extends Subview {
     this.$overlayImage.attr('src', this.$libraryItemImage.attr('src'));
 
     ViewUtil.animateCss(this.$overlayImage,
-        () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...rectStart),
-        () => this.setTransformUsing(this.$overlayImage, rectStart, rectEnd),
-        () => {
-          ViewUtil.setVisible(this.$libraryItemImage, '');
-          ViewUtil.setVisible(this.$picture, '');
-          this.onShowComplete();
-        });
+      () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...rectStart),
+      () => this.setTransformUsing(this.$overlayImage, rectStart, rectEnd),
+      () => {
+        ViewUtil.setVisible(this.$libraryItemImage, '');
+        ViewUtil.setVisible(this.$picture, '');
+        ViewUtil.setVisible(this.$pictureBlur, '');
+        this.onShowComplete();
+      });
   }
 
   onShowComplete = () => {
@@ -150,6 +154,7 @@ export default class AlbumView extends Subview {
     super.hide(() => {
       // Prevent next show from displaying old image on any fail or delay
       this.$picture.attr('src', '');
+      this.$pictureBlur.attr('src', '');
     });
 
     if (this.$libraryItemImage) {
@@ -175,33 +180,35 @@ export default class AlbumView extends Subview {
 
     // animate overlay image
     ViewUtil.setVisible(this.$picture, false);
+    ViewUtil.setVisible(this.$pictureBlur, false);
     ViewUtil.setVisible(this.$libraryItemImage, false);
     ViewUtil.setDisplayed(this.$overlayImage, true);
     this.$overlayImage.css('transform', 'translate(0,0) scale(1,1)');
 
     ViewUtil.animateCss(this.$overlayImage,
-        () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...rectStart),
-        () => this.setTransformUsing(this.$overlayImage, rectStart, rectEnd),
-        this.animateOutOverlayContinued);
+      () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...rectStart),
+      () => this.setTransformUsing(this.$overlayImage, rectStart, rectEnd),
+      this.animateOutOverlayContinued);
   }
 
   animateOutOverlayContinued = () => {
     ViewUtil.setDisplayed(this.$overlayImage, false);
     ViewUtil.setVisible(this.$picture, '');
+    ViewUtil.setVisible(this.$pictureBlur, '');
     ViewUtil.setVisible(this.$libraryItemImage, true);
     $(document).trigger('enable-user-input');
   };
-  
+
   populate(album) {
-  	this.album = album;
-  	this.tracks = AlbumUtil.getTracksOf(this.album);
+    this.album = album;
+    this.tracks = AlbumUtil.getTracksOf(this.album);
 
-  	this.listItems$ = [];
-		this.$list.empty();
+    this.listItems$ = [];
+    this.$list.empty();
 
-		if (!this.album) {
-			return;
-		}
+    if (!this.album) {
+      return;
+    }
 
     this.updateInfoArea();
 
@@ -216,14 +223,15 @@ export default class AlbumView extends Subview {
       this.$list.append($item);
     }
 
-		this.currentPlayingSong = undefined;
-		this.updateHighlightedTrack();
-	}
+    this.currentPlayingSong = undefined;
+    this.updateHighlightedTrack();
+  }
 
   updateInfoArea() {
 
     const imgPath = DataUtil.getAlbumImageUrl(this.album);
     this.$picture.attr('src', imgPath);
+    this.$pictureBlur.attr('src', imgPath);
 
     let s = this.album['@_artist'] || '';
     s = s.trim();
@@ -275,14 +283,14 @@ export default class AlbumView extends Subview {
     $("#albumViewPath").html(this.album['@_path']);
 
     MetaUtil.isAlbumFavoriteFor(this.album['@_hash'])
-        ? this.$albumFavoriteButton.addClass('isSelected')
-        : this.$albumFavoriteButton.removeClass('isSelected')
+      ? this.$albumFavoriteButton.addClass('isSelected')
+      : this.$albumFavoriteButton.removeClass('isSelected')
   }
 
-	makeListItem(index, item) {
-		const seconds = parseInt(item['@_length']);
-		const duration = seconds ? `&nbsp;&nbsp;&nbsp;<span class="albumItemDuration">${Util.durationText(seconds)}</span>` : '';
-		const song = item['@_song'];
+  makeListItem(index, item) {
+    const seconds = parseInt(item['@_length']);
+    const duration = seconds ? `&nbsp;&nbsp;&nbsp;<span class="albumItemDuration">${Util.durationText(seconds)}</span>` : '';
+    const song = item['@_song'];
     const hash = item['@_hash'];
     const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
     const favoriteSelectedClass = isFavorite ? 'isSelected' : '';
@@ -301,11 +309,11 @@ export default class AlbumView extends Subview {
 
     let s = '';
     s += `<div class="albumItem" data-index="${index}" data-hash="${hash}">`;
-		s += `  <div class="albumItemLeft">`;
+    s += `  <div class="albumItemLeft">`;
     s += `    <div class="playButton" data-index="${index}" title="Play Track Now"></div>`;
-    s += `    <span class="indexText">${index+1}</span>`;
+    s += `    <span class="indexText">${index + 1}</span>`;
     s += `  </div>`;
-		s += `  <div class="albumItemMain">`;
+    s += `  <div class="albumItemMain">`;
     s += `    <div class="song">${song}${duration}</div>`;
     if (extra) {
       s += `  <div class="extra">${extra}</div>`;
@@ -317,41 +325,41 @@ export default class AlbumView extends Subview {
     s += `      <div class="favoriteIcon"></div>`;
     s += `    </div>`;
     s += `  </div>`;
-		s += `  <div class="albumItemContext iconButton moreButton" data-index="${index}"></div>`;
-		s += `</div>`;
-		return $(s);
-		// also: [$]["name"] is filename; [$]["hash"];
-	}
+    s += `  <div class="albumItemContext iconButton moreButton" data-index="${index}"></div>`;
+    s += `</div>`;
+    return $(s);
+    // also: [$]["name"] is filename; [$]["hash"];
+  }
 
-	updateHighlightedTrack = () => {
-		if (!this.tracks) {
-			return;
-		}
+  updateHighlightedTrack = () => {
+    if (!this.tracks) {
+      return;
+    }
     const meta = Model.status.metadata;
     const song = meta['@_song'] || '';
     if (song === this.currentPlayingSong) {
-     return;
+      return;
     }
     this.currentPlayingSong = song;
 
     const isInAlbum = DataUtil.doesAlbumContainPlayingSong(this.album);
 
     for (let i = 0; i < this.tracks.length; i++) {
-			const track = this.tracks[i];
-			let b;
+      const track = this.tracks[i];
+      let b;
       if (!isInAlbum) {
         b = false;
       } else {
         b = DataUtil.doesAlbumSongEqualPlayingSong(this.album, track);
       }
-			const $listItem = this.listItems$[i];
+      const $listItem = this.listItems$[i];
       if (b) {
         $listItem.addClass('selected');
       } else {
         $listItem.removeClass('selected');
       }
-		}
-	};
+    }
+  };
 
   getLibraryItemImageRect() {
     const r1 = this.$libraryItemImage[0].getBoundingClientRect();
@@ -403,7 +411,7 @@ export default class AlbumView extends Subview {
     if (naturalAr > boxW / boxH) {
       // cl('image content has wider aspect ratio')
       overlayW = boxW;
-      overlayH = boxW * (1/ naturalAr);
+      overlayH = boxW * (1 / naturalAr);
     } else {
       // cl('image content has narrower aspect ratio')
       overlayH = boxH;
@@ -424,15 +432,15 @@ export default class AlbumView extends Subview {
     $(document).trigger('album-artist-button', s);
   };
 
-	onPlayNowButton = (event) => {
+  onPlayNowButton = (event) => {
     const commands = Commands.playlistAddUsingAlbumAndIndices(this.album);
     AppUtil.doPlaylistAdds(commands, true, true);
-	};
+  };
 
-	onQueueButton = (event) => {
+  onQueueButton = (event) => {
     const commands = Commands.playlistAddUsingAlbumAndIndices(this.album);
     AppUtil.doPlaylistAdds(commands);
-	};
+  };
 
   onAlbumFavoriteButton = (event) => {
     const hash = this.album['@_hash'];
@@ -448,18 +456,18 @@ export default class AlbumView extends Subview {
     MetaUtil.setAlbumFavoriteFor(hash, newValue);
   }
 
-	onItemClick(event) {
-		const index = $(event.currentTarget).attr("data-index");
-		const item = this.tracks[index];
+  onItemClick(event) {
+    const index = $(event.currentTarget).attr("data-index");
+    const item = this.tracks[index];
     // ...
-	}
+  }
 
-	onItemContextButtonClick(event) {
-		event.stopPropagation(); // prevent listitem from responding to same event
-		const $button = $(event.currentTarget);
-		const index = parseInt($button.attr("data-index"));
+  onItemContextButtonClick(event) {
+    event.stopPropagation(); // prevent listitem from responding to same event
+    const $button = $(event.currentTarget);
+    const index = parseInt($button.attr("data-index"));
     this.contextMenu.show(this.$el, $button, this.album, index);
-	}
+  }
 
   onPlayButtonClick(event) {
     event.stopPropagation();
@@ -504,6 +512,6 @@ export default class AlbumView extends Subview {
     const sy = r2[3] / r1[3];
     const value = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
     $el.css('transform', value);
-  } ;
+  };
 
 }

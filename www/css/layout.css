@@ -448,7 +448,7 @@
   }
 
   .sidebar-section {
-    margin-bottom: 24px;
+    margin-bottom: 10px;
     position: relative;
   }
 
@@ -491,7 +491,7 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--text-3);
-    padding: 0 20px 8px;
+    padding: 0 20px 6px;
   }
 
   .sidebar-label-row {
@@ -534,7 +534,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 20px;
+    padding: 6px 20px;
     font-size: 13px;
     font-weight: 300;
     color: var(--text-2);
@@ -574,7 +574,7 @@
   .sidebar-divider {
     height: 1px;
     background: var(--border);
-    margin: 0 20px 0;
+    margin: 0 20px 10px;
   }
 
 
@@ -632,7 +632,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 20px;
+    padding: 6px 20px;
     font-size: 13px;
     font-weight: 300;
     color: var(--text-2);
@@ -673,7 +673,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 20px;
+    padding: 6px 20px;
     font-size: 13px;
     font-weight: 300;
     color: var(--text-2);
@@ -694,7 +694,21 @@
     font-weight: 400;
   }
 
+  .period-info {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+
   .period-years {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    color: var(--text-3);
+    letter-spacing: 0.04em;
+  }
+
+  .period-count {
     font-family: 'Geist Mono', monospace;
     font-size: 10px;
     color: var(--text-3);
@@ -702,7 +716,8 @@
     margin-left: auto;
   }
 
-  .period-item.active .period-years {
+  .period-item.active .period-years,
+  .period-item.active .period-count {
     color: var(--text-3);
   }
 
