@@ -27,7 +27,7 @@
 - Changed upscaler settings icon for better clarity
 
 ### Settings View
-- Added new option to customize highlight color
+- Added new option to customize accent color
 
 ### Album View
 - Added play button before each track

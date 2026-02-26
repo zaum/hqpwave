@@ -51,7 +51,7 @@ export default class SettingsView extends Subview {
   }
 
   setupColorPresets() {
-    // Highlight color presets
+    // Accent color presets
     $('#highlightColorPresets').on('click', '.color-preset:not(.custom)', (e) => {
       const color = $(e.currentTarget).data('color');
       Settings.highlightColor = color;
