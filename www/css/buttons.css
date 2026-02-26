@@ -176,9 +176,6 @@
   background: transparent;
 }
 
-.dragHandleButton:before {
-  background-image: url("./../img/icons/drag_handle_white_24dp.svg");
-}
 
 .dragHandleButton:hover {
   background: var(--raised);

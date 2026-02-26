@@ -17,6 +17,9 @@
   --green: #52c27a;
   --red: #e05858;
   
+  /* User customizable colors */
+  --player-bg-color: #111112;
+  
   /* Legacy mappings for compatibility */
   --col-bg: var(--bg);
   --col-listitem-less: var(--surface);
@@ -49,6 +52,9 @@
   --accent-hi: rgba(200,160,80,0.2);
   --green: #3da85c;
   --red: #d04848;
+  
+  /* User customizable colors for light theme */
+  --player-bg-color: #f8f7f5;
   
   /* Legacy mappings for light theme */
   --col-bg: var(--bg);

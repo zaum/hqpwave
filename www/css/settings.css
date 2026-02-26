@@ -670,6 +670,52 @@
   background-position: right 12px center;
 }
 
+/* Filter Clear Icon */
+.filter-clear-icon {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border-md);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 10;
+  user-select: none;
+  pointer-events: none;
+}
+
+.settingsSelectOuter:hover .filter-clear-icon {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.settingsSelectOuter select:focus + .filter-clear-icon {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.filter-clear-icon:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.filter-clear-icon:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
 .settingsSelectOuter select:focus {
   outline: none;
   border-color: var(--accent);

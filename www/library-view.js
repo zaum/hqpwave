@@ -42,11 +42,6 @@ export default class LibraryView extends Subview {
     this.$searchButton = this.$el.find('#librarySearchButton');
     this.$searchCloseButton = this.$el.find('#librarySearchCloseButton');
     this.$spinner = this.$el.find('#librarySpinner');
-    // Topbar search input
-    this.$headerSearchInput = this.$el.find('#librarySearchInput');
-    this.$headerSearchContainer = this.$el.find('#librarySearchPanel');
-    this.$headerSearchClearButton = this.$el.find('#librarySearchClear');
-    this.$headerView = this.$el.find('#libraryHeaderView');
 
     // Global search input in topbar
     this.$globalSearchInput = $('#globalSearchInput');
@@ -58,57 +53,9 @@ export default class LibraryView extends Subview {
     this.$searchButton.on('click tap', () => this.openSearch());
     this.$searchCloseButton.on('click tap', () => this.closeSearch());
 
-    // Header search input functionality - filter albums in place (search as you type)
-    this._headerSearchDebounceTimer = null;
+    // Global search configuration
     this._headerSearchMinLength = 2;
     this._headerSearchDebounceDelay = 300;
-
-    this.$headerSearchInput.on('input', (e) => {
-      // Clear any existing debounce timer
-      if (this._headerSearchDebounceTimer) {
-        clearTimeout(this._headerSearchDebounceTimer);
-      }
-
-      const value = this.$headerSearchInput.val().trim();
-
-      // Update clear button visibility
-      this.updateHeaderSearchClearButtonVisibility();
-
-      if (value.length === 0) {
-        // Clear search filter and show all albums
-        this.clearHeaderSearchFilter();
-        return;
-      }
-
-      // Start new debounce timer for search-as-you-type filtering
-      if (value.length >= this._headerSearchMinLength) {
-        this._headerSearchDebounceTimer = setTimeout(() => {
-          this.applyHeaderSearchFilter(value);
-        }, this._headerSearchDebounceDelay);
-      }
-    });
-
-    this.$headerSearchInput.on('keyup', (e) => {
-      if (e.keyCode === 13) { // Enter key - cancel debounce and filter immediately
-        if (this._headerSearchDebounceTimer) {
-          clearTimeout(this._headerSearchDebounceTimer);
-          this._headerSearchDebounceTimer = null;
-        }
-        const value = this.$headerSearchInput.val().trim();
-        if (value.length === 0) {
-          // If empty, show all albums (pre-search state)
-          this.clearHeaderSearchFilter();
-        } else if (value.length >= this._headerSearchMinLength) {
-          this.applyHeaderSearchFilter(value);
-        }
-      }
-    });
-
-    // Clear button click handler
-    this.$headerSearchClearButton.on('click', () => {
-      this.clearHeaderSearchFilter();
-      this.$headerSearchInput.focus();
-    });
 
     // Global search input in topbar - filter albums as you type
     if (this.$globalSearchInput.length > 0) {
@@ -418,55 +365,6 @@ export default class LibraryView extends Subview {
     }
   }
 
-  /**
-   * Apply search filter to albums list - filters in place without showing search panel
-   * Supports comma-separated AND search: "pink floyd, 1970, dsd" matches all three conditions
-   */
-  applyHeaderSearchFilter(value) {
-    // Sync search values between global and local inputs
-    if (this.$globalSearchInput && this.$globalSearchInput.length > 0) {
-      this.$globalSearchInput.val(value);
-    }
-    if (this.$headerSearchInput && this.$headerSearchInput.length > 0) {
-      this.$headerSearchInput.val(value);
-    }
-
-    this.applyAllFilters();
-  }
-
-  /**
-   * Clear search filter and show all albums
-   */
-  clearHeaderSearchFilter() {
-    // Clear the header search input
-    if (this.$headerSearchInput) {
-      this.$headerSearchInput.val('');
-    }
-
-    // Also clear the global search input in topbar
-    if (this.$globalSearchInput) {
-      this.$globalSearchInput.val('');
-    }
-    if (this.$globalSearchClear) {
-      this.$globalSearchClear.css('display', 'none');
-    }
-
-    // Hide clear button
-    if (this.$headerSearchClearButton) {
-      this.$headerSearchClearButton.hide();
-    }
-
-    this.applyAllFilters();
-  }
-
-  updateHeaderSearchClearButtonVisibility() {
-    const hasValue = this.$headerSearchInput.val().trim().length > 0;
-    if (hasValue) {
-      this.$headerSearchClearButton.show();
-    } else {
-      this.$headerSearchClearButton.hide();
-    }
-  }
 
   /**
    * Parse year search string into array of year matches.
@@ -633,5 +531,87 @@ export default class LibraryView extends Subview {
     }
 
     return false;
+  }
+
+  /**
+   * Apply header search filter to albums list.
+   */
+  applyHeaderSearchFilter(searchValue) {
+    // Split search input by comma for AND search
+    // "pink floyd, 1970, dsd" -> ["pink floyd", "1970", "dsd"]
+    const searchTerms = searchValue.split(/,\s*/).map(s => {
+      const term = s.trim();
+      return term.length > 0 ? term.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+    }).filter(s => s.length > 0);
+
+    if (searchTerms.length === 0) {
+      this.clearHeaderSearchFilter();
+      return;
+    }
+
+    // Get all albums
+    let allAlbums = Model.library.albums;
+    if (!allAlbums) {
+      return;
+    }
+
+    // Filter albums based on search terms (AND logic)
+    let filteredAlbums = allAlbums.filter(album => {
+      // For each search term, check if album matches
+      // ALL terms must match for the album to be included
+      const matchesAllSearchTerms = searchTerms.every(searchVal => this.albumMatchesSearchTerm(album, searchVal));
+      return matchesAllSearchTerms;
+    });
+
+    // Make sure albums list is visible
+    ViewUtil.setDisplayed(this.albumsList.$el, true);
+
+    // Set filtered albums to albums list and force dirty flags to rebuild
+    this.albumsList.albums = filteredAlbums;
+    this.albumsList.filteredSortedAlbumsDirty = true;
+    this.albumsList.groupsDirty = true;
+    this.albumsList.domDirty = true;
+    this.albumsList.setFilterType('none');
+    this.albumsList.update();
+
+    // Update header to show filtered count
+    this.$title.text('Library');
+    const count = filteredAlbums.length;
+    const suffix = (count == 1) ? ' album' : ' albums';
+    this.$itemCount.text(count + suffix);
+
+    // Update album count in toolbar
+    $('#albumCount').text(count);
+  }
+
+  /**
+   * Clear header search filter and show all albums.
+   */
+  clearHeaderSearchFilter() {
+    // Get all albums
+    let allAlbums = Model.library.albums;
+    if (!allAlbums) {
+      return;
+    }
+
+    // Make sure albums list is visible
+    ViewUtil.setDisplayed(this.albumsList.$el, true);
+
+    // Set all albums to albums list and force dirty flags to rebuild
+    this.albumsList.albums = allAlbums;
+    this.albumsList.filteredSortedAlbumsDirty = true;
+    this.albumsList.groupsDirty = true;
+    this.albumsList.domDirty = true;
+    this.albumsList.setFilterType('none');
+    this.albumsList.update();
+
+    // Update header to show all albums count
+    this.$title.text('Library');
+    const count = allAlbums.length;
+    const suffix = (count == 1) ? ' album' : ' albums';
+    this.$itemCount.text(count + suffix);
+
+    // Update album count in toolbar
+    $('#albumCount').text(count);
   }
 }

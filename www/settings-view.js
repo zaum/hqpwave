@@ -127,8 +127,6 @@ export default class SettingsView extends Subview {
   }
 
   updateHighlightColorCSS() {
-    document.documentElement.style.setProperty('--col-highlight', Settings.highlightColor);
-    // Also update --accent for new design
     document.documentElement.style.setProperty('--accent', Settings.highlightColor);
   }
 
@@ -143,6 +141,7 @@ export default class SettingsView extends Subview {
   };
 
   updatePlayerBackgroundColorCSS() {
+    document.documentElement.style.setProperty('--player-bg-color', Settings.playerBackgroundColor);
     document.documentElement.style.setProperty('--player-bg', Settings.playerBackgroundColor);
     // Also update playbar background
     const playbar = document.getElementById('playbarView');

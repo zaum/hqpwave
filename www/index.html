@@ -242,20 +242,6 @@
           <!-- Hidden header for compatibility -->
 
 
-          <div id="librarySearchPanel">
-            <div id="searchTabContent">
-              <div class="inputLine">
-                <input id="librarySearchInput" name="librarySearchInput" type="text" required minlength="1"
-                  maxlength="64">
-                <span id="librarySearchClear" class="searchClearButton" style="display: none;">×</span>
-                <div id="librarySearchOkButton" class="textButton">OK</div>
-              </div>
-            </div>
-            <div class="searchFavoritesLine">
-              <div id="albumFavoritesButton" class="textButton"></div>
-              <div id="trackFavoritesButton" class="textButton"></div>
-            </div>
-          </div>
 
           <div id="librarySpinner" class="spinner"></div>
 
@@ -376,15 +362,19 @@
               <div class="settings-card-row">
                 <div class="row-label">Filter</div>
                 <div class="row-right">
-                  <div class="settingsSelectOuter" style="margin-bottom:0;"><select name="filterSelect"
-                      id="filterSelect"></select></div>
+                  <div class="settingsSelectOuter" style="margin-bottom:0; position: relative;">
+                    <select name="filterSelect" id="filterSelect"></select>
+                    <div class="filter-clear-icon" id="filterClearIcon" title="Clear filter">✕</div>
+                  </div>
                 </div>
               </div>
               <div class="settings-card-row">
                 <div class="row-label">Shaper</div>
                 <div class="row-right">
-                  <div class="settingsSelectOuter" style="margin-bottom:0;"><select name="shaperSelect"
-                      id="shaperSelect"></select></div>
+                  <div class="settingsSelectOuter" style="margin-bottom:0; position: relative;">
+                    <select name="shaperSelect" id="shaperSelect"></select>
+                    <div class="filter-clear-icon" id="shaperClearIcon" title="Clear shaper">✕</div>
+                  </div>
                 </div>
               </div>
               <div class="settings-card-row">

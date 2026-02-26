@@ -274,8 +274,6 @@ export default class App {
     }
     AppUtil.updateColorTheme();
     // Initialize highlight color CSS variable
-    document.documentElement.style.setProperty('--col-highlight', Settings.highlightColor);
-    // Also set --accent to highlight color for new design
     document.documentElement.style.setProperty('--accent', Settings.highlightColor);
     // Initialize player background color
     document.documentElement.style.setProperty('--player-bg', Settings.playerBackgroundColor);

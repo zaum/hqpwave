@@ -198,55 +198,25 @@
   color: var(--text-3);
   cursor: pointer;
   transition: color 0.15s;
-  display: none;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.8;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .search-clear:hover {
   color: var(--text-2);
+  opacity: 1;
 }
 
-#libraryHeaderSearchContainer {
-  position: relative;
-  flex: 1;
-  max-width: 420px;
-  min-width: 200px;
-}
-
-#libraryHeaderSearchInput {
-  width: 100%;
-  height: 32px;
-  padding: 0 32px 0 12px;
-  background: var(--surface);
-  border: 1px solid var(--border-md);
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 300;
-  outline: none;
-  transition: border-color 0.18s;
-}
-
-#libraryHeaderSearchInput::placeholder {
-  color: var(--text-3);
-}
-
-#libraryHeaderSearchInput:focus {
-  border-color: var(--accent);
-}
-
-#libraryHeaderSearchClear {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: var(--text-3);
-  cursor: pointer;
-}
-
-#libraryHeaderSearchClear:hover {
-  color: var(--text);
-}
 
 /* ═══════════════════════════════════════════════════════════════
    GROUP HEADING
@@ -720,184 +690,6 @@
   display: none;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SEARCH PANEL
-   ═══════════════════════════════════════════════════════════════ */
-
-#librarySearchPanel {
-  display: none;
-  margin: 16px 16px 0px 16px;
-  transition: opacity 264ms ease-in;
-}
-
-#librarySearchList {
-  margin: 0 auto;
-  max-width: 1800px;
-  padding: 28px 36px 100px;
-  margin-top: 0;
-  transition: opacity 264ms ease-out;
-}
-
-@media (max-width: 768px) {
-  #librarySearchList {
-    padding: 20px 20px 80px;
-  }
-}
-
-.searchFavoritesLine {
-  display: flex;
-  margin-top: 12px;
-  gap: 8px;
-}
-
-#albumFavoritesButton,
-#trackFavoritesButton {
-  padding: 6px 12px;
-  color: var(--text-3);
-  background: transparent;
-  border: 1px solid var(--border-md);
-  font-size: 11px;
-}
-
-#albumFavoritesButton.isSelected,
-#trackFavoritesButton.isSelected {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--accent-bg);
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   TRACK ITEM (Search results)
-   ═══════════════════════════════════════════════════════════════ */
-
-.libraryTrackItem {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 8px 12px;
-  border-top: 1px solid var(--border);
-  cursor: default;
-  transition: background 0.12s;
-}
-
-.libraryTrackItem:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.libraryTrackItem .content {
-  width: calc(100% - 48px);
-}
-
-.libraryTrackItem .song,
-.libraryTrackItem .artist,
-.libraryTrackItem .album {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.libraryTrackItem .song {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text);
-}
-
-.libraryTrackItem .artist {
-  color: var(--text-2);
-  font-size: 12px;
-  margin-bottom: 2px;
-}
-
-.libraryTrackItem .album {
-  color: var(--text-3);
-  font-size: 11px;
-}
-
-.libraryTrackItem .moreButton {
-  margin-left: auto;
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   ALL METADATA ITEM
-   ═══════════════════════════════════════════════════════════════ */
-
-.libraryAllMetadataItem {
-  display: flex;
-  align-items: flex-start;
-  width: 100%;
-  padding: 12px;
-  border-top: 1px solid var(--border);
-  cursor: default;
-  gap: 12px;
-}
-
-.libraryAllMetadataItem .itemPicture {
-  min-width: 48px;
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.libraryAllMetadataItem .itemPicture img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.libraryAllMetadataItem .itemPicture.clickableAlbum {
-  cursor: pointer;
-}
-
-.libraryAllMetadataItem .itemInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.libraryAllMetadataItem .itemInfo.clickableAlbum {
-  cursor: pointer;
-}
-
-.libraryAllMetadataItem .itemInfo .artistAlbum {
-  margin-bottom: 6px;
-}
-
-.libraryAllMetadataItem .itemInfo .artistAlbum .artist {
-  font-weight: 400;
-  color: var(--text);
-  font-size: 13px;
-}
-
-.libraryAllMetadataItem .itemInfo .artistAlbum .album {
-  color: var(--text-2);
-  font-size: 12px;
-}
-
-.libraryAllMetadataItem .itemInfo .tracksContainer .matchedTrack {
-  color: var(--text-3);
-  font-size: 11px;
-  padding: 2px 0;
-}
-
-.libraryAllMetadataItem .itemInfo .matchedField {
-  color: var(--text-3);
-  font-size: 11px;
-}
-
-.libraryAllMetadataItem .itemInfo .highlight {
-  background: var(--accent);
-  color: var(--bg);
-  padding: 0 2px;
-  border-radius: 2px;
-}
-
-.libraryAllMetadataItem .itemMeta {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-shrink: 0;
-}
 
 /* ═══════════════════════════════════════════════════════════════
    TIMELINE VIEW
