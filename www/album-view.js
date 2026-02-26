@@ -95,9 +95,14 @@ show(album, $libraryItem = null) {
     const heroHeight = this.$el.find('.album-hero').height();
     const pictureHeight = this.$picture.height();
 
-    if (scrollTop < heroHeight - pictureHeight) {
+    if (scrollTop === 0) {
+      // Reset to original position when at top
+      this.$picture.css('transform', '');
+    } else if (scrollTop < heroHeight - pictureHeight) {
+      // Translate picture when scrolling within hero area
       this.$picture.css('transform', `translateY(${scrollTop}px)`);
     } else {
+      // Keep picture at bottom of hero area when scrolling past it
       this.$picture.css('transform', `translateY(${heroHeight - pictureHeight}px)`);
     }
   };
@@ -107,6 +112,9 @@ hide() {
     $(document).off('model-status-updated', this.updateHighlightedTrack);
     $(document).off('new-track', this.onNewTrack);
     $(document).off('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
+
+    // Remove scroll handler to prevent multiple handlers from accumulating
+    this.$el.off('scroll', this.onScroll);
 
     // Do normal fadeout of album view
     super.hide(() => {

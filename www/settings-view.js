@@ -100,11 +100,11 @@ export default class SettingsView extends Subview {
 
   updateThemeCheckbox() {
     if (Settings.colorTheme == 'dark') {
-      this.$themeLightCheckbox.removeClass('isChecked');
-      this.$themeDarkCheckbox.addClass('isChecked');
+      this.$themeLightCheckbox.removeClass('active');
+      this.$themeDarkCheckbox.addClass('active');
     } else {
-      this.$themeDarkCheckbox.removeClass('isChecked');
-      this.$themeLightCheckbox.addClass('isChecked');
+      this.$themeDarkCheckbox.removeClass('active');
+      this.$themeLightCheckbox.addClass('active');
     }
   }
 

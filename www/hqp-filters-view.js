@@ -32,11 +32,11 @@ export default class HqpFiltersView {
   constructor($el) {
     this.$el = $el;
 
-    this.$modeSelect = this.$el.find('#modeSelect');
+    this.$modeToggle = this.$el.find('#modeToggle');
     this.$filterSelect = this.$el.find('#filterSelect');
     this.$shaperSelect = this.$el.find('#shaperSelect');
 
-    this.$modeSelect.on('change', this.onSelectChange);
+    this.$modeToggle.on('change', this.onModeToggleChange);
     this.$filterSelect.on('change', this.onSelectChange);
     this.$shaperSelect.on('change', this.onSelectChange);
 
@@ -72,7 +72,8 @@ export default class HqpFiltersView {
   
   populateSelects = () => {
     const mode = Model.status.data['@_active_mode'];
-    this.populateSelect(this.$modeSelect, HqpConfigModel.modesArray, '@_name', '@_index', mode);
+    // Set toggle state based on current mode
+    this.$modeToggle.prop('checked', mode === 'DSD');
 
     const filterName = Model.status.data['@_active_filter'];
     const filtersArray = HqpConfigModel.filtersData[mode];
@@ -122,15 +123,45 @@ export default class HqpFiltersView {
     const lastOutputBitrateString = this.outputBitrateString;
     const rate = Model.status.data['@_active_rate'] || '';
     const bits = Model.status.data['@_active_bits'] || '';
+    const mode = Model.status.data['@_active_mode'] || '';
     this.outputBitrateString = '';
+    let unit = '';
+    let formatLabel = '';
+    
     if (rate) {
-      this.outputBitrateString = rate;
-      if (bits) {
+      const rateInt = parseInt(rate);
+      if (mode === 'PCM') {
+        // PCM rates are in Hz, convert to kHz
+        unit = 'kHz';
+        this.outputBitrateString = (rateInt / 1000).toString();
+      } else if (mode === 'DSD') {
+        // DSD rates are multiples, show as DSD64, DSD128, etc.
+        unit = 'MHz';
+        this.outputBitrateString = (rateInt / 1000000).toString();
+        // Add DSD format label (DSD64, DSD128, etc.)
+        if (bits) {
+          formatLabel = bits;
+        }
+      } else {
+        this.outputBitrateString = rate;
+      }
+      
+      if (bits && mode !== 'DSD') {
         this.outputBitrateString += '/' + bits;
       }
     }
+    
+    // Format the display string with units and format label
+    let displayString = this.outputBitrateString;
+    if (unit) {
+      displayString += ' ' + unit;
+    }
+    if (formatLabel) {
+      displayString += ' (' + formatLabel + ')';
+    }
+    
     if (this.outputBitrateString != lastOutputBitrateString) {
-      this.$outputBitrateValue.text(this.outputBitrateString);
+      this.$outputBitrateValue.text(displayString);
     }
   }
 
@@ -207,7 +238,8 @@ export default class HqpFiltersView {
     // Diff status vs lastStatus
     const mode = Model.status.data['@_active_mode'];
     if (Model.status.data['@_active_mode'] != Model.lastStatus.data['@_active_mode']) {
-      this.populateSelect(this.$modeSelect, HqpConfigModel.modesArray, '@_name', '@_index', mode);
+      // Update toggle state based on current mode
+      this.$modeToggle.prop('checked', mode === 'DSD');
     }
     if (Model.status.data['@_active_filter'] != Model.lastStatus.data['@_active_filter']) {
       const filterName = Model.status.data['@_active_filter'];
@@ -219,5 +251,25 @@ export default class HqpFiltersView {
       const shapersArray = HqpConfigModel.shapersData[mode];
       this.populateSelect(this.$shaperSelect, shapersArray, '@_name', '@_index', shaperName);
     }
+  }
+
+  onModeToggleChange = (e) => {
+    const isChecked = e.currentTarget.checked;
+    const mode = isChecked ? 'DSD' : 'PCM';
+    
+    // Get the mode index from the modes array
+    const modeIndex = HqpConfigModel.getModeIndex(mode);
+    if (modeIndex === null) {
+      cl('warning no mode index found for', mode);
+      return;
+    }
+
+    Service.queueCommandFront(Commands.setMode(modeIndex), (data) => {
+      const b = DataUtil.isResultOk(data);
+      if (!b) {
+        SnackView.show('set-error', 'HQPlayer response', `Couldn't set mode to ${mode}`, '');
+      }
+      HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()));
+    });
   }
 }

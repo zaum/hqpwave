@@ -289,7 +289,10 @@ export default class LibraryView extends Subview {
 
     // Split search input by comma for AND search
     // "pink floyd, 1970, dsd" -> ["pink floyd", "1970", "dsd"]
-    const searchTerms = searchValue.split(/,\s*/).map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+    const searchTerms = searchValue.split(/,\s*/).map(s => {
+      const term = s.trim();
+      return term.length > 0 ? term.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+    }).filter(s => s.length > 0);
 
     // Apply filters
     let filteredAlbums = allAlbums.filter(album => {
@@ -549,10 +552,15 @@ export default class LibraryView extends Subview {
    * Used by AND search logic in applyHeaderSearchFilter.
    */
   albumMatchesSearchTerm(album, searchValue) {
+    // Helper function to normalize text for diacritic-insensitive comparison
+    const normalizeText = (text) => {
+      return text ? text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+    };
+
     // Check album-level fields
-    const artist = album['@_artist'] ? album['@_artist'].toLowerCase() : '';
-    const albumName = album['@_album'] ? album['@_album'].toLowerCase() : '';
-    const genre = album['@_genre'] ? album['@_genre'].toLowerCase() : '';
+    const artist = normalizeText(album['@_artist']);
+    const albumName = normalizeText(album['@_album']);
+    const genre = normalizeText(album['@_genre']);
 
     if (artist.includes(searchValue) ||
       albumName.includes(searchValue) ||
@@ -618,7 +626,7 @@ export default class LibraryView extends Subview {
     // Check track-level fields
     const tracks = AlbumUtil.getTracksOf(album);
     for (const track of tracks) {
-      const song = track['@_song'] ? track['@_song'].toLowerCase() : '';
+      const song = normalizeText(track['@_song']);
       if (song.includes(searchValue)) {
         return true;
       }

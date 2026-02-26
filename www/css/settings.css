@@ -231,6 +231,44 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   MODE TOGGLE SWITCH
+   ═══════════════════════════════════════════════════════════════ */
+
+.mode-toggle-input {
+  display: none;
+}
+
+.mode-labels {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-2);
+  letter-spacing: 0.02em;
+  margin-left: 12px;
+}
+
+.mode-label-pcm {
+  color: var(--text-2);
+  transition: color 0.25s;
+}
+
+.mode-label-dsd {
+  color: var(--text-2);
+  transition: color 0.25s;
+}
+
+.mode-toggle-input:checked ~ .mode-labels .mode-label-pcm {
+  color: var(--text-3);
+  opacity: 0.6;
+}
+
+.mode-toggle-input:not(:checked) ~ .mode-labels .mode-label-dsd {
+  color: var(--text-3);
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    THEME SELECTOR
    ═══════════════════════════════════════════════════════════════ */
 
@@ -260,6 +298,7 @@
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-bg);
+  box-shadow: 0 0 0 1px var(--accent-hi);
 }
 
 /* ═══════════════════════════════════════════════════════════════

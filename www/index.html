@@ -362,8 +362,15 @@
               <div class="settings-card-row">
                 <div class="row-label">Mode</div>
                 <div class="row-right">
-                  <div class="settingsSelectOuter" style="margin-bottom:0;"><select name="modeSelect"
-                      id="modeSelect"></select></div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="modeToggle" class="mode-toggle-input">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                  <div class="mode-labels">
+                    <span class="mode-label-pcm">PCM</span>
+                    <span class="mode-label-dsd">DSD</span>
+                  </div>
                 </div>
               </div>
               <div class="settings-card-row">
@@ -607,7 +614,7 @@
               <div class="connection-led" id="connectionLed"></div>
               <div class="hqp-name" id="hqpVersion">HQPlayer Desktop</div>
               <div class="hqp-version" id="hqpConnection">Connected</div>
-              <a href="#" class="hqp-link" id="hqpLink">signalyst.eu ↗</a>
+              <a href="https://signalyst.com" class="hqp-link" id="hqpLink">signalyst.com ↗</a>
             </div>
           </div>
 
