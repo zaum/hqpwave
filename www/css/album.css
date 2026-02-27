@@ -8,7 +8,8 @@
   gap: 48px;
   padding: 32px 0 0 52px;
   height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   align-items: start;
   /* Override .subview transition which breaks position: sticky */
   transition: none;
@@ -31,27 +32,8 @@
   min-width: 0;
   isolation: isolate;
   display: block;
-  height: 100%;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-#albumViewRightColumn:hover {
-  scrollbar-color: var(--border-md) transparent;
-}
-
-#albumViewRightColumn::-webkit-scrollbar {
-  width: 10px;
-}
-
-#albumViewRightColumn::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 10px;
-}
-
-#albumViewRightColumn:hover::-webkit-scrollbar-thumb {
-  background: var(--border-md);
+  height: auto;
+  overflow: visible;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -159,7 +141,8 @@
 
 .albumViewPictureOuter,
 .cover-wrap {
-  position: relative;
+  position: sticky;
+  top: 32px;
   z-index: 200;
   overflow: visible;
 }
@@ -256,6 +239,11 @@
   flex: 1;
   min-width: 0;
   padding-bottom: 4px;
+  transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#albumList {
+  transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 #albumViewTextsInner {

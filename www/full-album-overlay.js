@@ -28,15 +28,29 @@ class FullAlbumOverlay {
   }
 
   animateIn() {
+    if (!this.$sourceImage || !this.$sourceImage.length) {
+      return;
+    }
+
+    const src = this.$sourceImage.attr('src');
+    if (!src) {
+      return;
+    }
+
     ViewUtil.setDisplayed(this.$overlayScreen, true);
     ViewUtil.setDisplayed(this.$overlayImage, true);
     ViewUtil.setVisible(this.$sourceImage, false);
 
-    this.$overlayImage.attr('src', this.$sourceImage.attr('src'));
+    this.$overlayImage.attr('src', src);
 
     // Place abs pos overlay image on top of the in-flow album image, and animate
     const startRect = this.getConvertedStartRect(this.$sourceImage);
     const endRect = this.getEndRect(this.$sourceImage);
+    if (!this.isValidRect(startRect) || !this.isValidRect(endRect)) {
+      this.hide();
+      return;
+    }
+
     ViewUtil.animateCss(this.$overlayImage,
         () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...startRect),
         () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...endRect));
@@ -49,13 +63,33 @@ class FullAlbumOverlay {
   }
 
   animateOut() {
-    const r = this.getConvertedStartRect(this.$sourceImage);
-    ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r);
+    if (!this.$sourceImage || !this.$sourceImage.length) {
+      this.hide();
+      return;
+    }
 
+    const r = this.getConvertedStartRect(this.$sourceImage);
+    if (this.isValidRect(r)) {
+      ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r);
+    }
+
+    let done = false;
+    const finish = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      this.hide();
+    };
+
+    const fallbackTimeoutId = setTimeout(finish, 500);
     ViewUtil.animateCss(this.$overlayScreen,
         () => this.$overlayScreen.css('opacity', 1),
         () => this.$overlayScreen.css('opacity', 0),
-        () => this.hide());
+        () => {
+          clearTimeout(fallbackTimeoutId);
+          finish();
+        });
   }
 
   /**
@@ -73,6 +107,9 @@ class FullAlbumOverlay {
     // Source <img> is object-fit: contain, so need to shrink inside.
     const natchW = $sourceImage[0].naturalWidth;
     const natchH = $sourceImage[0].naturalHeight;
+    if (!natchW || !natchH) {
+      return [newX, newY, newW, newH];
+    }
     const r = ViewUtil.fitInRect(natchW, natchH, newW, newH);
     newX += r.x;
     newW -= r.x * 2;
@@ -82,10 +119,26 @@ class FullAlbumOverlay {
   }
 
   getEndRect($sourceImage) {
+    if (!$sourceImage || !$sourceImage.length) {
+      return [0, 0, 0, 0];
+    }
+
+    const naturalW = $sourceImage[0].naturalWidth;
+    const naturalH = $sourceImage[0].naturalHeight;
+    if (!naturalW || !naturalH) {
+      return [0, 0, this.$overlayScreen.width(), this.$overlayScreen.height()];
+    }
+
     const r = ViewUtil.fitInRect(
-        $sourceImage[0].naturalWidth, $sourceImage[0].naturalHeight,
+        naturalW, naturalH,
         this.$overlayScreen.width(), this.$overlayScreen.height());
     return [r.x, r.y, r.w, r.h];
+  }
+
+  isValidRect(rect) {
+    return Array.isArray(rect)
+      && rect.length === 4
+      && rect.every(v => Number.isFinite(v));
   }
 
   hide() {

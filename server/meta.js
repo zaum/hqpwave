@@ -176,7 +176,7 @@ const updateAlbumFavorite = (hash, isFavorite) => {
     data[ALBUMS_KEY][hash] = album;
   }
   album['favorite'] = isFavorite;
-  activityTouch();
+  activitySaveMetaAndStartTimeout();
   return album['favorite'];
 };
 

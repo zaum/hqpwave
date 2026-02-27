@@ -113,6 +113,9 @@ class SidebarView {
 
     // Listen for library updates to populate genre list
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
+    Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
+    Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
+    Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
 
     // Initial population
     if (Model.library && Model.library.albums) {
@@ -148,6 +151,24 @@ class SidebarView {
     this.updateCounts();
     this.populateGenreList();
     this.updatePeriodCounts();
+  }
+
+  onMetaLoadResult = () => {
+    this.updateCounts();
+  }
+
+  onAlbumFavoriteChanged = () => {
+    this.updateCounts();
+    if (this.browseFilter === 'favorite-albums') {
+      this.onFiltersChanged();
+    }
+  }
+
+  onTrackFavoriteChanged = () => {
+    this.updateCounts();
+    if (this.browseFilter === 'favorite-tracks') {
+      this.onFiltersChanged();
+    }
   }
 
   /**

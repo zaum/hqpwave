@@ -173,7 +173,9 @@ class MetaUtil {
     }
     const onSuccess = (data, textStatus, jqXHR) => { /*cl(data);*/ };
     const onError = (e) => cl('warning update track favorite failed', e);
-    const url = `${Values.META_ENDPOINT}?updateTrackFavorite&hash=${hash}&value=${isFavorite}`;
+    const safeHash = encodeURIComponent(hash);
+    const safeValue = encodeURIComponent(String(isFavorite));
+    const url = `${Values.META_ENDPOINT}?updateTrackFavorite&hash=${safeHash}&value=${safeValue}`;
     $.ajax( { url: url, error: onError, success: onSuccess } );
   }
 
@@ -203,7 +205,9 @@ class MetaUtil {
     }
     const onSuccess = (data, textStatus, jqXHR) => { /*cl(data);*/ };
     const onError = (e) => cl('warning update album favorite failed', e);
-    const url = `${Values.META_ENDPOINT}?updateAlbumFavorite&hash=${hash}&value=${isFavorite}`;
+    const safeHash = encodeURIComponent(hash);
+    const safeValue = encodeURIComponent(String(isFavorite));
+    const url = `${Values.META_ENDPOINT}?updateAlbumFavorite&hash=${safeHash}&value=${safeValue}`;
     $.ajax( { url: url, error: onError, success: onSuccess } );
   }
 

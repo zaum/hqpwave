@@ -513,10 +513,9 @@
   mask-position: center;
 }
 
-.album-card:hover .fav-dot,
-.libraryItem:hover .libraryItemFavorite,
 .album-card.faved .fav-dot,
 .libraryItem.isFavorite .libraryItemFavorite {
+  display: block;
   opacity: 1;
 }
 

@@ -33,15 +33,18 @@ export default class Subview {
       ViewUtil.setFocus(this.$el);
     };
 
-    const fallbackTimeoutId = setTimeout(complete, 260);
+    const fallbackTimeoutId = setTimeout(complete, 700);
 
-    ViewUtil.animateCss(this.$el,
-      () => this.$el.css('opacity', 0),
-      () => this.$el.css('opacity', 1),
-      () => {
-        clearTimeout(fallbackTimeoutId);
-        complete();
+    ViewUtil.setCssSync(this.$el, () => this.$el.css('opacity', 0));
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.$el.one('transitionend', () => {
+          clearTimeout(fallbackTimeoutId);
+          complete();
+        });
+        this.$el.css('opacity', 1);
       });
+    });
   }
 
   // Override as needed
@@ -71,7 +74,7 @@ export default class Subview {
       return;
     }
 
-    const fallbackMs = 260;
+    const fallbackMs = 700;
     const fallbackTimeoutId = setTimeout(complete, fallbackMs);
 
     ViewUtil.animateCss(this.$el,

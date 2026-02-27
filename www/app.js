@@ -262,6 +262,9 @@ export default class App {
   minKeyDuration = 350;
   resizeTimeoutId = 0;
   subviewZ = 100;
+  sidebarTransitionDurationMs = 520;
+  libraryTransitionTimeoutId = 0;
+  isLibraryTransitionInProgress = false;
 
   constructor() {
     if (!window.hqpwv) {
@@ -316,7 +319,8 @@ export default class App {
         return;
       }
       if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
-        this.hideHqpSettingsView();
+        this.switchSettingsSubview(this.hqpSettingsView, this.settingsView);
+        return;
       }
       this.showSettingsView();
     });
@@ -326,7 +330,8 @@ export default class App {
         return;
       }
       if (ViewUtil.isVisible(this.settingsView.$el)) {
-        this.hideSettingsView();
+        this.switchSettingsSubview(this.settingsView, this.hqpSettingsView);
+        return;
       }
       this.showHqpSettingsView();
     });
@@ -366,16 +371,16 @@ export default class App {
           break;
         case 'album':
           if ($pill.hasClass('isDisabled')) return;
-          this.hideSettingsViews();
+          this.hideSettingsViews(true);
           // Show currently playing album if available
           this.showCurrentAlbum();
           break;
         case 'playlist':
-          this.hideSettingsViews();
+          this.hideSettingsViews(true);
           this.showPlaylistCompoundView();
           break;
         case 'history':
-          this.hideSettingsViews();
+          this.hideSettingsViews(true);
           this.showHistoryView();
           break;
         case 'timeline':
@@ -391,12 +396,20 @@ export default class App {
     this.$navPills.filter(`[data-view="${view}"]`).addClass('active');
   }
 
-  hideSettingsViews() {
+  hideSettingsViews(isDirect = false) {
     if (ViewUtil.isVisible(this.settingsView.$el)) {
-      this.hideSettingsView();
+      if (isDirect) {
+        this.settingsView.hide();
+      } else {
+        this.hideSettingsView();
+      }
     }
     if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
-      this.hideHqpSettingsView();
+      if (isDirect) {
+        this.hqpSettingsView.hide();
+      } else {
+        this.hideHqpSettingsView();
+      }
     }
   }
 
@@ -513,6 +526,41 @@ export default class App {
     this.showSubview(this.hqpSettingsView);
   }
 
+  switchSettingsSubview(currentSubview, targetSubview) {
+    this.showSubview(targetSubview);
+    setTimeout(() => {
+      currentSubview.hide();
+    }, 40);
+  }
+
+  showSubviewFromLibrary(subview, ...extra) {
+    if (this.isLibraryTransitionInProgress) {
+      return;
+    }
+
+    const topSubview = this.getTopSubview();
+    if (topSubview !== this.libraryView) {
+      this.showSubviewNow(subview, ...extra);
+      return;
+    }
+
+    this.isLibraryTransitionInProgress = true;
+    $(document).trigger('disable-user-input');
+    TopBarUtil.returnSubviewHeader(true);
+
+    this.$pageHolder.addClass('isSidebarTransitionCollapsed');
+    this.$pageHolder.addClass('isLibraryTransitioning');
+
+    clearTimeout(this.libraryTransitionTimeoutId);
+    this.libraryTransitionTimeoutId = setTimeout(() => {
+      this.$pageHolder.removeClass('isSidebarTransitionCollapsed');
+      this.$pageHolder.removeClass('isLibraryTransitioning');
+      this.updatePageHolderSubviewClass(subview);
+      this.showSubviewNow(subview, ...extra);
+      this.isLibraryTransitionInProgress = false;
+    }, this.sidebarTransitionDurationMs);
+  }
+
   doAppTitleClick() {
     const topSubview = this.getTopSubview();
     if (topSubview && topSubview !== this.libraryView) {
@@ -582,6 +630,21 @@ export default class App {
   // subview management
 
   showSubview(subview, ...extra) {
+    if (this.getTopSubview() === subview) {
+      $(document).trigger('enable-user-input');
+      return;
+    }
+
+    const topSubview = this.getTopSubview();
+    if (topSubview === this.libraryView && subview !== this.libraryView) {
+      this.showSubviewFromLibrary(subview, ...extra);
+      return;
+    }
+
+    this.showSubviewNow(subview, ...extra);
+  }
+
+  showSubviewNow(subview, ...extra) {
     if (this.getTopSubview() === subview) {
       $(document).trigger('enable-user-input');
       return;

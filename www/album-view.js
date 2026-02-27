@@ -11,6 +11,7 @@ import Subview from './subview.js';
 import TopBar from './top-bar.js';
 import TopBarUtil from './top-bar-util.js';
 import TrackListItemUtil from './track-list-item-util.js';
+import ToastView from './toast-view.js';
 import Util from './util.js';
 import Values from './values.js';
 import ViewUtil from './view-util.js'
@@ -23,8 +24,7 @@ export default class AlbumView extends Subview {
 
   $pictureHolder;
   $picture;
-  $overlayImage;
-  $libraryItemImage;
+  $texts;
   $artistButton;
   $albumFavoriteButton;
   listItems$;
@@ -44,8 +44,8 @@ export default class AlbumView extends Subview {
     this.$pictureBlur = this.$el.find('#albumViewPictureBlur');
     this.$albumFavoriteButton = this.$el.find('#albumFavoriteButton');
     this.$list = this.$el.find('#albumList');
-    this.$overlayImage = $('#albumOverlayImage');
     this.$artistButton = this.$el.find('#albumViewArtist');
+    this.$texts = this.$el.find('#albumViewTexts');
 
     this.contextMenu = new AlbumContextMenu($("#albumContextMenu"));
     this.trackMetaChangeHandler = TrackListItemUtil.makeTrackMetaChangeHandler(this.$list);
@@ -58,11 +58,7 @@ export default class AlbumView extends Subview {
     this.$picture.on('click tap', () => $(document).trigger('album-picture-click', this.$picture));
   }
 
-show(album, $libraryItem = null) {
-
-    cl('album', album)
-
-    this.$libraryItemImage = $libraryItem ? $libraryItem.find('img') : null;
+  show(album, $libraryItem = null) {
     this.currentPlayingSongAlbumIndex = -1;
 
     // Reset any stale visibility state (e.g. left over from full-overlay animation)
@@ -78,16 +74,24 @@ show(album, $libraryItem = null) {
     $(document).on('new-track', this.onNewTrack);
     $(document).on('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
 
-    if (this.$libraryItemImage) {
-      this.onShowComplete();
-    } else {
-      this.onShowComplete();
-    }
+    this.fadeInContent();
+    this.onShowComplete();
   }
 
   onShowComplete = () => {
     $(document).trigger('enable-user-input');
   };
+
+  fadeInContent() {
+    ViewUtil.setCssSync(this.$texts, () => this.$texts.css('opacity', 0));
+    ViewUtil.setCssSync(this.$list, () => this.$list.css('opacity', 0));
+    ViewUtil.animateCss(this.$texts,
+      null,
+      () => this.$texts.css('opacity', 1));
+    ViewUtil.animateCss(this.$list,
+      null,
+      () => this.$list.css('opacity', 1));
+  }
 
 hide() {
     this.contextMenu.hide();
@@ -190,9 +194,14 @@ hide() {
 
     $("#albumViewPath").html(this.album['@_path']);
 
-    MetaUtil.isAlbumFavoriteFor(this.album['@_hash'])
+    const albumHash = this.getAlbumHash();
+    MetaUtil.isAlbumFavoriteFor(albumHash)
       ? this.$albumFavoriteButton.addClass('isSelected')
       : this.$albumFavoriteButton.removeClass('isSelected')
+  }
+
+  getAlbumHash() {
+    return this.album?.['@_hash'] || this.album?.['hash'] || '';
   }
 
   makeListItem(index, item) {
@@ -351,7 +360,11 @@ hide() {
   };
 
   onAlbumFavoriteButton = (event) => {
-    const hash = this.album['@_hash'];
+    const hash = this.getAlbumHash();
+    if (!hash) {
+      ToastView.show('Album favorite failed: missing album hash');
+      return;
+    }
     const oldValue = MetaUtil.isAlbumFavoriteFor(hash);
     const newValue = !oldValue;
     // update button

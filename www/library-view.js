@@ -116,6 +116,8 @@ export default class LibraryView extends Subview {
       () => this.syncExpandCollapseButtonState());
     Util.addAppListener(this, 'library-expand-all-groups', this.onExpandAllGroups);
     Util.addAppListener(this, 'library-collapse-all-groups', this.onCollapseAllGroups);
+    Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
+    Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
 
     // Listen for sidebar filter changes
     $(document).on('sidebar-filters-changed', (e, filterState) => {
@@ -331,6 +333,20 @@ export default class LibraryView extends Subview {
    */
   applySidebarFilters(filterState) {
     this.applyAllFilters();
+  }
+
+  onAlbumFavoriteChanged = () => {
+    const { browse } = SidebarView.getFilterState();
+    if (browse === 'favorite-albums') {
+      this.applyAllFilters();
+    }
+  }
+
+  onTrackFavoriteChanged = () => {
+    const { browse } = SidebarView.getFilterState();
+    if (browse === 'favorite-tracks') {
+      this.applyAllFilters();
+    }
   }
 
   /**
