@@ -65,14 +65,14 @@ show(album, $libraryItem = null) {
     this.$libraryItemImage = $libraryItem ? $libraryItem.find('img') : null;
     this.currentPlayingSongAlbumIndex = -1;
 
+    // Reset any stale visibility state (e.g. left over from full-overlay animation)
+    this.$picture.css({ visibility: '', transform: '' });
+
     // nb, list items get generated on every show
     this.populate(album);
     this.$el[0].scrollTop = 0;
 
     super.show();
-
-    // Add scroll handler to keep cover art visible
-    this.$el.on('scroll', this.onScroll);
 
     $(document).on('model-status-updated', this.updateHighlightedTrack);
     $(document).on('new-track', this.onNewTrack);
@@ -89,38 +89,19 @@ show(album, $libraryItem = null) {
     $(document).trigger('enable-user-input');
   };
 
-  onScroll = () => {
-    // Keep cover art visible when scrolling
-    const scrollTop = this.$el[0].scrollTop;
-    const heroHeight = this.$el.find('.album-hero').height();
-    const pictureHeight = this.$picture.height();
-
-    if (scrollTop === 0) {
-      // Reset to original position when at top
-      this.$picture.css('transform', '');
-    } else if (scrollTop < heroHeight - pictureHeight) {
-      // Translate picture when scrolling within hero area
-      this.$picture.css('transform', `translateY(${scrollTop}px)`);
-    } else {
-      // Keep picture at bottom of hero area when scrolling past it
-      this.$picture.css('transform', `translateY(${heroHeight - pictureHeight}px)`);
-    }
-  };
-
 hide() {
     this.contextMenu.hide();
     $(document).off('model-status-updated', this.updateHighlightedTrack);
     $(document).off('new-track', this.onNewTrack);
     $(document).off('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
 
-    // Remove scroll handler to prevent multiple handlers from accumulating
-    this.$el.off('scroll', this.onScroll);
-
     // Do normal fadeout of album view
     super.hide(() => {
       // Prevent next show from displaying old image on any fail or delay
       this.$picture.attr('src', '');
       this.$pictureBlur.attr('src', '');
+      // Reset any stale CSS state
+      this.$picture.css({ transform: '', visibility: '' });
     });
 
     $(document).trigger('enable-user-input');

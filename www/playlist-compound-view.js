@@ -31,15 +31,7 @@ export default class PlaylistCompoundView extends Subview {
 
   show() {
     super.show();
-
-    this.$el.addClass('animIn');
-
-    ViewUtil.animateCss(this.$el,
-      () => this.$el.css("transform", `translateY(${this.$el.height()}px)`),
-      () => this.$el.css('transform', 'translateY(0)'),
-      () => {
-        this.$el.removeClass('animIn');
-      });
+    this.$el.css('transform', '');
 
     ViewUtil.setVisible(this.historyView.$el, false);
     ViewUtil.setVisible(this.loadView.$el, false);
@@ -53,21 +45,20 @@ export default class PlaylistCompoundView extends Subview {
 
   hide() {
     if (!ViewUtil.isVisible(this.$el)) {
+      $(document).trigger('enable-user-input');
       return;
     }
-    ViewUtil.animateCss(this.$el,
-      null,
-      () => this.$el.css('transform', `translateY(${this.$el.outerHeight()}px)`),
-      () => {
-        ViewUtil.setVisible(this.$el, false);
-        ViewUtil.setVisible(this.historyView.$el, false);
-        ViewUtil.setVisible(this.loadView.$el, false);
-        ViewUtil.setVisible(this.mainView.$el, false);
-        $(document).trigger('enable-user-input');
-      });
+
     this.mainView.onHide();
     this.historyView.onHide();
     this.loadView.onHide();
+
+    super.hide(() => {
+      ViewUtil.setVisible(this.historyView.$el, false);
+      ViewUtil.setVisible(this.loadView.$el, false);
+      ViewUtil.setVisible(this.mainView.$el, false);
+      $(document).trigger('enable-user-input');
+    });
   }
 
   /** Like Android Activity.onBack() */

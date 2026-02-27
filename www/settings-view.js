@@ -90,7 +90,6 @@ export default class SettingsView extends Subview {
 
     this.updatePlayerBackgroundColorPicker();
 
-    ViewUtil.doStockFadeIn(this.$el);
     this.$el[0].scrollTop = 0;
 
     Service.queueCommandFront(Commands.getInfo());

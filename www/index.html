@@ -17,9 +17,17 @@
   <script src="libs/jquery-3.6.0.min.js"></script>
   <script type="module">
     import App from './app.js';
-    $(document).ready(() => {
-      window.app = new App();
-    });
+    const startApp = () => {
+      if (!window.app) {
+        window.app = new App();
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      startApp();
+    } else {
+      window.addEventListener('load', startApp, { once: true });
+    }
   </script>
 </head>
 
@@ -258,36 +266,41 @@
       <!-- Album View -->
       <section id="albumView" class="subview" tabindex="0">
 
-        <div id="albumViewInfo">
+        <div class="albumViewPictureColumn">
           <div class="albumViewPictureOuter">
             <img id="albumViewPictureBlur" alt="">
             <img id="albumViewPicture" alt="Album cover">
           </div>
-          <div id="albumViewTexts">
-            <div id="albumViewTextsInner">
-              <div id="albumViewArtist"></div>
-              <div id="albumViewTitle"></div>
-              <div id="albumViewStats"></div>
-              <div id="albumViewPerformerComposer">
-                <div id="albumViewPerformer"></div>
-                <div id="albumViewComposer"></div>
-              </div>
-              <div id="albumViewGenreButtons"></div>
-              <div id="albumViewPath"></div>
-              <div id="albumViewButtons">
-                <div id="albumPlayNowButton" class="textButton">
-                  <div class="iconPlay"></div>Play
+        </div>
+
+        <div id="albumViewRightColumn">
+          <div id="albumViewInfo">
+            <div id="albumViewTexts">
+              <div id="albumViewTextsInner">
+                <div id="albumViewArtist"></div>
+                <div id="albumViewTitle"></div>
+                <div id="albumViewStats"></div>
+                <div id="albumViewPerformerComposer">
+                  <div id="albumViewPerformer"></div>
+                  <div id="albumViewComposer"></div>
                 </div>
-                <div id="albumQueueButton" class="textButton">Add to queue</div>
-                <div id="albumFavoriteButton" class="iconButton favoriteButton">
-                  <div class="favoriteIcon"></div>
+                <div id="albumViewGenreButtons"></div>
+                <div id="albumViewPath"></div>
+                <div id="albumViewButtons">
+                  <div id="albumPlayNowButton" class="textButton">
+                    <div class="iconPlay"></div>Play
+                  </div>
+                  <div id="albumQueueButton" class="textButton">Add to queue</div>
+                  <div id="albumFavoriteButton" class="iconButton favoriteButton">
+                    <div class="favoriteIcon"></div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div id="albumList"></div>
+          <div id="albumList"></div>
+        </div>
       </section>
 
       <!-- Playlist View -->

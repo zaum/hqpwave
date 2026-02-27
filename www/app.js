@@ -310,28 +310,25 @@ export default class App {
 
     $(document).on('keydown', this.onKeydown);
 
-    // Debug: Check if buttons exist
-    console.log('Settings button found:', this.$settingsButton.length > 0);
-    console.log('HQP Settings button found:', this.$hqpSettingsButton.length > 0);
-
-    // Bind click handlers with debugging
-    this.$settingsButton.on("click", (e) => {
-      console.log('Settings clicked!');
-      // Toggle: if settings view is already open, close it and return to previous view
+    this.$settingsButton.on('click', () => {
       if (ViewUtil.isVisible(this.settingsView.$el)) {
-        this.hideSettingsView();
-      } else {
-        this.showSettingsView();
+        this.goToLibraryView();
+        return;
       }
-    });
-    this.$hqpSettingsButton.on("click", (e) => {
-      console.log('HQP Settings clicked!');
-      // Toggle: if hqp settings view is already open, close it and return to previous view
       if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
         this.hideHqpSettingsView();
-      } else {
-        this.showHqpSettingsView();
       }
+      this.showSettingsView();
+    });
+    this.$hqpSettingsButton.on('click', () => {
+      if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
+        this.goToLibraryView();
+        return;
+      }
+      if (ViewUtil.isVisible(this.settingsView.$el)) {
+        this.hideSettingsView();
+      }
+      this.showHqpSettingsView();
     });
     $("#appTitle").on("click", () => this.doAppTitleClick());
 
@@ -361,49 +358,63 @@ export default class App {
       const $pill = $(e.currentTarget);
       const view = $pill.data('view');
 
-      // Close settings modals if they are open
-      if (ViewUtil.isVisible(this.settingsView.$el)) {
-        this.hideSettingsView();
-      }
-      if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
-        this.hideHqpSettingsView();
-      }
-
-      // Update active state
-      this.$navPills.removeClass('active');
-      $pill.addClass('active');
+      this.setActiveNavPill(view);
 
       switch (view) {
         case 'library':
-          // Hide all top views until we return to library
-          for (let sv of this.subviews) {
-            if (sv !== this.libraryView && sv !== this.settingsView && sv !== this.hqpSettingsView && ViewUtil.isVisible(sv.$el)) {
-              this.hideSubview(sv);
-            }
-          }
+          this.goToLibraryView();
           break;
         case 'album':
           if ($pill.hasClass('isDisabled')) return;
+          this.hideSettingsViews();
           // Show currently playing album if available
           this.showCurrentAlbum();
           break;
         case 'playlist':
+          this.hideSettingsViews();
           this.showPlaylistCompoundView();
           break;
         case 'history':
+          this.hideSettingsViews();
           this.showHistoryView();
           break;
         case 'timeline':
         case 'artist':
-          // These views are not yet implemented, just return to library
-          for (let sv of this.subviews) {
-            if (sv !== this.libraryView && sv !== this.settingsView && sv !== this.hqpSettingsView && ViewUtil.isVisible(sv.$el)) {
-              this.hideSubview(sv);
-            }
-          }
+          this.goToLibraryView();
           break;
       }
     });
+  }
+
+  setActiveNavPill(view) {
+    this.$navPills.removeClass('active');
+    this.$navPills.filter(`[data-view="${view}"]`).addClass('active');
+  }
+
+  hideSettingsViews() {
+    if (ViewUtil.isVisible(this.settingsView.$el)) {
+      this.hideSettingsView();
+    }
+    if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
+      this.hideHqpSettingsView();
+    }
+  }
+
+  goToLibraryView() {
+    const closables = [this.hqpSettingsView, this.settingsView, this.playlistView, this.albumView];
+    for (let subview of closables) {
+      if (ViewUtil.isVisible(subview.$el)) {
+        this.hideSubview(subview);
+      }
+    }
+
+    ViewUtil.setVisible(this.libraryView.$el, true);
+    this.updatePageHolderSubviewClass(this.libraryView);
+    TopBarUtil.returnSubviewHeader(true);
+    TopBarUtil.updateFor(this.libraryView.$el, true);
+    ViewUtil.setFocus(this.libraryView.$el);
+    this.setActiveNavPill('library');
+    $(document).trigger('enable-user-input');
   }
 
   /**
@@ -571,6 +582,11 @@ export default class App {
   // subview management
 
   showSubview(subview, ...extra) {
+    if (this.getTopSubview() === subview) {
+      $(document).trigger('enable-user-input');
+      return;
+    }
+
     // Disable user input
     // Subview *must* send 'enable-user-input' at end of its show()
     $(document).trigger('disable-user-input');
@@ -586,6 +602,11 @@ export default class App {
   }
 
   hideSubview(subview) {
+    if (!ViewUtil.isVisible(subview.$el)) {
+      $(document).trigger('enable-user-input');
+      return;
+    }
+
     // Disable user input
     // Subview *must* send 'enable-user-input' at end of its hide()
     $(document).trigger('disable-user-input');
@@ -663,7 +684,7 @@ export default class App {
   updatePageHolderSubviewClassOnHide() {
     const subviews = this.getVisibleSubviews();
     if (subviews.length < 2) {
-      console.log('warning not enough visible subviews');
+      this.updatePageHolderSubviewClass(this.libraryView);
       return;
     }
     // The subview which is about to get exposed by the current subview's hide()
@@ -710,7 +731,7 @@ export default class App {
     let topSubview;
     for (let subview of this.subviews) {
       if (ViewUtil.isVisible(subview.$el)) {
-        const z = subview.$el.css('z-index');
+        const z = parseInt(subview.$el.css('z-index'), 10) || 0;
         if (z > maxZ) {
           maxZ = z;
           topSubview = subview;
@@ -725,7 +746,7 @@ export default class App {
     const array = [];
     for (let subview of this.subviews) {
       if (ViewUtil.isVisible(subview.$el)) {
-        const z = subview.$el.css('z-index');
+        const z = parseInt(subview.$el.css('z-index'), 10) || 0;
         array.push({ subview: subview, z: z });
       }
     }

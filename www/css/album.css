@@ -3,12 +3,55 @@
    ═══════════════════════════════════════════════════════════════ */
 
 #albumView {
-  padding: 0;
-  overflow-y: auto;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 48px;
+  padding: 32px 0 0 52px;
+  height: 100%;
+  overflow: hidden;
+  align-items: start;
+  /* Override .subview transition which breaks position: sticky */
+  transition: none;
+}
+
+#albumViewWrapper {
+  height: 100%;
+}
+
+#albumViewInfo {
+  padding-bottom: 32px;
+  flex: 0 0 auto;
 }
 
 #albumView .viewHeader {
   display: none;
+}
+
+#albumViewRightColumn {
+  min-width: 0;
+  isolation: isolate;
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+#albumViewRightColumn:hover {
+  scrollbar-color: var(--border-md) transparent;
+}
+
+#albumViewRightColumn::-webkit-scrollbar {
+  width: 10px;
+}
+
+#albumViewRightColumn::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+}
+
+#albumViewRightColumn:hover::-webkit-scrollbar-thumb {
+  background: var(--border-md);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -18,38 +61,58 @@
 #albumViewInfo,
 .album-hero {
   position: relative;
-  padding: 52px 64px 48px;
-  display: flex;
-  gap: 48px;
-  align-items: flex-end;
+  padding-bottom: 32px;
   animation: heroIn 0.3s ease-out;
 }
 
 @keyframes heroIn {
   from {
-    opacity: 1;
-    transform: translateY(10px);
+    opacity: 0;
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-#albumView {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
+
 
 @media (max-width: 768px) {
 
+  #albumView {
+    grid-template-columns: 1fr;
+    padding: 32px 0 0 24px;
+    gap: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  #albumViewRightColumn {
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .albumViewPictureColumn {
+    align-self: start;
+    padding-bottom: 0;
+  }
+
+  .albumViewPictureOuter,
+  .cover-wrap {
+    position: static;
+    margin: 0 auto;
+  }
+
+  #albumViewPicture,
+  .cover {
+    height: auto;
+    width: 280px;
+    max-height: none;
+  }
+
   #albumViewInfo,
   .album-hero {
-    padding: 32px 24px;
-    gap: 24px;
-    flex-direction: column;
-    align-items: flex-start;
+    padding-bottom: 16px;
   }
 }
 
@@ -86,18 +149,27 @@
    COVER ART
    ═══════════════════════════════════════════════════════════════ */
 
+.albumViewPictureColumn {
+  align-self: stretch;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  padding-bottom: 16px;
+}
+
 .albumViewPictureOuter,
 .cover-wrap {
   position: relative;
-  flex-shrink: 0;
-  z-index: 10;
+  z-index: 200;
   overflow: visible;
 }
 
 #albumViewPicture,
 .cover {
-  width: 550px;
-  height: 550px;
+  width: auto;
+  height: calc(100vh - 80px - 70px - 80px);
+  max-height: 560px;
+  aspect-ratio: 1 / 1;
   border-radius: 10px;
   background: var(--surface2);
   border: none;
@@ -105,15 +177,16 @@
   object-fit: cover;
   position: relative;
   z-index: 2;
+  display: block;
 }
 
 #albumViewPictureBlur {
   position: absolute;
-  top: -100px;
-  bottom: -250px;
-  left: -200px;
-  right: -450px;
-  filter: blur(100px);
+  top: -180px;
+  bottom: -320px;
+  left: -300px;
+  right: -480px;
+  filter: blur(120px);
   opacity: 0.6;
   z-index: 1;
   object-fit: cover;
@@ -397,19 +470,18 @@
 
 #albumList,
 .track-section {
-  padding: 0 64px 60px;
+  padding: 0 0 60px;
   animation: listIn 0.3s ease-out 0.1s both;
+  overflow: visible;
 }
 
 @keyframes listIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -417,7 +489,7 @@
 
   #albumList,
   .track-section {
-    padding: 0 24px 60px;
+    padding: 0 0 60px;
   }
 }
 
@@ -500,12 +572,10 @@
 @keyframes playButtonIn {
   from {
     opacity: 0;
-    transform: scale(0.8);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -660,12 +730,10 @@
 @keyframes moreButtonIn {
   from {
     opacity: 0;
-    transform: scale(0.8);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -815,12 +883,10 @@
 @keyframes contextButtonIn {
   from {
     opacity: 0;
-    transform: scale(0.8);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 

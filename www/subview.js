@@ -17,28 +17,69 @@ export default class Subview {
     this.$el.on("scroll", e => this.onScroll(e));
   }
 
-  get $el() {
-    return this.$el;
-  }
-
   /**
    * Subclass should super.show()
    */
   show(...extra) {
     ViewUtil.setVisible(this.$el, true);
-    ViewUtil.setFocus(this.$el);
+
+    let done = false;
+    const complete = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      this.$el.css('opacity', 1);
+      ViewUtil.setFocus(this.$el);
+    };
+
+    const fallbackTimeoutId = setTimeout(complete, 260);
+
+    ViewUtil.animateCss(this.$el,
+      () => this.$el.css('opacity', 0),
+      () => this.$el.css('opacity', 1),
+      () => {
+        clearTimeout(fallbackTimeoutId);
+        complete();
+      });
   }
 
   // Override as needed
   hide(callback = null) {
+    if (!ViewUtil.isVisible(this.$el)) {
+      if (callback) {
+        callback();
+      }
+      return;
+    }
+
+    let done = false;
+    const complete = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      ViewUtil.setVisible(this.$el, false);
+      if (callback) {
+        callback();
+      }
+    };
+
+    const opacity = this.$el.css('opacity');
+    if (opacity == '0') {
+      complete();
+      return;
+    }
+
+    const fallbackMs = 260;
+    const fallbackTimeoutId = setTimeout(complete, fallbackMs);
+
     ViewUtil.animateCss(this.$el,
       null,
       () => this.$el.css('opacity', 0),
       () => {
-        ViewUtil.setVisible(this.$el, false);
-        if (callback) {
-          callback();
-        }
+        clearTimeout(fallbackTimeoutId);
+        complete();
       });
   }
 
