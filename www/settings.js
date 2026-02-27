@@ -16,6 +16,7 @@ class Settings {
   _libraryFilterType;
   _libraryCollapsedGroups;
   _colorTheme;
+  _showPlayButton;
   _presetsArray;
   _currentRule;
   _thresholdRule;
@@ -47,6 +48,7 @@ class Settings {
     }
 
     this._colorTheme = this.storage.getItem('colorTheme') || 'dark';
+    this._showPlayButton = this.storage.getItem('showPlayButton') || 'true';
     this._highlightColor = this.storage.getItem('highlightColor') || '#e8c88a';
     this._playerBackgroundColor = this.storage.getItem('playerBackgroundColor') || '#111112';
 
@@ -201,6 +203,17 @@ class Settings {
   set playerBackgroundColor(s) {
     this._playerBackgroundColor = s;
     this.storage.setItem('playerBackgroundColor', s);
+  }
+
+  get showPlayButton() {
+    return (this._showPlayButton === 'true');
+  }
+
+  set showPlayButton(b) {
+    const s = (b === true || b === 'true') ? 'true' : 'false';
+    this._showPlayButton = s;
+    this.storage.setItem('showPlayButton', s);
+    $(document).trigger('settings-show-play-button-changed');
   }
 
   get presetsArray() {

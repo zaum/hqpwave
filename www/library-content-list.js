@@ -31,6 +31,7 @@ export default class LibraryContentList {
     const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0 };
     this.intersectionObs = new IntersectionObserver(this.onIntersection, config);
     $(document).on('album-favorite-changed', this.onAlbumFavoriteChanged);
+    $(document).on('settings-show-play-button-changed', this.onSettingsChanged);
   }
 
   show(type = null, value = null) {
@@ -94,6 +95,9 @@ export default class LibraryContentList {
       this.populateGroupDiv($group, group);
     }
     this.$el.append($group);
+    
+    // Update play button visibility based on setting
+    this.updatePlayButtonVisibility();
   }
 
   // override-able
@@ -234,15 +238,18 @@ export default class LibraryContentList {
     const albumText = album['@_album'];
     const bits = AlbumUtil.getBitrateText(album);
     const isFavoriteClass = MetaUtil.isAlbumFavoriteFor(hash) ? 'isFavorite' : '';
+    // Invert the logic to fix the backwards toggle
+    const showPlayButton = !Settings.showPlayButton;
 
     let s = `<div class="libraryItem ${isFavoriteClass}" data-hash="${hash}">`; /* tabindex="0" */
     s += `<div class="libraryItemPicture">
                  <img data-src="${imgPath}" />
-                 <div class="libraryItemPlayBtn" title="Play Album">
+                 ${showPlayButton ? `` : `<div class="libraryItemPlayBtn" title="Play Album">
                    <svg viewBox="0 0 24 24" fill="currentColor">
                      <path d="M8 5v14l11-7z"/>
                    </svg>
-                 </div>
+                 </div>`}
+                 <div class="libraryItemBits">${bits}</div>
                </div>`;
     s += `<div class="libraryItemTexts">
                   <div class="libraryItemFavorite"></div>
@@ -252,12 +259,37 @@ export default class LibraryContentList {
     s += `</div>`;
     const $item = $(s);
 
-    $item.find('.libraryItemPlayBtn').on('click tap', (e) => {
-      e.stopPropagation();
-      const commands = Commands.playlistAddUsingAlbumAndIndices(album, 0, -1);
-      AppUtil.doPlaylistAdds(commands, true, true);
-    });
+    if (!showPlayButton) {
+      $item.addClass('show-play-button');
+      $item.find('.libraryItemPlayBtn').on('click tap', (e) => {
+        e.stopPropagation();
+        const commands = Commands.playlistAddUsingAlbumAndIndices(album, 0, -1);
+        AppUtil.doPlaylistAdds(commands, true, true);
+      });
+    } else {
+      $item.removeClass('show-play-button');
+    }
 
     return $item;
+  }
+
+  updatePlayButtonVisibility() {
+    // Invert the logic to fix the backwards toggle
+    const showPlayButton = !Settings.showPlayButton;
+    const $items = this.$el.find('.libraryItem');
+    
+    $items.each((index, item) => {
+      const $item = $(item);
+      if (!showPlayButton) {
+        $item.addClass('show-play-button');
+      } else {
+        $item.removeClass('show-play-button');
+      }
+    });
+  }
+
+  onSettingsChanged = () => {
+    // Update all existing items in the library view
+    this.updatePlayButtonVisibility();
   }
 }

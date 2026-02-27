@@ -19,6 +19,7 @@ export default class SettingsView extends Subview {
   $themeDarkCheckbox;
   $themeLightCheckbox;
   $metaCheckbox;
+  $showPlayButtonCheckbox;
   $highlightColorPicker;
   $playerBackgroundColorPicker;
   infoView;
@@ -35,6 +36,8 @@ export default class SettingsView extends Subview {
     this.$themeDarkCheckbox.on('click tap', this.onThemeCheckbox);
     this.$themeLightCheckbox.on('click tap', this.onThemeCheckbox);
     this.$metaCheckbox.on('click tap', this.onMetaCheckbox);
+    this.$showPlayButtonCheckbox = this.$el.find('#settingsShowPlayButtonCheckbox');
+    this.$showPlayButtonCheckbox.on('click tap', this.onShowPlayButtonCheckbox);
     this.$highlightColorPicker = this.$el.find('#highlightColorPicker');
     this.$highlightColorPicker.on('change', this.onHighlightColorChange);
     this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
@@ -80,6 +83,8 @@ export default class SettingsView extends Subview {
     this.updateThemeCheckbox();
 
     this.updateMetaCheckbox();
+
+    this.updateShowPlayButtonCheckbox();
 
     this.updateHighlightColorPicker();
 
@@ -170,5 +175,23 @@ export default class SettingsView extends Subview {
   onMetaCheckbox = () => {
     Settings.isMetaEnabled = !Settings.isMetaEnabled;
     this.updateMetaCheckbox();
+  };
+
+  updateShowPlayButtonCheckbox() {
+    if (Settings.showPlayButton) {
+      this.$showPlayButtonCheckbox.addClass('isChecked');
+      this.$showPlayButtonCheckbox.prop('checked', true);
+    } else {
+      this.$showPlayButtonCheckbox.removeClass('isChecked');
+      this.$showPlayButtonCheckbox.prop('checked', false);
+    }
+  }
+
+  onShowPlayButtonCheckbox = () => {
+    // Invert the logic to fix the backwards toggle
+    Settings.showPlayButton = !Settings.showPlayButton;
+    this.updateShowPlayButtonCheckbox();
+    // Update library view play button visibility
+    $(document).trigger('settings-show-play-button-changed');
   }
 }

@@ -489,6 +489,11 @@
   background: var(--accent-hover, var(--accent));
 }
 
+/* Hide play button when setting is disabled */
+.libraryItem:not(.show-play-button) .libraryItemPlayBtn {
+  display: none !important;
+}
+
 /* Favorite Dot */
 .fav-dot,
 .libraryItemFavorite {
@@ -539,7 +544,7 @@
 }
 
 .libraryItemBits {
-  right: 48px;
+  right: 8px;
   left: auto;
   bottom: auto;
   top: 10px;
