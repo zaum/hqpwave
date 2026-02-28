@@ -26,6 +26,9 @@ export default class LoadPlaylistView  extends Subview {
 
   customPlaylistPaths;
   hqpPlaylistItems;
+  loadTimeoutId = null;
+  loadSessionId = 0;
+  isLoading = false;
 
   constructor($el) {
   	super($el);
@@ -37,11 +40,15 @@ export default class LoadPlaylistView  extends Subview {
 
   onShow() {
     $(document).on('custom-playlists-changed', this.onMetaPlaylistsChanged);
+    $(document).on('server-errors', this.onServerErrors);
+    $(document).on('proxy-errors', this.onProxyErrors);
     this.populate();
   }
 
   onHide() {
     $(document).off('custom-playlists-changed', this.onMetaPlaylistsChanged);
+    $(document).off('server-errors', this.onServerErrors);
+    $(document).off('proxy-errors', this.onProxyErrors);
   }
 
   populate() {
@@ -139,13 +146,27 @@ export default class LoadPlaylistView  extends Subview {
   // ---
 
   doPlaylistLoad(path) {
+    this.loadSessionId += 1;
+    const sessionId = this.loadSessionId;
+    this.isLoading = true;
+
     ToastView.show(`Loading playlist`, 0);
     $(document).trigger('disable-user-input');
+
+    if (this.loadTimeoutId) {
+      clearTimeout(this.loadTimeoutId);
+    }
+    this.loadTimeoutId = setTimeout(() => {
+      if (sessionId !== this.loadSessionId) {
+        return;
+      }
+      this.finishLoad(false, 'Load timed out');
+    }, 6000);
 
     const onGetTransport = (data) => {
       if (data['GetTransport'] == undefined || data['GetTransport']['@_value'] == undefined) {
         cl('warning bad value', data);
-        ToastView.show(`<span class="colorAccent">Couldn't load playlist</span>`);
+        this.finishLoad(false, `Couldn't load playlist`);
       } else {
         let transport = data['GetTransport']['@_value'];
         if (transport == 0) {
@@ -164,19 +185,64 @@ export default class LoadPlaylistView  extends Subview {
 
   doPlaylistLoadContinued(path, transport) {
     const onPlaylistLoaded = (data) => {
-      ToastView.hide();
-      $(document).trigger('enable-user-input');
-
-      // done:
       if (!DataUtil.isResultOk(data)) {
-        ToastView.show(`<span class="colorAccent">Couldn't load playlist</span>`);
-      } else {
-        $(document).trigger('load-playlist-close');
+        this.finishLoad(false, `Couldn't load playlist`);
+        return;
       }
+
+      Values.bumpCoverCacheKey();
+
+      // HQPlayer returns OK immediately but processes the new playlist
+      // asynchronously. Delay PlaylistGet so the model gets the NEW data
+      // before we transition back.
+      const sessionId = this.loadSessionId;
+      setTimeout(() => {
+        if (sessionId !== this.loadSessionId) return;
+        Service.queueCommandFront(Commands.playlistGet(), () => {
+          if (sessionId !== this.loadSessionId) return;
+          this.finishLoad(true);
+        });
+      }, 400);
     };
     const command = Commands.setTransport(transport, path);
     Service.queueCommandFront(command, onPlaylistLoaded);
   }
+
+  finishLoad(isSuccess, message = null) {
+    if (!this.isLoading) {
+      return;
+    }
+    this.isLoading = false;
+
+    if (this.loadTimeoutId) {
+      clearTimeout(this.loadTimeoutId);
+      this.loadTimeoutId = null;
+    }
+
+    $(document).trigger('enable-user-input');
+
+    if (isSuccess) {
+      ToastView.hide();
+      $(document).trigger('load-playlist-close');
+    } else {
+      // Show error directly (don't call hide() first — the indefinite
+      // "Loading" toast's min-duration delayed-hide would clobber the error)
+      if (message) {
+        ToastView.show(`<span class="colorAccent">${message}</span>`, 2500);
+      } else {
+        ToastView.hide();
+      }
+      // Stay on Load view so user can retry
+    }
+  }
+
+  onServerErrors = () => {
+    this.finishLoad(false, 'Server not responding');
+  };
+
+  onProxyErrors = () => {
+    this.finishLoad(false, 'Server error');
+  };
 
   onItemContextButtonClick(event) {
     event.stopPropagation(); // prevent listitem from responding to same event

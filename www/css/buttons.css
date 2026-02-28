@@ -8,8 +8,7 @@
 .libraryGroupLabel:before,
 .libraryGroupLabel .icon:before,
 .loadItem:before,
-.dropdownItem.isSelected:before,
-#playlistRepeatButton:before {
+.dropdownItem.isSelected:before {
   content: " ";
   display: block;
   position: absolute;
@@ -165,7 +164,7 @@
 }
 
 .deleteButton:before {
-  background-image: url("./../img/icons/delete_white_24dp.svg");
+  background-image: url("./../img/icons/delete_outline_thin_white_24dp.svg");
 }
 
 .deleteButton:hover {
@@ -174,6 +173,11 @@
 
 .dragHandleButton {
   background: transparent;
+}
+
+.dragHandleButton:before {
+  background-image: url("./../img/icons/drag_handle_thin_white_24dp.svg");
+  opacity: 0.7;
 }
 
 

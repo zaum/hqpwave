@@ -22,6 +22,7 @@ class Values {
   _hqplayerIp;
   _imagesEndpoint;
   _startTime = new Date().getTime();
+  _coverCacheKey = Date.now();
 
   constructor() {
     // Dev convenience
@@ -56,6 +57,14 @@ class Values {
 
   get imagesEndpoint() {
     return this._imagesEndpoint;
+  }
+
+  get coverCacheKey() {
+    return this._coverCacheKey;
+  }
+
+  bumpCoverCacheKey() {
+    this._coverCacheKey = Date.now();
   }
 
   get uptimeString() {

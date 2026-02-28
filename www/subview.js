@@ -30,12 +30,16 @@ export default class Subview {
       }
       done = true;
       this.$el.css('opacity', 1);
+      this.$el.css('filter', 'brightness(1)');
       ViewUtil.setFocus(this.$el);
     };
 
-    const fallbackTimeoutId = setTimeout(complete, 700);
+    const fallbackTimeoutId = setTimeout(complete, 420);
 
-    ViewUtil.setCssSync(this.$el, () => this.$el.css('opacity', 0));
+    ViewUtil.setCssSync(this.$el, () => {
+      this.$el.css('opacity', 0);
+      this.$el.css('filter', 'brightness(1.08)');
+    });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         this.$el.one('transitionend', () => {
@@ -43,6 +47,7 @@ export default class Subview {
           complete();
         });
         this.$el.css('opacity', 1);
+        this.$el.css('filter', 'brightness(1)');
       });
     });
   }
@@ -63,6 +68,7 @@ export default class Subview {
       }
       done = true;
       ViewUtil.setVisible(this.$el, false);
+      this.$el.css('filter', 'brightness(1)');
       if (callback) {
         callback();
       }
@@ -74,12 +80,15 @@ export default class Subview {
       return;
     }
 
-    const fallbackMs = 700;
+    const fallbackMs = 420;
     const fallbackTimeoutId = setTimeout(complete, fallbackMs);
 
     ViewUtil.animateCss(this.$el,
       null,
-      () => this.$el.css('opacity', 0),
+      () => {
+        this.$el.css('opacity', 0);
+        this.$el.css('filter', 'brightness(1.08)');
+      },
       () => {
         clearTimeout(fallbackTimeoutId);
         complete();

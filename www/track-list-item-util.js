@@ -287,12 +287,23 @@ export default class TrackListItemUtil {
     let s = '';
     s +=  `<div class="trackItem groupFirst trackItemAlbumHeader">`;
     s +=    `<div class="albumLineButton" data-hash="${album['@_hash']}">`;
-    s +=      `<img src="${imgPath}">`;
+    s +=      `<div class="coverThumb">`;
+    s +=        `<img src="${imgPath}" alt="">`;
+    s +=        `<div class="coverFallback" aria-hidden="true"></div>`;
+    s +=      `</div>`;
     s +=      `<div class="text">${text}</div>`;
     s +=    `</div>`;
     s +=    `<div class="statsText">${statsText}</div>`;
     s += `</div>`;
-    return $(s);
+    const $el = $(s);
+    const $img = $el.find('img');
+    $img.on('error', () => {
+      $el.addClass('isCoverMissing');
+    });
+    $img.on('load', () => {
+      $el.removeClass('isCoverMissing');
+    });
+    return $el;
   }
 
   static onAlbumButton = (e) => {

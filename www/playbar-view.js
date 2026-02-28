@@ -316,13 +316,35 @@ export default class PlaybarView {
   };
 
   _getCurrentAlbum() {
-    // Status metadata is empty when stopped, so cover is blank then.
+    // Prefer status metadata uri, then fall back to current playlist track.
     const meta = Model.status.metadata || {};
     const uri = meta['@_uri'];
-    if (!uri || !Model.hasLibrary) {
+    if (uri && Model.hasLibrary) {
+      const fromStatus = Model.library.getAlbumByTrackUri(uri);
+      if (fromStatus) {
+        return fromStatus;
+      }
+    }
+
+    const currentIndex = Model.playlist?.currentIndex;
+    const hasCurrentTrack = Number.isInteger(currentIndex)
+      && currentIndex >= 0
+      && currentIndex < (Model.playlist?.array?.length || 0);
+    if (!hasCurrentTrack) {
       return null;
     }
-    return Model.library.getAlbumByTrackUri(uri) || null;
+
+    const currentTrack = Model.playlist.array[currentIndex];
+    if (currentTrack?.album) {
+      return currentTrack.album;
+    }
+
+    const trackUri = currentTrack?.['@_uri'];
+    if (trackUri && Model.hasLibrary) {
+      return Model.library.getAlbumByTrackUri(trackUri) || null;
+    }
+
+    return null;
   }
 
   _updateCoverArt() {
@@ -346,7 +368,7 @@ export default class PlaybarView {
     if (!album) {
       return;
     }
-    $(document).trigger('library-item-click', [album, null]);
+    $(document).trigger('library-item-click', album);
   };
 
   _updateVolumeInline() {

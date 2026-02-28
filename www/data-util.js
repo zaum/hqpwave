@@ -67,7 +67,7 @@ class DataUtil {
   }
 
   static getAlbumImageUrl(album) {
-    return Values.imagesEndpoint + album['@_hash']
+    return `${Values.imagesEndpoint}${album['@_hash']}?v=${Values.coverCacheKey}`;
   }
 
   /** Where track is assumed to be from album. */

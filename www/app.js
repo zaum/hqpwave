@@ -262,7 +262,7 @@ export default class App {
   minKeyDuration = 350;
   resizeTimeoutId = 0;
   subviewZ = 100;
-  sidebarTransitionDurationMs = 520;
+  sidebarTransitionDurationMs = 260;
   libraryTransitionTimeoutId = 0;
   isLibraryTransitionInProgress = false;
 
