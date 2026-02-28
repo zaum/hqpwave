@@ -337,6 +337,7 @@ export default class App {
       this.showHqpSettingsView();
     });
     $("#appTitle").on("click", () => this.doAppTitleClick());
+    $('#backToLibraryButton').on('click', () => this.goToLibraryView());
 
     App.instance = this; // yes really
 
@@ -364,28 +365,28 @@ export default class App {
       const $pill = $(e.currentTarget);
       const view = $pill.data('view');
 
-      this.setActiveNavPill(view);
-
       switch (view) {
         case 'library':
+          this.setActiveNavPill('library');
           this.goToLibraryView();
           break;
         case 'album':
-          if ($pill.hasClass('isDisabled')) return;
           this.hideSettingsViews(true);
-          // Show currently playing album if available
           this.showCurrentAlbum();
           break;
         case 'playlist':
+          this.setActiveNavPill('playlist');
           this.hideSettingsViews(true);
           this.showPlaylistCompoundView();
           break;
         case 'history':
+          this.setActiveNavPill('history');
           this.hideSettingsViews(true);
           this.showHistoryView();
           break;
         case 'timeline':
         case 'artist':
+          this.setActiveNavPill('library');
           this.goToLibraryView();
           break;
       }
@@ -444,16 +445,49 @@ export default class App {
    * Show currently playing album.
    */
   showCurrentAlbum() {
-    // Get current track from playlist
-    if (Model.playlist && Model.playlist.currentIndex >= 0) {
-      const track = Model.playlist.array[Model.playlist.currentIndex];
-      if (track && track.album) {
-        this.showAlbumView(track.album);
-        return;
+    const album = this.getCurrentAlbum();
+    if (album) {
+      this.showAlbumView(album);
+      return;
+    }
+
+    if (ViewUtil.isVisible(this.albumView.$el)) {
+      this.setActiveNavPill('album');
+      return;
+    }
+
+    ToastView.show('No album currently playing');
+  }
+
+  getCurrentAlbum() {
+    const meta = Model.status?.metadata || {};
+    const uri = meta['@_uri'];
+    if (uri && Model.hasLibrary) {
+      const fromStatus = Model.library.getAlbumByTrackUri(uri);
+      if (fromStatus) {
+        return fromStatus;
       }
     }
-    // If no current track, show toast
-    ToastView.show('No album currently playing');
+
+    const currentIndex = Model.playlist?.currentIndex;
+    const hasCurrentTrack = Number.isInteger(currentIndex)
+      && currentIndex >= 0
+      && currentIndex < (Model.playlist?.array?.length || 0);
+    if (!hasCurrentTrack) {
+      return null;
+    }
+
+    const currentTrack = Model.playlist.array[currentIndex];
+    if (currentTrack?.album) {
+      return currentTrack.album;
+    }
+
+    const trackUri = currentTrack?.['@_uri'];
+    if (trackUri && Model.hasLibrary) {
+      return Model.library.getAlbumByTrackUri(trackUri) || null;
+    }
+
+    return null;
   }
 
   /** Performs a series of required asynchronous calls. */
@@ -516,6 +550,7 @@ export default class App {
   }
 
   showAlbumView(album, $libraryItem) {
+    this.setActiveNavPill('album');
     this.showSubview(this.albumView, album, $libraryItem);
   }
 
@@ -702,15 +737,10 @@ export default class App {
     }
 
     // Album tab disabled state
-    let hasCurrentAlbum = false;
-    if (Model.playlist && Model.playlist.currentIndex >= 0 && Model.playlist.currentIndex < Model.playlist.array.length) {
-      const track = Model.playlist.array[Model.playlist.currentIndex];
-      if (track && track.album) {
-        hasCurrentAlbum = true;
-      }
-    }
+    const hasCurrentAlbum = !!this.getCurrentAlbum();
+    const isAlbumVisible = ViewUtil.isVisible(this.albumView.$el);
 
-    if (hasCurrentAlbum) {
+    if (hasCurrentAlbum || isAlbumVisible) {
       this.$navPills.filter('[data-view="album"]').removeClass('isDisabled');
     } else {
       this.$navPills.filter('[data-view="album"]').addClass('isDisabled');

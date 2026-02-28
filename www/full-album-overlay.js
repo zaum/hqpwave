@@ -1,4 +1,5 @@
 import Util from './util.js';
+import Native from './native.js';
 import ViewUtil from './view-util.js';
 
 /**
@@ -12,18 +13,37 @@ class FullAlbumOverlay {
   $overlayScreen = $('#fullOverlayScreen');
   /** The album image copy, which is actually one level above in the z-index. */
   $overlayImage = $('#fullOverlayImage');
+  $prevButton = $('#fullOverlayPrevButton');
+  $nextButton = $('#fullOverlayNextButton');
   $sourceImage;
+  imageUrls = [];
+  currentImageIndex = 0;
+  overlaySessionId = 0;
 
   constructor() {
     Util.addAppListener(this, 'album-picture-click', this.onAlbumPictureClick);
     this.$overlayScreen.on('click tap', () => this.animateOut());
     this.$overlayImage.on('click tap', () => this.animateOut());
+    this.$overlayImage.on('load', this.onOverlayImageLoad);
+    this.$prevButton.on('pointerdown mousedown touchstart', (event) => {
+      event.stopPropagation();
+    });
+    this.$nextButton.on('pointerdown mousedown touchstart', (event) => {
+      event.stopPropagation();
+    });
+    this.$prevButton.on('click tap', this.onPrevButtonClick);
+    this.$nextButton.on('click tap', this.onNextButtonClick);
   }
 
   noop() {}
 
-  onAlbumPictureClick($sourceImage) {
-    this.$sourceImage = $($sourceImage); // todo weird, revisit
+  onAlbumPictureClick(payload) {
+    const $sourceImage = payload?.$sourceImage ? $(payload.$sourceImage) : $(payload);
+    this.$sourceImage = $sourceImage; // todo weird, revisit
+    const albumPath = payload?.album?.['@_path'] || '';
+    const sourceUrl = this.$sourceImage.attr('src');
+    this.overlaySessionId += 1;
+    this.loadGalleryImages(sourceUrl, albumPath, this.overlaySessionId);
     this.animateIn();
   }
 
@@ -54,12 +74,15 @@ class FullAlbumOverlay {
     ViewUtil.animateCss(this.$overlayImage,
         () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...startRect),
         () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...endRect));
+    this.updateNavRailsPosition(endRect);
 
     // Also fade in overlay screen, which is right under overlay image
     ViewUtil.setCssSync(this.$overlayScreen, () => this.$overlayScreen.css('opacity', 0));
     this.$overlayScreen.css('opacity', 1);
 
     $(document).on('debounced-window-resize', this.onWindowResize);
+    $(document).on('keydown', this.onDocumentKeydown);
+    this.updateNavButtons();
   }
 
   animateOut() {
@@ -141,17 +164,159 @@ class FullAlbumOverlay {
       && rect.every(v => Number.isFinite(v));
   }
 
+  loadGalleryImages(sourceUrl, albumPath, sessionId) {
+    this.imageUrls = [];
+    this.currentImageIndex = 0;
+
+    if (sourceUrl) {
+      this.imageUrls.push(sourceUrl);
+    }
+    this.updateNavButtons();
+
+    if (!albumPath) {
+      return;
+    }
+
+    Native.getAlbumImages(albumPath, (result) => {
+      if (sessionId !== this.overlaySessionId) {
+        return;
+      }
+      if (!result || !Array.isArray(result.images)) {
+        this.updateNavButtons();
+        return;
+      }
+
+      const uniqueRealImages = [];
+      const seen = new Set();
+      for (const imageUrl of result.images) {
+        if (!imageUrl || seen.has(imageUrl)) {
+          continue;
+        }
+        seen.add(imageUrl);
+        uniqueRealImages.push(imageUrl);
+      }
+
+      if (uniqueRealImages.length > 0) {
+        this.imageUrls = uniqueRealImages;
+        this.currentImageIndex = 0;
+        if (ViewUtil.isDisplayed(this.$overlayImage)) {
+          this.$overlayImage.attr('src', this.imageUrls[this.currentImageIndex]);
+        }
+      }
+      this.updateNavButtons();
+    });
+  }
+
+  onPrevButtonClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    this.stepImage(-1);
+  };
+
+  onNextButtonClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    this.stepImage(1);
+  };
+
+  stepImage(delta) {
+    if (!this.imageUrls.length) {
+      return;
+    }
+    const targetIndex = this.currentImageIndex + delta;
+    if (targetIndex < 0 || targetIndex >= this.imageUrls.length) {
+      this.updateNavButtons();
+      return;
+    }
+
+    this.currentImageIndex = targetIndex;
+    this.$overlayImage.attr('src', this.imageUrls[this.currentImageIndex]);
+    this.updateNavButtons();
+  }
+
+  updateNavButtons() {
+    const hasImages = this.imageUrls.length > 1;
+    const canGoPrev = hasImages && this.currentImageIndex > 0;
+    const canGoNext = hasImages && this.currentImageIndex < this.imageUrls.length - 1;
+
+    if (ViewUtil.isDisplayed(this.$overlayScreen)) {
+      ViewUtil.setDisplayed(this.$prevButton, canGoPrev);
+      ViewUtil.setDisplayed(this.$nextButton, canGoNext);
+    } else {
+      ViewUtil.setDisplayed(this.$prevButton, false);
+      ViewUtil.setDisplayed(this.$nextButton, false);
+    }
+
+    this.$prevButton.toggleClass('isDisabled', !canGoPrev);
+    this.$nextButton.toggleClass('isDisabled', !canGoNext);
+    this.updateNavRailsPosition();
+  }
+
+  updateNavRailsPosition(rect = null) {
+    if (!ViewUtil.isDisplayed(this.$overlayScreen)) {
+      return;
+    }
+    const height = this.$overlayScreen.height() || window.innerHeight || 0;
+    const style = {
+      top: '0px',
+      height: `${Math.max(0, height)}px`
+    };
+    this.$prevButton.css(style);
+    this.$nextButton.css(style);
+  }
+
+  onDocumentKeydown = (event) => {
+    if (!ViewUtil.isDisplayed(this.$overlayScreen)) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.stepImage(-1);
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.stepImage(1);
+      return;
+    }
+  };
+
+  onOverlayImageLoad = () => {
+    if (!this.$overlayImage.is(':visible')) {
+      return;
+    }
+    const r = this.getEndRect(this.$overlayImage);
+    ViewUtil.setCssSync(this.$overlayImage,
+      () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r));
+    this.updateNavRailsPosition(r);
+  };
+
   hide() {
     ViewUtil.setDisplayed(this.$overlayScreen, false);
     ViewUtil.setDisplayed(this.$overlayImage, false);
-    this.$sourceImage.css('visibility', ''); // nb! (?!)
+    ViewUtil.setDisplayed(this.$prevButton, false);
+    ViewUtil.setDisplayed(this.$nextButton, false);
+    if (this.$sourceImage && this.$sourceImage.length) {
+      this.$sourceImage.css('visibility', ''); // nb! (?!)
+    }
     $(document).off('debounced-window-resize', this.onWindowResize);
+    $(document).off('keydown', this.onDocumentKeydown);
+    this.$prevButton.css({ top: '', height: '' });
+    this.$nextButton.css({ top: '', height: '' });
+    this.imageUrls = [];
+    this.currentImageIndex = 0;
+    this.updateNavButtons();
   }
 
   onWindowResize = () => {
-    const r = this.getEndRect(this.$sourceImage);
+    const r = this.getEndRect(this.$overlayImage);
     ViewUtil.setCssSync(this.$overlayImage,
         () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r));
+    this.updateNavRailsPosition(r);
   };
 }
 

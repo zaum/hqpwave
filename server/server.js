@@ -4,6 +4,8 @@
  */
 
 const path = require('path');
+const fs = require('fs');
+const { spawn } = require('child_process');
 const express = require('express');
 const bodyParser = require("body-parser");
 const app = express();
@@ -21,10 +23,75 @@ const playlists = require('./playlists');
 const APP_FILENAME = `hqpwv`;
 const WEBPAGE_DIR = path.join( __dirname, './../www' );
 const DEFAULT_PORT = 8000;
+const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']);
 
 let port;
 let server;
 let hqpIp;
+
+const normalizeRequestedPath = (inputPath) => {
+  if (!inputPath || typeof inputPath !== 'string') {
+    return '';
+  }
+
+  let pathToOpen = inputPath;
+  try {
+    pathToOpen = decodeURIComponent(pathToOpen);
+  } catch (e) {
+    // keep raw if it was not URI-encoded
+  }
+  pathToOpen = pathToOpen.trim();
+  pathToOpen = pathToOpen.replace(/^file:\/+/i, '');
+  if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(pathToOpen)) {
+    pathToOpen = pathToOpen.slice(1);
+  }
+  if (process.platform === 'win32' && /^[a-zA-Z]\|/.test(pathToOpen)) {
+    pathToOpen = pathToOpen.replace(/^([a-zA-Z])\|/, '$1:');
+  }
+  return path.normalize(pathToOpen);
+};
+
+const isImageFilename = (filename) => {
+  const ext = path.extname(filename || '').toLowerCase();
+  return IMAGE_EXTENSIONS.has(ext);
+};
+
+const isHiddenName = (name) => {
+  return !!name && name.startsWith('.');
+};
+
+const hasHiddenPathSegment = (inputPath) => {
+  if (!inputPath) {
+    return false;
+  }
+  const normalizedPath = inputPath.replace(/\\/g, '/');
+  const segments = normalizedPath.split('/').filter(Boolean);
+  return segments.some((segment) => segment.startsWith('.'));
+};
+
+const collectAlbumImagesRecursive = (folderPath, rootPath) => {
+  let images = [];
+  const entries = fs.readdirSync(folderPath, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (isHiddenName(entry.name)) {
+      continue;
+    }
+
+    const fullPath = path.join(folderPath, entry.name);
+    if (entry.isDirectory()) {
+      images = images.concat(collectAlbumImagesRecursive(fullPath, rootPath));
+      continue;
+    }
+    if (!entry.isFile() || !isImageFilename(entry.name)) {
+      continue;
+    }
+    const relPath = path.relative(rootPath, fullPath).replace(/\\/g, '/');
+    images.push({ relPath, fullPath });
+  }
+
+  return images;
+};
 
 // ---
 
@@ -57,6 +124,124 @@ app.get('/endpoints/native', (request, response) => {
     });
     return;
   }
+
+  if (request.query.openFolder !== undefined) {
+    const userAgent = (request.get('user-agent') || '').toLowerCase();
+    const isMobileUa = /android|iphone|ipad|ipod|mobile|windows phone|blackberry/.test(userAgent);
+    if (isMobileUa) {
+      response.status(403).json({ error: 'desktop_only' });
+      return;
+    }
+
+    const inputPath = request.query.path;
+    if (!inputPath || typeof inputPath !== 'string') {
+      response.status(400).json({ error: 'bad_param_data' });
+      return;
+    }
+
+    let pathToOpen = normalizeRequestedPath(inputPath);
+
+    try {
+      if (!fs.existsSync(pathToOpen)) {
+        response.status(404).json({ error: 'path_not_found' });
+        return;
+      }
+
+      const stat = fs.statSync(pathToOpen);
+      if (stat.isFile()) {
+        pathToOpen = path.dirname(pathToOpen);
+      }
+
+      let command;
+      let args;
+      if (process.platform === 'win32') {
+        command = 'explorer';
+        args = [pathToOpen];
+      } else if (process.platform === 'darwin') {
+        command = 'open';
+        args = [pathToOpen];
+      } else {
+        command = 'xdg-open';
+        args = [pathToOpen];
+      }
+
+      const child = spawn(command, args, {
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+
+      response.send({ ok: true });
+      return;
+    } catch (error) {
+      response.status(500).json({ error: 'open_failed' });
+      return;
+    }
+  }
+
+  if (request.query.albumImages !== undefined) {
+    const inputPath = request.query.path;
+    if (!inputPath || typeof inputPath !== 'string') {
+      response.status(400).json({ error: 'bad_param_data', images: [] });
+      return;
+    }
+
+    try {
+      let folderPath = normalizeRequestedPath(inputPath);
+      if (!fs.existsSync(folderPath)) {
+        response.status(404).json({ error: 'path_not_found', images: [] });
+        return;
+      }
+
+      const stat = fs.statSync(folderPath);
+      if (stat.isFile()) {
+        folderPath = path.dirname(folderPath);
+      }
+
+      const images = collectAlbumImagesRecursive(folderPath, folderPath)
+        .sort((a, b) => a.relPath.localeCompare(b.relPath, undefined, { numeric: true, sensitivity: 'base' }))
+        .map((item) => `/endpoints/native?albumImage=1&path=${encodeURIComponent(item.fullPath)}`);
+
+      response.json({ images });
+      return;
+    } catch (error) {
+      response.status(500).json({ error: 'read_failed', images: [] });
+      return;
+    }
+  }
+
+  if (request.query.albumImage !== undefined) {
+    const inputPath = request.query.path;
+    if (!inputPath || typeof inputPath !== 'string') {
+      response.status(400).json({ error: 'bad_param_data' });
+      return;
+    }
+
+    try {
+      const imagePath = normalizeRequestedPath(inputPath);
+      if (hasHiddenPathSegment(imagePath)) {
+        response.status(400).json({ error: 'bad_param_data' });
+        return;
+      }
+      if (!fs.existsSync(imagePath)) {
+        response.status(404).json({ error: 'path_not_found' });
+        return;
+      }
+
+      const stat = fs.statSync(imagePath);
+      if (!stat.isFile() || !isImageFilename(imagePath)) {
+        response.status(400).json({ error: 'bad_param_data' });
+        return;
+      }
+
+      response.sendFile(path.resolve(imagePath));
+      return;
+    } catch (error) {
+      response.status(500).json({ error: 'read_failed' });
+      return;
+    }
+  }
+
   // No recognized param
   response.status(400).json( {error: 'bad_param_data'} );
 });

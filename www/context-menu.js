@@ -22,7 +22,7 @@ export default class ContextMenu {
     this.$el = $el;
     this.$items = this.$el.find('.contextItem');
     this.$items.on('click tap', e => this.onItemClick(e));
-    this.ModalPointerUtil = new ModalPointerUtil(this.$el, () => this.hide());
+    this.ModalPointerUtil = new ModalPointerUtil(this.$el, () => this.hide(), false);
     if (!this.$el.length || !this.$items.length) {
       cl('warning bad dom structure or properties, will fail.');
     }
@@ -36,22 +36,31 @@ export default class ContextMenu {
    * @param rest are any other params the subclass may need (eg, some data)
    */
   show($holder, $button, ...rest) {
-    // Position context menu to the left of the button that triggered it,
-    // and either vertically aligned to the top or bottom of the button..
-    const buttonPos = ViewUtil.getPositionInParentSpace($holder[0], $button[0]);
-    let [x, y] = buttonPos;
-    x = x - this.$el.width() - 10;
-    if (y + this.$el.height() > $holder.height()) {
-      y = y + $button.height() - this.$el.outerHeight();
+    // Context menu uses `position: fixed`, so coordinates must be viewport-based.
+    const rect = $button[0].getBoundingClientRect();
+    const menuWidth = this.$el.outerWidth();
+    const menuHeight = this.$el.outerHeight();
+
+    let x = rect.left - menuWidth - 10;
+    let y = rect.top;
+
+    if (y + menuHeight > window.innerHeight - 8) {
+      y = rect.bottom - menuHeight;
     }
+    x = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, x));
+    y = Math.max(8, Math.min(window.innerHeight - menuHeight - 8, y));
+
     this.$el.css("left", x);
     this.$el.css("top", y);
+    this.$el.addClass('isVisible');
     ViewUtil.setVisible(this.$el, true);
 
+    this.ModalPointerUtil.whitelist$ = [this.$el, $button];
     this.ModalPointerUtil.start();
   }
 
   hide() {
+    this.$el.removeClass('isVisible');
     ViewUtil.setVisible(this.$el, false);
     this.ModalPointerUtil.clear();
   }

@@ -236,6 +236,14 @@
       </div>
     </aside>
 
+    <!-- Back to Library Button -->
+    <button id="backToLibraryButton" title="Back to Library" aria-label="Back to Library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"/>
+        <path d="M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+
     <!-- Main Area -->
     <main id="mainArea">
       <!-- Library View -->
@@ -268,6 +276,18 @@
           <div class="albumViewPictureOuter">
             <img id="albumViewPictureBlur" alt="">
             <img id="albumViewPicture" alt="Album cover">
+            <div id="albumViewImageNav">
+              <button id="albumViewPrevImageButton" class="albumViewImageNavButton" aria-label="Previous album image">
+                <svg class="albumViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+                  <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+                </svg>
+              </button>
+              <button id="albumViewNextImageButton" class="albumViewImageNavButton" aria-label="Next album image">
+                <svg class="albumViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+                  <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -283,7 +303,10 @@
                   <div id="albumViewComposer"></div>
                 </div>
                 <div id="albumViewGenreButtons"></div>
-                <div id="albumViewPath"></div>
+                <div id="albumViewPathRow">
+                  <div id="albumViewPath"></div>
+                  <button id="albumViewOpenFolderButton" class="albumPathAction" title="Open folder" aria-label="Open album folder">↗</button>
+                </div>
                 <div id="albumViewButtons">
                   <div id="albumPlayNowButton" class="textButton">
                     <div class="iconPlay"></div>Play
@@ -618,6 +641,10 @@
                     settings</span></div>
                 <div class="hotkey-row"><span class="key-badge">ESC</span><span class="key-action">Close modal</span>
                 </div>
+                <div class="hotkey-row"><span class="key-badge">←</span><span class="key-action">Overlay previous image</span>
+                </div>
+                <div class="hotkey-row"><span class="key-badge">→</span><span class="key-action">Overlay next image</span>
+                </div>
               </div>
             </div>
           </div>
@@ -667,6 +694,16 @@
 
       <div id="fullOverlayScreen"></div>
       <img id="fullOverlayImage" alt="">
+      <button id="fullOverlayPrevButton" class="fullOverlayArrow" aria-label="Previous image">
+        <svg class="fullOverlayArrowIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+          <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+        </svg>
+      </button>
+      <button id="fullOverlayNextButton" class="fullOverlayArrow" aria-label="Next image">
+        <svg class="fullOverlayArrowIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+          <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+        </svg>
+      </button>
 
       <div id="breakpointIndicator"></div>
     </main>

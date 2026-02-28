@@ -15,6 +15,7 @@ import ToastView from './toast-view.js';
 import Util from './util.js';
 import Values from './values.js';
 import ViewUtil from './view-util.js'
+import Native from './native.js';
 
 /**
  * Album view containing a header and a list of track list items.
@@ -36,6 +37,9 @@ export default class AlbumView extends Subview {
 
   currentPlayingSong = null;
   currentPlayingSongAlbumIndex = -1;
+  albumImageUrls = [];
+  albumImageIndex = 0;
+  albumImageLoadSessionId = 0;
 
   constructor() {
     super($("#albumView"));
@@ -46,6 +50,9 @@ export default class AlbumView extends Subview {
     this.$list = this.$el.find('#albumList');
     this.$artistButton = this.$el.find('#albumViewArtist');
     this.$texts = this.$el.find('#albumViewTexts');
+    this.$openFolderButton = this.$el.find('#albumViewOpenFolderButton');
+    this.$prevImageButton = this.$el.find('#albumViewPrevImageButton');
+    this.$nextImageButton = this.$el.find('#albumViewNextImageButton');
 
     this.contextMenu = new AlbumContextMenu($("#albumContextMenu"));
     this.trackMetaChangeHandler = TrackListItemUtil.makeTrackMetaChangeHandler(this.$list);
@@ -55,7 +62,13 @@ export default class AlbumView extends Subview {
     $("#albumQueueButton").on("click tap", this.onQueueButton);
     this.$albumFavoriteButton.on('click tap', this.onAlbumFavoriteButton);
     $("#albumCloseButton").on("click tap", () => $(document).trigger('album-view-close-button', this.album, true));
-    this.$picture.on('click tap', () => $(document).trigger('album-picture-click', this.$picture));
+    this.$picture.on('click tap', () => $(document).trigger('album-picture-click', {
+      $sourceImage: this.$picture,
+      album: this.album
+    }));
+    this.$openFolderButton.on('click tap', this.onOpenFolderButtonClick);
+    this.$prevImageButton.on('click tap', this.onPrevAlbumImageClick);
+    this.$nextImageButton.on('click tap', this.onNextAlbumImageClick);
   }
 
   show(album, $libraryItem = null) {
@@ -106,6 +119,9 @@ hide() {
       this.$pictureBlur.attr('src', '');
       // Reset any stale CSS state
       this.$picture.css({ transform: '', visibility: '' });
+      this.albumImageUrls = [];
+      this.albumImageIndex = 0;
+      this.updateAlbumImageNavButtons();
     });
 
     $(document).trigger('enable-user-input');
@@ -142,8 +158,41 @@ hide() {
   updateInfoArea() {
 
     const imgPath = DataUtil.getAlbumImageUrl(this.album);
-    this.$picture.attr('src', imgPath);
-    this.$pictureBlur.attr('src', imgPath);
+    this.setAlbumImageByIndex(0, [imgPath]);
+
+    const albumPath = this.album?.['@_path'] || '';
+    this.albumImageLoadSessionId += 1;
+    const sessionId = this.albumImageLoadSessionId;
+    if (albumPath) {
+      Native.getAlbumImages(albumPath, (result) => {
+        if (sessionId !== this.albumImageLoadSessionId) {
+          return;
+        }
+        if (!result || !Array.isArray(result.images)) {
+          this.updateAlbumImageNavButtons();
+          return;
+        }
+
+        const uniqueRealImages = [];
+        const seen = new Set();
+        for (const imageUrl of result.images) {
+          if (!imageUrl || seen.has(imageUrl)) {
+            continue;
+          }
+          seen.add(imageUrl);
+          uniqueRealImages.push(imageUrl);
+        }
+
+        if (uniqueRealImages.length > 0) {
+          this.albumImageUrls = uniqueRealImages;
+          this.albumImageIndex = 0;
+          const current = this.albumImageUrls[this.albumImageIndex];
+          this.$picture.attr('src', current);
+          this.$pictureBlur.attr('src', current);
+        }
+        this.updateAlbumImageNavButtons();
+      });
+    }
 
     let s = this.album['@_artist'] || '';
     s = s.trim();
@@ -192,7 +241,10 @@ hide() {
 
     AlbumUtil.updateGenreButtons($('#albumViewGenreButtons'), this.album);
 
-    $("#albumViewPath").html(this.album['@_path']);
+    const rawPath = this.album['@_path'] || '';
+    $("#albumViewPath").text(rawPath);
+    const isDesktopLike = !Util.isTouch;
+    ViewUtil.setDisplayed(this.$openFolderButton, isDesktopLike && !!rawPath);
 
     const albumHash = this.getAlbumHash();
     MetaUtil.isAlbumFavoriteFor(albumHash)
@@ -206,7 +258,8 @@ hide() {
 
   makeListItem(index, item) {
     const seconds = parseInt(item['@_length']);
-    const duration = seconds ? `&nbsp;&nbsp;&nbsp;<span class="albumItemDuration">${Util.durationText(seconds)}</span>` : '';
+    const durationText = seconds ? Util.durationText(seconds) : '';
+    const durationEmptyClass = durationText ? '' : 'isEmpty';
     const song = item['@_song'];
     const hash = item['@_hash'];
     const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
@@ -231,11 +284,12 @@ hide() {
     s += `    <span class="indexText">${index + 1}</span>`;
     s += `  </div>`;
     s += `  <div class="albumItemMain">`;
-    s += `    <div class="song">${song}${duration}</div>`;
+    s += `    <div class="song">${song}</div>`;
     if (extra) {
       s += `  <div class="extra">${extra}</div>`;
     }
     s += `  </div>`;
+    s += `  <div class="albumItemDurationCol ${durationEmptyClass}"><span class="albumItemDuration">${durationText}</span></div>`;
     s += `  <div class="trackItemMeta">`;
     s += `    <div class="numViews">${numViews || ''}</div>`;
     s += `    <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}">`;
@@ -399,6 +453,66 @@ hide() {
     const isPlayNow = true;
     const commands = Commands.playlistAddUsingAlbumAndIndices(this.album, startIndex, endIndex, isPlayNow);
     AppUtil.doPlaylistAdds(commands, isPlayNow, isPlayNow);
+  }
+
+  onOpenFolderButtonClick = (event) => {
+    event.stopPropagation();
+    if (Util.isTouch) {
+      return;
+    }
+    const path = this.album?.['@_path'];
+    if (!path) {
+      return;
+    }
+    Native.openFolder(path, (result) => {
+      if (!result || result.error) {
+        ToastView.show('Could not open folder');
+      }
+    });
+  }
+
+  setAlbumImageByIndex(index, initialUrls = null) {
+    if (Array.isArray(initialUrls)) {
+      this.albumImageUrls = [...initialUrls];
+    }
+
+    if (!this.albumImageUrls.length) {
+      this.albumImageIndex = 0;
+      this.$picture.attr('src', '');
+      this.$pictureBlur.attr('src', '');
+      this.updateAlbumImageNavButtons();
+      return;
+    }
+
+    const maxIndex = this.albumImageUrls.length - 1;
+    const clampedIndex = Math.max(0, Math.min(index, maxIndex));
+    this.albumImageIndex = clampedIndex;
+    const url = this.albumImageUrls[this.albumImageIndex];
+    this.$picture.attr('src', url);
+    this.$pictureBlur.attr('src', url);
+    this.updateAlbumImageNavButtons();
+  }
+
+  updateAlbumImageNavButtons() {
+    const canGoPrev = this.albumImageUrls.length > 1 && this.albumImageIndex > 0;
+    const canGoNext = this.albumImageUrls.length > 1 && this.albumImageIndex < this.albumImageUrls.length - 1;
+    const hasMultipleImages = this.albumImageUrls.length > 1;
+    ViewUtil.setDisplayed(this.$prevImageButton, hasMultipleImages);
+    ViewUtil.setDisplayed(this.$nextImageButton, hasMultipleImages);
+    this.$prevImageButton.toggleClass('isGhost', !canGoPrev);
+    this.$nextImageButton.toggleClass('isGhost', !canGoNext);
+  }
+
+  onPrevAlbumImageClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    this.setAlbumImageByIndex(this.albumImageIndex - 1);
+  }
+
+  onNextAlbumImageClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    this.setAlbumImageByIndex(this.albumImageIndex + 1);
   }
 
   onNewTrack = (e, currentUri, lastUri) => {

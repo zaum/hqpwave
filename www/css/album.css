@@ -156,7 +156,7 @@
   background: var(--surface2);
   border: none;
   overflow: hidden;
-  object-fit: cover;
+  object-fit: contain;
   position: relative;
   z-index: 2;
   display: block;
@@ -164,16 +164,66 @@
 
 #albumViewPictureBlur {
   position: absolute;
-  top: -180px;
-  bottom: -320px;
-  left: -300px;
-  right: -480px;
-  filter: blur(120px);
-  opacity: 0.6;
+  top: -240px;
+  bottom: -420px;
+  left: -380px;
+  right: -620px;
+  filter: blur(170px);
+  opacity: 0.68;
   z-index: 1;
   object-fit: cover;
   pointer-events: none;
   border-radius: 10px;
+}
+
+#albumViewImageNav {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  display: flex;
+  gap: 6px;
+  z-index: 4;
+}
+
+.albumViewImageNavButton {
+  display: none;
+  width: 28px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 140ms ease, background 140ms ease;
+}
+
+.albumViewImageNavButton.isGhost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.albumViewImageNavButton:hover {
+  opacity: 1;
+  background: var(--raised);
+}
+
+.albumViewImageNavIcon {
+  width: 15px;
+  height: 15px;
+  display: block;
+  margin: 0 auto;
+  pointer-events: none;
+}
+
+.albumViewImageNavIcon path {
+  fill: currentColor;
+}
+
+#albumViewPrevImageButton .albumViewImageNavIcon {
+  transform: rotate(180deg);
 }
 
 @media (max-width: 768px) {
@@ -343,7 +393,7 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 #albumViewGenreButtons .genre-tag,
@@ -367,12 +417,42 @@
   color: var(--text-2);
 }
 
+#albumViewPathRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 #albumViewPath {
   font-size: 11px;
   color: var(--text-3);
-  margin-top: 12px;
   font-family: 'Geist Mono', monospace;
   letter-spacing: 0.02em;
+}
+
+.albumPathAction {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-3);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.86;
+  transition: color 0.12s, opacity 0.12s, background 0.12s;
+}
+
+.albumPathAction:hover {
+  color: var(--text-2);
+  opacity: 1;
+  background: var(--raised);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -757,6 +837,15 @@
   background: var(--accent-bg);
 }
 
+.albumItem.selected .albumItemLeft .playButton {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.albumItem.selected .albumItemLeft .playButton.iconPlay {
+  background-color: var(--accent);
+}
+
 .albumItemLeft {
   display: flex;
   align-items: center;
@@ -768,13 +857,18 @@
 
 .albumItemLeft .playButton {
   display: flex;
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0.3;
   transition: opacity 0.15s;
+}
+
+.albumItemLeft .playButton.iconPlay {
+  -webkit-mask-size: 16px 16px;
+  mask-size: 16px 16px;
 }
 
 .albumItem:hover .albumItemLeft .playButton {
@@ -808,11 +902,20 @@
   text-overflow: ellipsis;
 }
 
-.albumItemMain .albumItemDuration {
+.albumItemDurationCol {
+  width: 56px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.albumItemDurationCol.isEmpty {
+  visibility: hidden;
+}
+
+.albumItemDuration {
   font-family: 'Geist Mono', monospace;
   font-size: 11px;
   color: var(--text-3);
-  margin-left: 8px;
 }
 
 .albumItemMain .extra {
@@ -858,11 +961,12 @@
 .albumItemContext {
   width: 28px;
   flex-shrink: 0;
-  opacity: 0;
+  opacity: 0.55;
   transition: opacity 0.1s;
 }
 
-.albumItem:hover .albumItemContext {
+.albumItem:hover .albumItemContext,
+.albumItemContext:hover {
   opacity: 1;
   animation: contextButtonIn 0.2s ease-out;
 }
