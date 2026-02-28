@@ -125,18 +125,19 @@ export default class HqpFiltersView {
     const bits = Model.status.data['@_active_bits'] || '';
     const mode = Model.status.data['@_active_mode'] || '';
     this.outputBitrateString = '';
-    let unit = '';
+    let sampleRateUnit = '';
+    let bitDepthText = '';
     let formatLabel = '';
     
     if (rate) {
       const rateInt = parseInt(rate);
       if (mode === 'PCM') {
         // PCM rates are in Hz, convert to kHz
-        unit = 'kHz';
+        sampleRateUnit = 'kHz';
         this.outputBitrateString = (rateInt / 1000).toString();
       } else if (mode === 'DSD') {
         // DSD rates are multiples, show as DSD64, DSD128, etc.
-        unit = 'MHz';
+        sampleRateUnit = 'MHz';
         this.outputBitrateString = (rateInt / 1000000).toString();
         // Add DSD format label (DSD64, DSD128, etc.)
         if (bits) {
@@ -147,20 +148,24 @@ export default class HqpFiltersView {
       }
       
       if (bits && mode !== 'DSD') {
-        this.outputBitrateString += '/' + bits;
+        bitDepthText = bits + ' bit';
       }
     }
     
     // Format the display string with units and format label
     let displayString = this.outputBitrateString;
-    if (unit) {
-      displayString += ' ' + unit;
+    if (sampleRateUnit) {
+      displayString += ' ' + sampleRateUnit;
+    }
+    if (bitDepthText) {
+      displayString += ' ' + bitDepthText;
     }
     if (formatLabel) {
       displayString += ' (' + formatLabel + ')';
     }
     
-    if (this.outputBitrateString != lastOutputBitrateString) {
+    if (displayString != lastOutputBitrateString) {
+      this.outputBitrateString = displayString;
       this.$outputBitrateValue.text(displayString);
     }
   }

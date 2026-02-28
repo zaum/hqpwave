@@ -60,6 +60,13 @@ export default class LibraryView extends Subview {
     // Global search input in topbar - filter albums as you type
     if (this.$globalSearchInput.length > 0) {
       this._globalSearchDebounceTimer = null;
+      const updateGlobalSearchClearVisibility = () => {
+        if (!this.$globalSearchClear || this.$globalSearchClear.length === 0) {
+          return;
+        }
+        const value = this.$globalSearchInput.val().trim();
+        this.$globalSearchClear.css('display', value.length > 0 ? 'flex' : 'none');
+      };
 
       this.$globalSearchInput.on('input', (e) => {
         if (this._globalSearchDebounceTimer) {
@@ -69,9 +76,7 @@ export default class LibraryView extends Subview {
         const value = this.$globalSearchInput.val().trim();
 
         // Update clear button visibility
-        if (this.$globalSearchClear) {
-          this.$globalSearchClear.css('display', value.length > 0 ? 'block' : 'none');
-        }
+        updateGlobalSearchClearVisibility();
 
         if (value.length === 0) {
           this.clearHeaderSearchFilter();
@@ -103,11 +108,13 @@ export default class LibraryView extends Subview {
       if (this.$globalSearchClear) {
         this.$globalSearchClear.on('click', () => {
           this.$globalSearchInput.val('');
-          this.$globalSearchClear.css('display', 'none');
+          updateGlobalSearchClearVisibility();
           this.clearHeaderSearchFilter();
           this.$globalSearchInput.focus();
         });
       }
+
+      updateGlobalSearchClearVisibility();
     }
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
     Util.addAppListener(this, 'library-albums-filter-changed library-albums-list-populated',

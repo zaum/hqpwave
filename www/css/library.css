@@ -210,6 +210,7 @@
   opacity: 0.8;
   z-index: 10;
   pointer-events: auto;
+  display: none;
 }
 
 .search-clear:hover {

@@ -271,6 +271,15 @@
     height: 28px;
   }
 
+  #topBarButtons .iconButton:before {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 auto !important;
+  }
+
   #appTitle {
     display: none;
   }
@@ -315,7 +324,7 @@
     display: block;
     width: 20px !important;
     height: 20px !important;
-    background-image: url("./../img/icons/settings_white_24dp.svg") !important;
+    background-image: url("./../img/icons/settings_thin_white_24dp.svg") !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
     opacity: 0.7 !important;
