@@ -92,11 +92,14 @@ export default class LibraryView extends Subview {
 
       this.$globalSearchInput.on('keyup', (e) => {
         if (e.keyCode === 13) {
+          const value = this.$globalSearchInput.val().trim();
+          $(document).trigger('global-search-enter', value);
+
           if (this._globalSearchDebounceTimer) {
             clearTimeout(this._globalSearchDebounceTimer);
             this._globalSearchDebounceTimer = null;
           }
-          const value = this.$globalSearchInput.val().trim();
+
           if (value.length === 0) {
             this.clearHeaderSearchFilter();
           } else if (value.length >= this._headerSearchMinLength) {

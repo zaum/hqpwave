@@ -310,6 +310,7 @@ export default class App {
     Util.addAppListener(this, 'settings-view-close', this.hideSettingsView);
     Util.addAppListener(this, 'hqp-settings-view-close', this.hideHqpSettingsView);
     Util.addAppListener(this, 'app-do-escape', this.doEscape);
+    Util.addAppListener(this, 'global-search-enter', this.onGlobalSearchEnter);
 
     $(document).on('keydown', this.onKeydown);
 
@@ -938,6 +939,19 @@ export default class App {
     this.libraryView.openSearchSync('genre', genre);
     this.albumView.hide();
   }
+
+  onGlobalSearchEnter = (value = '') => {
+    if (this.getTopSubview() !== this.libraryView) {
+      this.goToLibraryView();
+    }
+
+    const searchValue = (value || '').trim();
+    if (searchValue.length === 0) {
+      this.libraryView.clearHeaderSearchFilter();
+    } else {
+      this.libraryView.applyHeaderSearchFilter(searchValue);
+    }
+  };
 
   onAlbumArtistButton(artist) {
     this.libraryView.openSearchSync('artist', artist);

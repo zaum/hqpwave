@@ -66,8 +66,8 @@ export default class PlaybarView {
     this.$stopButton.on('click tap', () => Service.queueCommandFrontAndGetStatus(Commands.stop()));
     this.$previousButton.on("click tap", this.onPreviousButton);
     this.$nextButton.on("click tap", this.onNextButton);
-    this.$seekBackwardButton.on("click tap", () => Service.queueCommandFrontAndGetStatus(Commands.backward()));
-    this.$seekForwardButton.on("click tap", () => Service.queueCommandFrontAndGetStatus(Commands.forward()));
+    this.$seekBackwardButton.on("click tap", () => this.seekBySeconds(-10));
+    this.$seekForwardButton.on("click tap", () => this.seekBySeconds(10));
 
     this.$showPlaylistButton.on("click tap", () => $(document).trigger('playbar-show-playlist'));
     this.$playingText.on("click tap", () => $(document).trigger('playbar-show-playlist'));
@@ -128,38 +128,59 @@ export default class PlaybarView {
    * Relies on both Model.status and Model.playlist.
    */
   _updatePlayingText() {
-    let s = '';
+    let artist = '&nbsp;';
+    let title = '&nbsp;';
     if (Model.status.isStopped) {
-      s = (Model.playlist.array.length > 0)
-          ? `Stopped`
-          : `<span class="colorTextLess">Playlist is empty</span>`;
+      if (Model.playlist.array.length <= 0) {
+        title = `<span class="colorTextLess">Playlist is empty</span>`;
+      }
     } else {
       const meta = Model.status.metadata;
-      if (meta['@_artist']) {
-        s += '<span class="playingArtist">' + meta['@_artist'] + '</span>';
+      const artistText = (meta['@_artist'] || '').trim();
+      if (artistText) {
+        artist = artistText;
       }
+
+      let song = '';
       if (meta['@_song']) {
-        if (s) {
-          s += ' ';
-        }
-        let song;
         if (Util.areUriAndPathEquivalent(meta['@_song'], meta['@_uri'])) {
-          // hqp uses full path when file has no song metadata
           song = Util.getFilenameFromPath(meta['@_song']);
         } else {
           song = meta['@_song'];
         }
-        s += song;
       }
-      if (!s) {
-        // can occur when 'past' playlist and about to stop
-        s = '&nbsp';
+      song = (song || '').trim();
+      if (song) {
+        title = song;
+      }
+
+      if (!artistText && !song) {
+        title = '&nbsp;';
       }
     }
+
+    const s = `<div class="playingArtist">${artist}</div><div class="playingTitle">${title}</div>`;
     if (this.playingText != s) {
       this.playingText = s;
       this.$playingText.html(this.playingText);
     }
+  }
+
+  seekBySeconds(deltaSeconds) {
+    if (!deltaSeconds || Model.status.isStopped) {
+      return;
+    }
+
+    const currentSeconds = (Model.status.seconds == -1) ? 0 : Model.status.seconds;
+    const totalSeconds = (Model.status.totalSeconds == -1) ? 0 : Model.status.totalSeconds;
+
+    let targetSeconds = currentSeconds + deltaSeconds;
+    targetSeconds = Math.max(0, targetSeconds);
+    if (totalSeconds > 0) {
+      targetSeconds = Math.min(totalSeconds, targetSeconds);
+    }
+
+    Service.queueCommandFrontAndGetStatus(Commands.seek(Math.round(targetSeconds)));
   }
 
   _updateThumb() {

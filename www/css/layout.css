@@ -792,6 +792,8 @@
 
   #playbarView {
     grid-area: playbar;
+    --system-message-side-margin: 96px;
+    --system-message-side-gap: 192px;
     visibility: visible;
     position: sticky;
     bottom: 0;
@@ -848,7 +850,11 @@
     min-width: 0;
     flex: 0 1 220px;
     cursor: pointer;
-    font-family: 'Doto', 'Geist', sans-serif;
+    font-family: 'Geist', sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   #playingText:hover {
@@ -886,6 +892,29 @@
     gap: 4px;
     flex: 1 1 auto;
     min-width: 0;
+    position: relative;
+  }
+
+  #transportButtons {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    z-index: 10;
+  }
+
+  #playbarButtons .iconButton {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  #playbarButtons #playButton {
+    border-color: var(--border);
+    background: var(--accent);
+    color: var(--bg);
   }
 
   #stopButton {
@@ -931,7 +960,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--text);
+    background: var(--accent);
     color: var(--bg);
     flex-shrink: 0;
   }
@@ -971,7 +1000,7 @@
   }
 
   #playButton:hover {
-    background: var(--accent);
+    background: var(--accent-hi);
   }
 
   @media (max-width: 480px) {
@@ -983,7 +1012,7 @@
   }
 
   #nextButton {
-    margin-right: 12px;
+    margin-right: 4px;
   }
 
   #nextButton:before {
@@ -1003,7 +1032,7 @@
   }
 
   #seekBackwardButton:before {
-    background-image: url("./../img/icons/replay_10_white_24dp.svg");
+    background-image: url("./../img/icons/replay_10_alt_thin_white_24dp.svg");
   }
 
   .isStopped #seekBackwardButton {
@@ -1015,7 +1044,7 @@
   }
 
   #seekForwardButton:before {
-    background-image: url("./../img/icons/forward_10_white_24dp.svg");
+    background-image: url("./../img/icons/forward_10_alt_thin_white_24dp.svg");
   }
 
   #seekForwardButton {
@@ -1039,11 +1068,14 @@
   }
 
   #playingTrackArea {
-    flex: 1;
+    flex: 0 1 380px;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 10px;
     min-width: 0;
+    margin-left: auto;
+    width: 100%;
   }
 
   #playingTrackCurrentTime {
@@ -1080,13 +1112,14 @@
 
   #playProgressView {
     flex: 1;
-    max-width: 480px;
+    max-width: none;
+    min-width: 80px;
     height: 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
     position: relative;
-    z-index: 10;
+    z-index: 1;
   }
 
   .isStopped #playProgressView,
@@ -1097,9 +1130,13 @@
   #playProgressInner {
     position: relative;
     width: 100%;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 2px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.10);
+    border-radius: 999px;
+  }
+
+  .lightTheme #playProgressInner {
+    background: rgba(0, 0, 0, 0.10);
   }
 
   #playProgressThumb {
@@ -1108,7 +1145,7 @@
     left: 0;
     top: 0;
     background: var(--accent);
-    border-radius: 2px;
+    border-radius: 999px;
     transition: width 0s linear;
   }
 
@@ -1216,12 +1253,14 @@
     justify-content: center;
     gap: 2px;
     height: 14px;
-    opacity: 0.3;
+    opacity: 0;
+    visibility: hidden;
     transition: opacity 0.3s ease;
   }
 
   .music-playing.isPlaying {
     opacity: 1;
+    visibility: visible;
   }
 
   .music-playing.isPlaying .bar {
@@ -1255,25 +1294,32 @@
     visibility: hidden;
     position: absolute;
     width: 100%;
-    height: 36px;
-    top: -36px;
+    height: 84px;
+    top: -84px;
     overflow: hidden;
   }
 
   #toast #toastInner {
     position: absolute;
-    left: 0;
-    width: 100%;
-    height: 36px;
-    background: var(--surface);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - var(--system-message-side-gap));
+    height: 84px;
+    background: rgba(20, 20, 20, 0.82);
     border-top: 1px solid var(--border-md);
-    padding: 0 16px;
-    font-size: 13px;
+    border-radius: 14px 14px 0 0;
+    padding: 8px 28px;
+    font-family: 'Doto', 'Geist', sans-serif;
+    font-size: 26px;
+    color: #fff;
     text-align: center;
-    line-height: 32px;
+    line-height: 68px;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
     transition: top 400ms cubic-bezier(0, 0.5, 0.3, 1);
   }
 
@@ -1281,58 +1327,97 @@
     visibility: hidden;
     position: absolute;
     width: 100%;
-    height: 110px;
-    top: -110px;
+    height: 0;
+    top: 0;
     overflow: hidden;
   }
 
   #snack #snackInner {
     position: absolute;
-    left: 0;
-    width: 100%;
-    height: 110px;
-    background: var(--surface2);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - var(--system-message-side-gap));
+    height: auto;
+    background: rgba(18, 18, 18, 0.82);
     border-top: 1px solid var(--border-md);
-    line-height: 22px;
-    padding: 8px 16px 0 16px;
+    border-radius: 14px 14px 0 0;
+    line-height: 20px;
+    padding: 18px 28px 18px 28px;
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
     transition: top 400ms cubic-bezier(0, 0.5, 0.3, 1);
   }
 
   #snack #snackInner #snackIcon {
     position: absolute;
-    top: 8px;
-    left: 14px;
+    top: 24px;
+    transform: none;
+    left: 28px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: default;
+    pointer-events: none;
   }
 
   #snack #snackInner #snackIcon:before {
-    background-image: url("./../img/icons/error_outline_white_24dp.svg");
-  }
-
-  #snack #snackInner #snackIcon {
-    background-color: transparent;
-    cursor: default;
+    content: 'i';
+    background-image: none;
+    opacity: 1;
+    filter: none;
+    color: #fff;
+    font-family: 'Geist', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 28px;
+    text-align: center;
   }
 
   #snack #snackInner #snackClose {
     position: absolute;
-    top: 10px;
-    right: 12px;
+    top: 18px;
+    right: 28px;
   }
 
   #snack #snackInner #snackLine1 {
-    margin-left: 44px;
-    margin-right: 38px;
-    color: var(--accent);
+    margin-left: 64px;
+    margin-right: 64px;
+    color: #fff;
     font-weight: 400;
     font-family: 'Doto', 'Geist', sans-serif;
-    font-size: 16px;
+    font-size: 32px;
+    line-height: 1.2;
   }
 
   #snack #snackInner #snackLine2 {
-    margin-left: 44px;
-    margin-right: 38px;
-    font-family: 'Noto Sans TC', 'Geist', sans-serif;
-    font-size: 14px;
+    margin-top: 4px;
+    margin-left: 64px;
+    margin-right: 64px;
+    font-family: 'Doto', 'Geist', sans-serif;
+    font-size: 28px;
+    color: #fff;
+    line-height: 1.25;
+  }
+
+  @media (max-width: 980px) {
+    #playbarView {
+      --system-message-side-margin: 48px;
+      --system-message-side-gap: 96px;
+    }
+
+    #playingTrackArea {
+      margin-left: 8px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    #playbarView {
+      --system-message-side-margin: 24px;
+      --system-message-side-gap: 48px;
+    }
   }
 
   #fullOverlayScreen {
