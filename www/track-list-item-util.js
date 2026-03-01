@@ -127,6 +127,9 @@ export default class TrackListItemUtil {
     }
 
     const hash = item['@_hash'] || Model.library.getHashForPlaylistItem(item) || '';
+    const seconds = parseFloat(item['@_length']);
+    const durationText = seconds ? Util.durationText(seconds) : '';
+    const durationEmptyClass = durationText ? '' : 'isEmpty';
 
     let s = '';
     s += `<div class="trackItem ${groupingClass}" data-index="${index}" data-hash="${hash}">`;
@@ -135,6 +138,7 @@ export default class TrackListItemUtil {
         ? TrackListItemUtil.makeMainContents(item, album)
         : TrackListItemUtil.makeNonLibraryMainContents(item, album);
     s += `  <div class="main">${mainText}</div>`;
+    s += `  <div class="trackItemDurationCol ${durationEmptyClass}"><span class="trackItemDuration">${durationText}</span></div>`;
 
     if (hash) {
       const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
@@ -167,12 +171,8 @@ export default class TrackListItemUtil {
   static makeMainContents(item) {
 
     const song = item['@_song'];
-    const seconds = parseFloat(item['@_length']);
     let result = '';
     result += `<span class="trackText">${ song ? song : 'Track' }</span>`;
-    if (seconds) {
-      result += `&nbsp;&nbsp;&nbsp;<span class="duration">${Util.durationText(seconds)}</span>`;
-    }
 
     // Album track items do not have the album's performer or composer properties (redundantly) populated.
     // Playlist track items have artist, and performer + composer (when exists),
@@ -224,7 +224,6 @@ export default class TrackListItemUtil {
     const artist = item['@_artist'] || item['@_album_artist'];
     const album = item['@_album'];
     const song = item['@_song'];
-    const seconds = parseFloat(item['@_length']);
 
     let result = '';
 
@@ -240,10 +239,6 @@ export default class TrackListItemUtil {
     }
 
     result += `<span class="trackText">${song || 'Track'}</span>`;
-
-    if (seconds) {
-      result += `&nbsp;&nbsp;&nbsp;<span class="duration">${Util.durationText(seconds)}</span>`;
-    }
 
     return result;
   }

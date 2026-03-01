@@ -35,7 +35,7 @@
     grid-area: topbar;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 300;
     display: grid;
     grid-template-columns: calc(var(--sidebar-expanded) - 28px) auto 1fr auto;
     grid-template-areas: "brand nav search right";

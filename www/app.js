@@ -998,9 +998,28 @@ export default class App {
     }
   };
 
+  applyLibrarySearchFromAlbum(value) {
+    const searchValue = (value || '').trim();
+
+    SidebarView.resetFilters();
+    this.goToLibraryView();
+
+    if (this.libraryView.$globalSearchInput && this.libraryView.$globalSearchInput.length > 0) {
+      this.libraryView.$globalSearchInput.val(searchValue);
+    }
+    if (this.libraryView.$globalSearchClear && this.libraryView.$globalSearchClear.length > 0) {
+      this.libraryView.$globalSearchClear.css('display', searchValue ? 'flex' : 'none');
+    }
+
+    if (searchValue.length === 0) {
+      this.libraryView.clearHeaderSearchFilter();
+      return;
+    }
+    this.libraryView.applyHeaderSearchFilter(searchValue);
+  }
+
   onAlbumGenreButton(genre) {
-    this.libraryView.openSearchSync('genre', genre);
-    this.albumView.hide();
+    this.applyLibrarySearchFromAlbum(genre);
   }
 
   onGlobalSearchEnter = (value = '') => {
@@ -1017,8 +1036,7 @@ export default class App {
   };
 
   onAlbumArtistButton(artist) {
-    this.libraryView.openSearchSync('artist', artist);
-    this.albumView.hide();
+    this.applyLibrarySearchFromAlbum(artist);
   }
 
   onSettingsMetaChanged() {

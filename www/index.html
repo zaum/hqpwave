@@ -45,8 +45,24 @@
         <div class="nav-pill" data-view="history">History</div>
       </nav>
       <div class="search-wrap">
+        <div
+          class="search-help"
+          role="img"
+          aria-label="Search syntax help"
+          tabindex="0">i</div>
+        <div class="search-help-tooltip" role="tooltip" aria-hidden="true">
+          <div class="search-help-title">SEARCH OPTIONS</div>
+          <div class="search-help-line"><span>Text:</span> genre, artist, album, track name...</div>
+          <div class="search-help-line"><span>Year:</span> 1970, 1970-1980, 1990-, -2000...</div>
+          <div class="search-help-line"><span>Format:</span> dsd, dsd64, dsd128, dsd256, dsd512...</div>
+          <div class="search-help-line"><span>Sample rate:</span> 44.1, 96, 192, 44100hz, 44.1khz...</div>
+          <div class="search-help-line"><span>Tip:</span> use commas for AND search</div>
+          <div class="search-help-examples">EXAMPLES</div>
+          <div class="search-help-example-line"><span>Rock, 1990-2000, 192</span> → Rock releases from 1990-2000 at 192 kHz</div>
+          <div class="search-help-example-line"><span>Jazz, DSD, -1980</span> → Jazz albums in DSD released up to 1980</div>
+        </div>
         <div class="search-icon"></div>
-        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…"
+        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…" autocomplete="off"
           id="globalSearchInput">
         <div class="search-clear" id="globalSearchClear">×</div>
       </div>

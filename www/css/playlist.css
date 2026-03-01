@@ -72,6 +72,30 @@
   padding: 6px 12px;
 }
 
+#playlistClearButton::before,
+#playlistLoadButton::before,
+#playlistSaveButton::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  display: block;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+}
+
+#playlistClearButton::before {
+  background-image: url("./../img/icons/delete_white_24dp.svg");
+}
+
+#playlistLoadButton::before {
+  background-image: url("./../img/icons/featured_play_list_white_24dp.svg");
+}
+
+#playlistSaveButton::before {
+  background-image: url("./../img/icons/check_white_24dp.svg");
+}
+
 /* Playlist Saver */
 #playlistSaver {
   padding: 16px 24px;
@@ -196,11 +220,20 @@
   display: block;
 }
 
-.trackItem .duration {
+.trackItemDurationCol {
+  width: 56px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.trackItemDurationCol.isEmpty {
+  visibility: hidden;
+}
+
+.trackItemDuration {
   font-family: 'Geist Mono', monospace;
   font-size: 11px;
   color: var(--text-3);
-  margin-left: 8px;
 }
 
 .trackItem .extra {
@@ -257,8 +290,15 @@
 }
 
 .trackItem .right .deleteButton {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   opacity: 0.6;
   cursor: pointer;
+}
+
+.trackItem .right .deleteButton:before {
+  background-size: 18px 18px;
 }
 
 .trackItem:hover .right .deleteButton {

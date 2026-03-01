@@ -175,8 +175,8 @@ hide() {
 
   updateInfoArea() {
 
-    const imgPath = DataUtil.getAlbumImageUrl(this.album);
-    this.setAlbumImageByIndex(0, [imgPath]);
+    const defaultImageUrl = DataUtil.getAlbumImageUrl(this.album);
+    this.setAlbumImageByIndex(0, [defaultImageUrl]);
 
     const albumPath = decodeAlbumPath(this.album?.['@_path'] || '');
     this.albumImageLoadSessionId += 1;
@@ -202,11 +202,13 @@ hide() {
         }
 
         if (uniqueRealImages.length > 0) {
-          this.albumImageUrls = uniqueRealImages;
-          this.albumImageIndex = 0;
-          const current = this.albumImageUrls[this.albumImageIndex];
-          this.$picture.attr('src', current);
-          this.$pictureBlur.attr('src', current);
+          const orderedImages = [defaultImageUrl];
+          for (const imageUrl of uniqueRealImages) {
+            if (imageUrl !== defaultImageUrl) {
+              orderedImages.push(imageUrl);
+            }
+          }
+          this.setAlbumImageByIndex(0, orderedImages);
         }
         this.updateAlbumImageNavButtons();
       });

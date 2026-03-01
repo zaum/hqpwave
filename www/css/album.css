@@ -327,6 +327,13 @@
   color: var(--text-2);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+#albumViewArtist:hover,
+#albumViewArtist:focus-visible {
+  color: var(--text);
 }
 
 #albumViewTitle,

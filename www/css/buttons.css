@@ -163,7 +163,7 @@
 }
 
 .deleteButton:before {
-  background-image: url("./../img/icons/delete_outline_thin_white_24dp.svg");
+  background-image: url("./../img/icons/delete_white_24dp.svg");
 }
 
 .deleteButton:hover {

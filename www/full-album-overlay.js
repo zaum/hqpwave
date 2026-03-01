@@ -2,6 +2,24 @@ import Util from './util.js';
 import Native from './native.js';
 import ViewUtil from './view-util.js';
 
+const decodeAlbumPath = (value) => {
+  let result = (typeof value === 'string') ? value : '';
+  try {
+    result = decodeURIComponent(result);
+  } catch (e) {
+    // keep raw if not URI-encoded
+  }
+  const entityMap = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'"
+  };
+  result = result.replace(/&(amp|lt|gt|quot|apos);/g, (m, name) => entityMap[name] || m);
+  return result;
+};
+
 /**
  * Full-sized album image view.
  *
@@ -40,7 +58,7 @@ class FullAlbumOverlay {
   onAlbumPictureClick(payload) {
     const $sourceImage = payload?.$sourceImage ? $(payload.$sourceImage) : $(payload);
     this.$sourceImage = $sourceImage; // todo weird, revisit
-    const albumPath = payload?.album?.['@_path'] || '';
+    const albumPath = decodeAlbumPath(payload?.album?.['@_path'] || '');
     const sourceUrl = this.$sourceImage.attr('src');
     this.overlaySessionId += 1;
     this.loadGalleryImages(sourceUrl, albumPath, this.overlaySessionId);
@@ -168,7 +186,9 @@ class FullAlbumOverlay {
     this.imageUrls = [];
     this.currentImageIndex = 0;
 
+    const seen = new Set();
     if (sourceUrl) {
+      seen.add(sourceUrl);
       this.imageUrls.push(sourceUrl);
     }
     this.updateNavButtons();
@@ -187,7 +207,6 @@ class FullAlbumOverlay {
       }
 
       const uniqueRealImages = [];
-      const seen = new Set();
       for (const imageUrl of result.images) {
         if (!imageUrl || seen.has(imageUrl)) {
           continue;
@@ -197,7 +216,7 @@ class FullAlbumOverlay {
       }
 
       if (uniqueRealImages.length > 0) {
-        this.imageUrls = uniqueRealImages;
+        this.imageUrls = sourceUrl ? [sourceUrl, ...uniqueRealImages] : uniqueRealImages;
         this.currentImageIndex = 0;
         if (ViewUtil.isDisplayed(this.$overlayImage)) {
           this.$overlayImage.attr('src', this.imageUrls[this.currentImageIndex]);

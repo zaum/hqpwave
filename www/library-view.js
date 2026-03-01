@@ -1,5 +1,6 @@
 import AlbumUtil from './album-util.js';
 import AppUtil from './app-util.js';
+import Commands from './commands.js';
 import DataUtil from './data-util.js';
 import LibraryAlbumOptionsView from './library-album-options-view.js';
 import LibraryAlbumsList from './library-albums-list.js';
@@ -11,6 +12,7 @@ import Model from './model.js';
 import Service from './service.js';
 import Settings from './settings.js';
 import Subview from './subview.js';
+import TrackListItemUtil from './track-list-item-util.js';
 import TopBarUtil from './top-bar-util.js';
 import Util from './util.js';
 import Values from './values.js';
@@ -32,6 +34,11 @@ export default class LibraryView extends Subview {
   $searchCloseButton;
 
   albumsList;
+  $searchList;
+  $timelineView;
+  trackMetaChangeHandler;
+  _resultMode = 'albums';
+  _resultCount = 0;
 
   constructor() {
     super($("#libraryView"));
@@ -43,6 +50,7 @@ export default class LibraryView extends Subview {
     this.$searchButton = this.$el.find('#librarySearchButton');
     this.$searchCloseButton = this.$el.find('#librarySearchCloseButton');
     this.$spinner = this.$el.find('#librarySpinner');
+    this.$timelineView = this.$el.find('#timelineView');
 
     // Global search input in topbar
     this.$globalSearchInput = $('#globalSearchInput');
@@ -50,6 +58,9 @@ export default class LibraryView extends Subview {
 
     this.albumOptionsView = new LibraryAlbumOptionsView(this.$el.find("#libraryAlbumOptionsView"));
     this.albumsList = new LibraryAlbumsList(this.$el.find('#libraryAlbumsList'));
+    this.$searchList = this.$el.find('#librarySearchList');
+    this.trackMetaChangeHandler = TrackListItemUtil.makeTrackMetaChangeHandler(this.$searchList);
+    ViewUtil.setDisplayed(this.$searchList, false);
 
     this.$searchButton.on('click tap', () => this.openSearch());
     this.$searchCloseButton.on('click tap', () => this.closeSearch());
@@ -60,6 +71,7 @@ export default class LibraryView extends Subview {
 
     // Global search input in topbar - filter albums as you type
     if (this.$globalSearchInput.length > 0) {
+      this.$globalSearchInput.val('');
       this._globalSearchDebounceTimer = null;
       const updateGlobalSearchClearVisibility = () => {
         if (!this.$globalSearchClear || this.$globalSearchClear.length === 0) {
@@ -130,6 +142,7 @@ export default class LibraryView extends Subview {
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
     Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
+    $(document).on('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
 
     // Listen for sidebar filter changes
     $(document).on('sidebar-filters-changed', (e, filterState) => {
@@ -178,6 +191,7 @@ export default class LibraryView extends Subview {
 
   onModelLibraryUpdated() {
     this.albumsList.setAlbums(Model.library.albums);
+    this.applyAllFilters();
   }
 
   onSearch(type, value) {
@@ -222,10 +236,148 @@ export default class LibraryView extends Subview {
 
   updateHeaderText(isForSearch) {
     // isForSearch parameter is now ignored - search is done in-place
+    this.updateResultHeader(this._resultMode, this._resultCount);
+  }
+
+  updateResultHeader(mode, count) {
+    this._resultMode = mode;
+    this._resultCount = count;
     this.$title.text('Library');
-    const count = this.albumsList.filteredSortedAlbums.length;
-    const suffix = (count == 1) ? ' album' : ' albums';
+    const suffix = (mode === 'tracks')
+      ? ((count == 1) ? ' track' : ' tracks')
+      : ((count == 1) ? ' album' : ' albums');
     this.$itemCount.text(count + suffix);
+    $('#albumCount').text(count);
+  }
+
+  makeFavoriteTracks(albums) {
+    const result = [];
+    for (const album of albums) {
+      const tracks = AlbumUtil.getTracksOf(album);
+      for (const track of tracks) {
+        const hash = track['@_hash'];
+        if (MetaUtil.isTrackFavoriteFor(hash)) {
+          result.push(track);
+        }
+      }
+    }
+    return result;
+  }
+
+  showAlbumResults(filteredAlbums) {
+    ViewUtil.setDisplayed(this.$timelineView, true);
+    $('#timelineMinimapContainer').removeClass('isVisible');
+    $('#libraryView').removeClass('hasMinimap');
+    ViewUtil.setDisplayed(this.albumsList.$el, true);
+    ViewUtil.setDisplayed(this.$searchList, false);
+
+    this.albumsList.albums = filteredAlbums;
+    this.albumsList.filteredSortedAlbumsDirty = true;
+    this.albumsList.groupsDirty = true;
+    this.albumsList.domDirty = true;
+    this.albumsList.setFilterType('none');
+    this.albumsList.update();
+
+    this.updateResultHeader('albums', filteredAlbums.length);
+  }
+
+  showTrackResults(tracks) {
+    ViewUtil.setDisplayed(this.$timelineView, false);
+    $('#timelineMinimapContainer').removeClass('isVisible');
+    $('#libraryView').removeClass('hasMinimap');
+    ViewUtil.setDisplayed(this.albumsList.$el, false);
+    ViewUtil.setDisplayed(this.$searchList, true);
+
+    this.$searchList.empty();
+    if (tracks.length > 0) {
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        const $item = $(this.makeFavoriteTrackListItem(i, track));
+        $item.find('.favoriteButton').on('click tap', (e) => TrackListItemUtil.onFavoriteButtonClick(e));
+        $item.find('.playButton').on('click tap', (e) => this.onFavoriteTrackPlayClick(e));
+        this.$searchList.append($item);
+      }
+    } else {
+      this.$searchList.append('<div class="libraryItem" id="libraryNoneItem">No items</div>');
+    }
+
+    this.updateResultHeader('tracks', tracks.length);
+  }
+
+  makeFavoriteTrackListItem(index, track) {
+    const seconds = parseInt(track['@_length']);
+    const durationText = seconds ? Util.durationText(seconds) : '';
+    const durationEmptyClass = durationText ? '' : 'isEmpty';
+    const song = track['@_song'] || 'Track';
+    const hash = track['@_hash'] || '';
+    const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
+    const favoriteSelectedClass = isFavorite ? 'isSelected' : '';
+    const numViews = MetaUtil.getNumViewsFor(hash);
+
+    let extra = '';
+    if (track['@_performer']) {
+      extra += `<div class='extraLine'><span class='caption'>Performer:</span> ${track['@_performer']}</div>`;
+    }
+    if (track['@_artist']) {
+      extra += `<div class='extraLine'><span class='caption'>Artist:</span> ${track['@_artist']}</div>`;
+    }
+    if (track['@_composer']) {
+      extra += `<div class='extraLine'><span class='caption'>Composer:</span> ${track['@_composer']}</div>`;
+    }
+
+    let s = '';
+    s += `<div class="albumItem" data-index="${index}" data-hash="${hash}">`;
+    s += `  <div class="albumItemLeft">`;
+    s += `    <div class="playButton iconPlay" data-index="${index}" title="Play Track Now"></div>`;
+    s += `    <span class="indexText">${index + 1}</span>`;
+    s += `  </div>`;
+    s += `  <div class="albumItemMain">`;
+    s += `    <div class="song">${song}</div>`;
+    if (extra) {
+      s += `  <div class="extra">${extra}</div>`;
+    }
+    s += `  </div>`;
+    s += `  <div class="albumItemDurationCol ${durationEmptyClass}"><span class="albumItemDuration">${durationText}</span></div>`;
+    s += `  <div class="trackItemMeta">`;
+    s += `    <div class="numViews">${numViews || ''}</div>`;
+    s += `    <div class="iconButton toggleButton favoriteButton ${favoriteSelectedClass}">`;
+    s += `      <div class="favoriteIcon"></div>`;
+    s += `    </div>`;
+    s += `  </div>`;
+    s += `</div>`;
+    return s;
+  }
+
+  onFavoriteTrackPlayClick(event) {
+    event.stopPropagation();
+    const index = parseInt($(event.currentTarget).attr('data-index'));
+    if (!(index >= 0)) {
+      return;
+    }
+
+    const tracks = this.$searchList.find('.albumItem');
+    if (!tracks || index >= tracks.length) {
+      return;
+    }
+
+    const hash = $(tracks[index]).attr('data-hash');
+    if (!hash) {
+      return;
+    }
+
+    const album = Model.library.getAlbumByTrackHash(hash);
+    if (!album) {
+      return;
+    }
+
+    const albumTracks = AlbumUtil.getTracksOf(album);
+    const trackIndex = albumTracks.findIndex(t => t['@_hash'] === hash);
+    if (!(trackIndex >= 0)) {
+      return;
+    }
+
+    const commands = Commands.playlistAddUsingAlbumAndIndices(album, trackIndex, trackIndex, true);
+    AppUtil.doPlaylistAdds(commands, true, true);
   }
 
   /**
@@ -265,7 +417,7 @@ export default class LibraryView extends Subview {
         }
       } else if (browse === 'favorite-tracks') {
         // Check if album has any favorite tracks
-        const tracks = album.track || [];
+        const tracks = AlbumUtil.getTracksOf(album);
         const hasFavoriteTrack = tracks.some(t => {
           const trackHash = t['@_hash'];
           return MetaUtil.isTrackFavoriteFor(trackHash);
@@ -319,25 +471,12 @@ export default class LibraryView extends Subview {
       return true;
     });
 
-    // Make sure albums list is visible
-    ViewUtil.setDisplayed(this.albumsList.$el, true);
-
-    // Set filtered albums to albums list and force dirty flags to rebuild
-    this.albumsList.albums = filteredAlbums;
-    this.albumsList.filteredSortedAlbumsDirty = true;
-    this.albumsList.groupsDirty = true;
-    this.albumsList.domDirty = true;
-    this.albumsList.setFilterType('none');
-    this.albumsList.update();
-
-    // Update header to show filtered count
-    this.$title.text('Library');
-    const count = filteredAlbums.length;
-    const suffix = (count == 1) ? ' album' : ' albums';
-    this.$itemCount.text(count + suffix);
-
-    // Update album count in toolbar
-    $('#albumCount').text(count);
+    if (browse === 'favorite-tracks') {
+      const tracks = this.makeFavoriteTracks(filteredAlbums);
+      this.showTrackResults(tracks);
+    } else {
+      this.showAlbumResults(filteredAlbums);
+    }
   }
 
   /**
@@ -572,81 +711,13 @@ export default class LibraryView extends Subview {
    * Apply header search filter to albums list.
    */
   applyHeaderSearchFilter(searchValue) {
-    // Split search input by comma for AND search
-    // "pink floyd, 1970, dsd" -> ["pink floyd", "1970", "dsd"]
-    const searchTerms = searchValue.split(/,\s*/).map(s => {
-      const term = s.trim();
-      return term.length > 0 ? term.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
-    }).filter(s => s.length > 0);
-
-    if (searchTerms.length === 0) {
-      this.clearHeaderSearchFilter();
-      return;
-    }
-
-    // Get all albums
-    let allAlbums = Model.library.albums;
-    if (!allAlbums) {
-      return;
-    }
-
-    // Filter albums based on search terms (AND logic)
-    let filteredAlbums = allAlbums.filter(album => {
-      // For each search term, check if album matches
-      // ALL terms must match for the album to be included
-      const matchesAllSearchTerms = searchTerms.every(searchVal => this.albumMatchesSearchTerm(album, searchVal));
-      return matchesAllSearchTerms;
-    });
-
-    // Make sure albums list is visible
-    ViewUtil.setDisplayed(this.albumsList.$el, true);
-
-    // Set filtered albums to albums list and force dirty flags to rebuild
-    this.albumsList.albums = filteredAlbums;
-    this.albumsList.filteredSortedAlbumsDirty = true;
-    this.albumsList.groupsDirty = true;
-    this.albumsList.domDirty = true;
-    this.albumsList.setFilterType('none');
-    this.albumsList.update();
-
-    // Update header to show filtered count
-    this.$title.text('Library');
-    const count = filteredAlbums.length;
-    const suffix = (count == 1) ? ' album' : ' albums';
-    this.$itemCount.text(count + suffix);
-
-    // Update album count in toolbar
-    $('#albumCount').text(count);
+    this.applyAllFilters();
   }
 
   /**
    * Clear header search filter and show all albums.
    */
   clearHeaderSearchFilter() {
-    // Get all albums
-    let allAlbums = Model.library.albums;
-    if (!allAlbums) {
-      return;
-    }
-
-    // Make sure albums list is visible
-    ViewUtil.setDisplayed(this.albumsList.$el, true);
-
-    // Set all albums to albums list and force dirty flags to rebuild
-    this.albumsList.albums = allAlbums;
-    this.albumsList.filteredSortedAlbumsDirty = true;
-    this.albumsList.groupsDirty = true;
-    this.albumsList.domDirty = true;
-    this.albumsList.setFilterType('none');
-    this.albumsList.update();
-
-    // Update header to show all albums count
-    this.$title.text('Library');
-    const count = allAlbums.length;
-    const suffix = (count == 1) ? ' album' : ' albums';
-    this.$itemCount.text(count + suffix);
-
-    // Update album count in toolbar
-    $('#albumCount').text(count);
+    this.applyAllFilters();
   }
 }
