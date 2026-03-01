@@ -12,13 +12,15 @@
     --sidebar-collapsed: 0px;
     --sidebar-toggle-w: 18px;
     --sidebar-toggle-h: 34px;
+    --sidebar-transition-ms: 800ms;
+    --sidebar-transition-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
     --sidebar-w: var(--sidebar-expanded);
     grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
     grid-template-areas:
       "topbar topbar"
       "sidebar main"
       "playbar playbar";
-    /* No transition — grid layout changes happen behind the view-transition overlay */
+    transition: grid-template-columns var(--sidebar-transition-ms) var(--sidebar-transition-ease);
   }
 
   #page.isSidebarCollapsed {
@@ -354,7 +356,9 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: none;
+  transition: width var(--sidebar-transition-ms) var(--sidebar-transition-ease),
+    opacity 240ms ease,
+    visibility 0s linear 240ms;
   z-index: 150;
 }
 
@@ -368,6 +372,9 @@
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+  transition: width var(--sidebar-transition-ms) var(--sidebar-transition-ease),
+    opacity 240ms ease,
+    visibility 0s linear 0s;
 }
 
   .sidebar-scroll {
@@ -380,6 +387,15 @@
     /* Firefox */
     scrollbar-color: transparent transparent;
     /* Firefox */
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 220ms ease, transform var(--sidebar-transition-ms) var(--sidebar-transition-ease);
+  }
+
+  #page.libraryView.isSidebarCollapsed #sidebar .sidebar-scroll {
+    opacity: 0;
+    transform: translateX(-8px);
+    pointer-events: none;
   }
 
   .sidebar-scroll::-webkit-scrollbar {

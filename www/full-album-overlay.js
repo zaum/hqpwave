@@ -36,7 +36,9 @@ class FullAlbumOverlay {
   $sourceImage;
   imageUrls = [];
   currentImageIndex = 0;
+  albumCoverCountHint = 0;
   overlaySessionId = 0;
+  isZoomAnimating = false;
 
   constructor() {
     Util.addAppListener(this, 'album-picture-click', this.onAlbumPictureClick);
@@ -58,6 +60,7 @@ class FullAlbumOverlay {
   onAlbumPictureClick(payload) {
     const $sourceImage = payload?.$sourceImage ? $(payload.$sourceImage) : $(payload);
     this.$sourceImage = $sourceImage; // todo weird, revisit
+    this.albumCoverCountHint = Number.isFinite(payload?.coverCount) ? payload.coverCount : 0;
     const albumPath = decodeAlbumPath(payload?.album?.['@_path'] || '');
     const sourceUrl = this.$sourceImage.attr('src');
     this.overlaySessionId += 1;
@@ -89,9 +92,18 @@ class FullAlbumOverlay {
       return;
     }
 
+    this.isZoomAnimating = true;
+    const clearZoomAnimatingTimeoutId = setTimeout(() => {
+      this.isZoomAnimating = false;
+    }, 900);
+
     ViewUtil.animateCss(this.$overlayImage,
         () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...startRect),
-        () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...endRect));
+        () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...endRect),
+        () => {
+          clearTimeout(clearZoomAnimatingTimeoutId);
+          this.isZoomAnimating = false;
+        });
     this.updateNavRailsPosition(endRect);
 
     // Also fade in overlay screen, which is right under overlay image
@@ -110,6 +122,7 @@ class FullAlbumOverlay {
     }
 
     const r = this.getConvertedStartRect(this.$sourceImage);
+    this.isZoomAnimating = true;
     if (this.isValidRect(r)) {
       ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r);
     }
@@ -120,6 +133,7 @@ class FullAlbumOverlay {
         return;
       }
       done = true;
+      this.isZoomAnimating = false;
       this.hide();
     };
 
@@ -254,9 +268,11 @@ class FullAlbumOverlay {
   }
 
   updateNavButtons() {
-    const hasImages = this.imageUrls.length > 1;
-    const canGoPrev = hasImages && this.currentImageIndex > 0;
-    const canGoNext = hasImages && this.currentImageIndex < this.imageUrls.length - 1;
+    const hasMultipleImages = this.albumCoverCountHint > 0
+      ? this.albumCoverCountHint > 1
+      : this.imageUrls.length > 1;
+    const canGoPrev = hasMultipleImages && this.currentImageIndex > 0;
+    const canGoNext = hasMultipleImages && this.currentImageIndex < this.imageUrls.length - 1;
 
     if (ViewUtil.isDisplayed(this.$overlayScreen)) {
       ViewUtil.setDisplayed(this.$prevButton, canGoPrev);
@@ -308,6 +324,9 @@ class FullAlbumOverlay {
     if (!this.$overlayImage.is(':visible')) {
       return;
     }
+    if (this.isZoomAnimating) {
+      return;
+    }
     const r = this.getEndRect(this.$overlayImage);
     ViewUtil.setCssSync(this.$overlayImage,
       () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r));
@@ -315,6 +334,7 @@ class FullAlbumOverlay {
   };
 
   hide() {
+    this.isZoomAnimating = false;
     ViewUtil.setDisplayed(this.$overlayScreen, false);
     ViewUtil.setDisplayed(this.$overlayImage, false);
     ViewUtil.setDisplayed(this.$prevButton, false);

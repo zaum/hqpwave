@@ -17,7 +17,7 @@ const ViewTransition = {
   /** @type {HTMLElement|null} */ _overlay: null,
   _busy: false,
   _queue: null,
-  _defaultDuration: 350,
+  _defaultDuration: 50,
 
   _getOverlay() {
     if (!this._overlay) {

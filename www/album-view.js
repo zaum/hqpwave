@@ -58,6 +58,7 @@ export default class AlbumView extends Subview {
   albumImageUrls = [];
   albumImageIndex = 0;
   albumImageLoadSessionId = 0;
+  albumCoverCount = 0;
 
   constructor() {
     super($("#albumView"));
@@ -82,7 +83,8 @@ export default class AlbumView extends Subview {
     $("#albumCloseButton").on("click tap", () => $(document).trigger('album-view-close-button', this.album, true));
     this.$picture.on('click tap', () => $(document).trigger('album-picture-click', {
       $sourceImage: this.$picture,
-      album: this.album
+      album: this.album,
+      coverCount: this.albumCoverCount
     }));
     this.$openFolderButton.on('click tap', this.onOpenFolderButtonClick);
     this.$prevImageButton.on('click tap', this.onPrevAlbumImageClick);
@@ -143,6 +145,7 @@ hide() {
       this.$picture.css({ transform: '', visibility: '' });
       this.albumImageUrls = [];
       this.albumImageIndex = 0;
+      this.albumCoverCount = 0;
       this.updateAlbumImageNavButtons();
     });
 
@@ -180,6 +183,7 @@ hide() {
   updateInfoArea() {
 
     const defaultImageUrl = DataUtil.getAlbumImageUrl(this.album);
+    this.albumCoverCount = defaultImageUrl ? 1 : 0;
     this.setAlbumImageByIndex(0, [defaultImageUrl]);
 
     const albumPath = decodeAlbumPath(this.album?.['@_path'] || '');
@@ -204,6 +208,8 @@ hide() {
           seen.add(imageUrl);
           uniqueRealImages.push(imageUrl);
         }
+
+        this.albumCoverCount = uniqueRealImages.length || (defaultImageUrl ? 1 : 0);
 
         if (uniqueRealImages.length > 0) {
           const orderedImages = [defaultImageUrl];
@@ -519,9 +525,9 @@ hide() {
   }
 
   updateAlbumImageNavButtons() {
-    const canGoPrev = this.albumImageUrls.length > 1 && this.albumImageIndex > 0;
-    const canGoNext = this.albumImageUrls.length > 1 && this.albumImageIndex < this.albumImageUrls.length - 1;
-    const hasMultipleImages = this.albumImageUrls.length > 1;
+    const hasMultipleImages = this.albumCoverCount > 1;
+    const canGoPrev = hasMultipleImages && this.albumImageIndex > 0;
+    const canGoNext = hasMultipleImages && this.albumImageIndex < this.albumImageUrls.length - 1;
     ViewUtil.setDisplayed(this.$prevImageButton, hasMultipleImages);
     ViewUtil.setDisplayed(this.$nextImageButton, hasMultipleImages);
     this.$prevImageButton.toggleClass('isGhost', !canGoPrev);
