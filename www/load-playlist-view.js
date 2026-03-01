@@ -13,6 +13,8 @@ import Util from './util.js';
 import Values from './values.js';
 import ViewUtil from './view-util.js';
 
+const PLAYLIST_LOAD_TIMEOUT_MS = 12000;
+
 /**
  * Shows list of custom playlists.
  */
@@ -129,6 +131,59 @@ export default class LoadPlaylistView  extends Subview {
     return $(s);
   }
 
+  decodePlaylistPath(path) {
+    if (!path || typeof path !== 'string') {
+      return '';
+    }
+    let result = path;
+    try {
+      result = decodeURIComponent(result);
+    } catch (e) {
+      // keep original when not URI encoded
+    }
+    const entityMap = {
+      amp: '&',
+      lt: '<',
+      gt: '>',
+      quot: '"',
+      apos: "'"
+    };
+    result = result.replace(/&(amp|lt|gt|quot|apos);/g, (m, name) => entityMap[name] || m);
+    return result.trim();
+  }
+
+  makeTransportPathCandidates(path) {
+    const raw = (typeof path === 'string') ? path.trim() : '';
+    const decoded = this.decodePlaylistPath(raw);
+
+    const values = [];
+    const add = (value) => {
+      if (!value || typeof value !== 'string') {
+        return;
+      }
+      const v = value.trim();
+      if (!v || values.includes(v)) {
+        return;
+      }
+      values.push(v);
+    };
+
+    add(raw);
+    add(decoded);
+
+    const noFilePrefix = decoded.replace(/^file:\/\//i, '');
+    add(noFilePrefix);
+
+    const slashPath = noFilePrefix.replace(/\\/g, '/');
+    add(slashPath);
+
+    // Some HQPlayer builds accept file:// URI form, others prefer local path.
+    add(`file://${noFilePrefix}`);
+    add(`file:///${slashPath.replace(/^\/+/, '')}`);
+
+    return values;
+  }
+
 	onCustomItemClick = (e) => {
     const $item = $(e.currentTarget);
     const index = parseInt($item.attr('data-index'));
@@ -140,13 +195,15 @@ export default class LoadPlaylistView  extends Subview {
     const $item = $(e.currentTarget);
     const index = parseInt($item.attr('data-index'));
     const item = this.hqpPlaylistItems[index];
-    const path = item['@_path'];
+    const path = this.decodePlaylistPath(item['@_path']);
     this.doPlaylistLoad(path);
   };
 
   // ---
 
   doPlaylistLoad(path) {
+    path = this.decodePlaylistPath(path);
+
     this.loadSessionId += 1;
     const sessionId = this.loadSessionId;
     this.isLoading = true;
@@ -162,7 +219,7 @@ export default class LoadPlaylistView  extends Subview {
         return;
       }
       this.finishLoad(false, 'Load timed out');
-    }, 6000);
+    }, PLAYLIST_LOAD_TIMEOUT_MS);
 
     const onGetTransport = (data) => {
       if (data['GetTransport'] == undefined || data['GetTransport']['@_value'] == undefined) {
@@ -185,12 +242,10 @@ export default class LoadPlaylistView  extends Subview {
   }
 
   doPlaylistLoadContinued(path, transport) {
-    const onPlaylistLoaded = (data) => {
-      if (!DataUtil.isResultOk(data)) {
-        this.finishLoad(false, `Couldn't load playlist`);
-        return;
-      }
+    const candidates = this.makeTransportPathCandidates(path);
+    let candidateIndex = 0;
 
+    const onLoaded = () => {
       Values.bumpCoverCacheKey();
 
       // HQPlayer returns OK immediately but processes the new playlist
@@ -205,8 +260,25 @@ export default class LoadPlaylistView  extends Subview {
         });
       }, 400);
     };
-    const command = Commands.setTransport(transport, path);
-    Service.queueCommandFront(command, onPlaylistLoaded);
+
+    const tryNextCandidate = () => {
+      if (candidateIndex >= candidates.length) {
+        this.finishLoad(false, `Couldn't load playlist`);
+        return;
+      }
+
+      const candidatePath = candidates[candidateIndex++];
+      const command = Commands.setTransport(transport, candidatePath);
+      Service.queueCommandFront(command, (data) => {
+        if (DataUtil.isResultOk(data)) {
+          onLoaded();
+          return;
+        }
+        tryNextCandidate();
+      });
+    };
+
+    tryNextCandidate();
   }
 
   finishLoad(isSuccess, message = null) {

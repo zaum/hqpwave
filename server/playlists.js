@@ -4,7 +4,7 @@
  */
 const fs = require("fs");
 const path = require('path');
-const PATH = path.resolve('hqpwv-playlists');
+const PATH = path.resolve(__dirname, 'hqpwv-playlists');
 
 const log = require('./log');
 

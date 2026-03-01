@@ -20,6 +20,7 @@ export default class SettingsView extends Subview {
   $themeLightCheckbox;
   $metaCheckbox;
   $showPlayButtonCheckbox;
+  $showFormatOverlayCheckbox;
   $highlightColorPicker;
   $playerBackgroundColorPicker;
   infoView;
@@ -38,6 +39,8 @@ export default class SettingsView extends Subview {
     this.$metaCheckbox.on('click tap', this.onMetaCheckbox);
     this.$showPlayButtonCheckbox = this.$el.find('#settingsShowPlayButtonCheckbox');
     this.$showPlayButtonCheckbox.on('click tap', this.onShowPlayButtonCheckbox);
+    this.$showFormatOverlayCheckbox = this.$el.find('#settingsShowFormatOverlayCheckbox');
+    this.$showFormatOverlayCheckbox.on('click tap', this.onShowFormatOverlayCheckbox);
     this.$highlightColorPicker = this.$el.find('#highlightColorPicker');
     this.$highlightColorPicker.on('change', this.onHighlightColorChange);
     this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
@@ -85,6 +88,8 @@ export default class SettingsView extends Subview {
     this.updateMetaCheckbox();
 
     this.updateShowPlayButtonCheckbox();
+
+    this.updateShowFormatOverlayCheckbox();
 
     this.updateHighlightColorPicker();
 
@@ -192,5 +197,21 @@ export default class SettingsView extends Subview {
     this.updateShowPlayButtonCheckbox();
     // Update library view play button visibility
     $(document).trigger('settings-show-play-button-changed');
+  }
+
+  updateShowFormatOverlayCheckbox() {
+    if (Settings.showFormatOverlay) {
+      this.$showFormatOverlayCheckbox.addClass('isChecked');
+      this.$showFormatOverlayCheckbox.prop('checked', true);
+    } else {
+      this.$showFormatOverlayCheckbox.removeClass('isChecked');
+      this.$showFormatOverlayCheckbox.prop('checked', false);
+    }
+  }
+
+  onShowFormatOverlayCheckbox = () => {
+    Settings.showFormatOverlay = !Settings.showFormatOverlay;
+    this.updateShowFormatOverlayCheckbox();
+    $(document).trigger('settings-show-format-overlay-changed');
   }
 }

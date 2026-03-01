@@ -9,6 +9,18 @@ import AlbumUtil from './album-util.js';
  */
 export default class Commands {}
 
+const xmlEscapeAttribute = (value) => {
+	if (value === null || value === undefined) {
+		return '';
+	}
+	return String(value)
+		.replace(/&/g, '&amp;')
+		.replace(/"/g, '&quot;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/'/g, '&apos;');
+};
+
 Commands.getInfo = () => {
 	return `<GetInfo/>`;
 };
@@ -38,7 +50,8 @@ Commands.playlistAdd = (uri, queued, clear) => {
 	// rem, hqp expects 1 for 'true'
 	queued = (queued === true || queued === 1) ? 1 : 0;
 	clear = (clear === true || clear === 1) ? 1 : 0;
-  return `<PlaylistAdd uri="${uri}" queued="${queued}" clear="${clear}"></PlaylistAdd>`; // todo smth abt <metadata>
+	const escapedUri = xmlEscapeAttribute(uri);
+	return `<PlaylistAdd uri="${escapedUri}" queued="${queued}" clear="${clear}"></PlaylistAdd>`; // todo smth abt <metadata>
 };
 
 Commands.playlistClear = () => {
@@ -62,7 +75,8 @@ Commands.getTransport = () => {
 }
 
 Commands.setTransport = (value, arg) => {
-  return `<SetTransport value="${value}" arg="${arg}" />`;
+	const escapedArg = xmlEscapeAttribute(arg);
+	return `<SetTransport value="${value}" arg="${escapedArg}" />`;
 };
 
 Commands.setRepeat = (value) => {

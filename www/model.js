@@ -74,7 +74,7 @@ class Model {
     this._infoData = data['GetInfo'] ? data['GetInfo'] : {};
     $(document).trigger('model-info-updated');
   }
-l}
+}
 
 // Singleton
 export default new Model();

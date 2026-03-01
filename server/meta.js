@@ -8,7 +8,7 @@ const path = require('path');
 const log = require('./log');
 
 const FILENAME = 'hqpwv-metadata.json';
-const PATH = path.resolve(FILENAME);
+const PATH = path.resolve(__dirname, '..', FILENAME);
 
 const ACTIVITY_COUNTER_THRESH = 10;
 const ACTIVITY_TIMEOUT_DURATION = 5 * 60 * 1000;
@@ -48,7 +48,7 @@ const init = () => {
  */
 const initFile = () => {
   try {
-    fs.accessSync(FILENAME, fs.constants.R_OK | fs.constants.W_OK);
+    fs.accessSync(PATH, fs.constants.R_OK | fs.constants.W_OK);
   } catch (err) {
     const doesntExist = (err.code == 'ENOENT');
     if (doesntExist) {
@@ -67,7 +67,7 @@ const initFile = () => {
 const loadData = () => {
   let filedata;
   try {
-    filedata = fs.readFileSync(FILENAME, {encoding: 'utf8'});
+    filedata = fs.readFileSync(PATH, {encoding: 'utf8'});
   } catch (err) {
     log.x(`error: couldn't load metadata`, err.code);
     log.x('  ' + PATH);
@@ -130,7 +130,7 @@ const getIsDirty = () => {
 // todo save to intermediate file and swap on success?
 const saveFile = () => {
   try {
-    fs.writeFileSync(FILENAME, JSON.stringify(data), {encoding: 'utf8'});
+    fs.writeFileSync(PATH, JSON.stringify(data), {encoding: 'utf8'});
   } catch (err) {
     log.x(`warning couldn't save metadata`, err.code);
     log.x('  ' + PATH);

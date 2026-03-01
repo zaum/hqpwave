@@ -265,6 +265,9 @@ export default class App {
   sidebarTransitionDurationMs = 0;
   libraryTransitionTimeoutId = 0;
   isLibraryTransitionInProgress = false;
+  metaRetryTimeoutId = 0;
+  metaRetryCount = 0;
+  metaRetryMax = 3;
 
   constructor() {
     if (Util.isTouch) {
@@ -424,6 +427,9 @@ export default class App {
     TopBarUtil.updateFor(this.libraryView.$el, true);
     ViewUtil.setFocus(this.libraryView.$el);
     this.setActiveNavPill('library');
+    if (this.libraryView?.albumsList?.updateOverlayVisibility) {
+      this.libraryView.albumsList.updateOverlayVisibility();
+    }
     $(document).trigger('enable-user-input');
   }
 
@@ -634,6 +640,9 @@ export default class App {
 
   hideAlbumView() {
     this.hideSubview(this.albumView);
+    if (this.libraryView?.albumsList?.updateOverlayVisibility) {
+      this.libraryView.albumsList.updateOverlayVisibility();
+    }
   }
 
   hideSettingsView() {
@@ -1019,8 +1028,36 @@ export default class App {
     this.updateMetaEnabledClass();
   }
 
-  onMetaLoadResult() {
+  onMetaLoadResult(isSuccess) {
     this.updateMetaEnabledClass();
+
+    if (isSuccess === true) {
+      this.metaRetryCount = 0;
+      if (this.metaRetryTimeoutId) {
+        clearTimeout(this.metaRetryTimeoutId);
+        this.metaRetryTimeoutId = 0;
+      }
+      return;
+    }
+
+    if (!Settings.isMetaEnabled || MetaUtil.isLoading) {
+      return;
+    }
+    if (this.metaRetryCount >= this.metaRetryMax) {
+      return;
+    }
+
+    this.metaRetryCount += 1;
+    if (this.metaRetryTimeoutId) {
+      clearTimeout(this.metaRetryTimeoutId);
+    }
+    this.metaRetryTimeoutId = setTimeout(() => {
+      this.metaRetryTimeoutId = 0;
+      if (!Settings.isMetaEnabled || MetaUtil.isLoading || MetaUtil.isReady) {
+        return;
+      }
+      MetaUtil.init();
+    }, 2500);
   }
 
   /** Triggers custom resize event 100ms after last window resize event. */

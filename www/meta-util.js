@@ -9,6 +9,9 @@ const HISTORY_MAX_ITEMS = 1000;
 const TRACKS_KEY = 'tracks-r2';
 const HISTORY_KEY = 'history-r2';
 const ALBUMS_KEY = 'albums';
+const META_REQUEST_TIMEOUT_MS = 5000;
+const META_INIT_MAX_RETRIES = 3;
+const META_RETRY_DELAY_MS = 1200;
 
 /**
  * Owns the hqpwv 'metadata layer' data.
@@ -29,27 +32,45 @@ class MetaUtil {
   _tracks = {};
   _albums = {};
   _history = [];
+  _initAttempt = 0;
   
   constructor() {}
 
   init() {
+    this.isReady = false;
+    this.isFailed = false;
     this.isLoading = true;
+    this._initAttempt = 0;
+
+    this.tryInit();
+  }
+
+  tryInit() {
+    this._initAttempt += 1;
 
     this.fetchInfo((result) => {
       if (!result) {
-        cl('warning meta info failed');
-        this.doFail();
+        cl('warning meta info failed', this._initAttempt);
+        this.retryOrFail();
         return;
       }
       this.fetchMain((result) => {
         if (!result) {
-          cl('warning meta main failed');
-          this.doFail();
+          cl('warning meta main failed', this._initAttempt);
+          this.retryOrFail();
           return;
         }
         this.doSuccess();
       });
     });
+  }
+
+  retryOrFail() {
+    if (this._initAttempt < META_INIT_MAX_RETRIES) {
+      setTimeout(() => this.tryInit(), META_RETRY_DELAY_MS);
+      return;
+    }
+    this.doFail();
   }
 
   doFail() {
@@ -78,7 +99,12 @@ class MetaUtil {
       resultCallback(false);
     };
     const url = `${Values.META_ENDPOINT}?info`;
-    $.ajax( { url: url, error: onError, success: onSuccess } );
+    $.ajax({
+      url: url,
+      timeout: META_REQUEST_TIMEOUT_MS,
+      error: onError,
+      success: onSuccess
+    });
   }
 
   fetchMain(resultCallback) {
@@ -105,7 +131,12 @@ class MetaUtil {
     };
 
     const url = `${Values.META_ENDPOINT}?getMain`;
-    $.ajax( { url: url, error: onError, success: onSuccess } );
+    $.ajax({
+      url: url,
+      timeout: META_REQUEST_TIMEOUT_MS,
+      error: onError,
+      success: onSuccess
+    });
   }
 
   get isEnabled() {

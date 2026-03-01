@@ -41,7 +41,9 @@ class SidebarView {
     // Collapse/expand toggle
     this.$toggle = $(`
       <button type="button" id="sidebarToggle" aria-label="Collapse sidebar" title="Hide sidebar">
-        &lt;
+        <svg class="sidebar-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M9.29 6.71a1 1 0 0 1 1.42 0l4.59 4.59a1 1 0 0 1 0 1.41l-4.59 4.59a1 1 0 1 1-1.42-1.41L13.17 12 9.29 8.12a1 1 0 0 1 0-1.41z"></path>
+        </svg>
       </button>
     `);
     this.$el.append(this.$toggle);
@@ -134,12 +136,11 @@ class SidebarView {
 
   syncToggleIcon() {
     const isCollapsed = this.$page.hasClass('isSidebarCollapsed');
+    this.$toggle.toggleClass('isCollapsed', isCollapsed);
     if (isCollapsed) {
-      this.$toggle.html('&gt;');
       this.$toggle.attr('aria-label', 'Expand sidebar');
       this.$toggle.attr('title', 'Show sidebar');
     } else {
-      this.$toggle.html('&lt;');
       this.$toggle.attr('aria-label', 'Collapse sidebar');
       this.$toggle.attr('title', 'Hide sidebar');
     }

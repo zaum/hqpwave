@@ -25,13 +25,15 @@ export default class LibraryContentList {
   groups;
 
   intersectionObs;
+  preloadedImageUrls;
 
   constructor($el) {
     this.$el = $el;
+    this.preloadedImageUrls = new Set();
     const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0 };
     this.intersectionObs = new IntersectionObserver(this.onIntersection, config);
     $(document).on('album-favorite-changed', this.onAlbumFavoriteChanged);
-    $(document).on('settings-show-play-button-changed', this.onSettingsChanged);
+    $(document).on('settings-show-play-button-changed settings-show-format-overlay-changed', this.onSettingsChanged);
   }
 
   show(type = null, value = null) {
@@ -65,6 +67,7 @@ export default class LibraryContentList {
    */
   clear() {
     this.intersectionObs.disconnect();
+    this.preloadedImageUrls.clear();
     this.$el.empty();
   }
 
@@ -97,7 +100,8 @@ export default class LibraryContentList {
     this.$el.append($group);
     
     // Update play button visibility based on setting
-    this.updatePlayButtonVisibility();
+    this.updateOverlayVisibility();
+    this.primeInitialPreload();
   }
 
   // override-able
@@ -192,20 +196,68 @@ export default class LibraryContentList {
 
     for (const entry of entries) {
       const $img = $(entry.target);
-      if (!entry.isIntersecting) {
-        $img.removeAttr('src');
-      } else {
+      if (entry.isIntersecting) {
         const src = $img.attr('data-src');
-        $img.attr('src', src);
+        if (src && $img.attr('src') !== src) {
+          $img.attr('src', src);
+        }
+        this.preloadNearbyImages(entry.target);
       }
     }
   };
 
+  preloadNearbyImages(imgEl) {
+    const $imgs = this.$el.find('.libraryItemPicture img[data-src]');
+    const currentIndex = $imgs.index(imgEl);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    const preloadAheadCount = 24;
+    const preloadBehindCount = 4;
+    const maxIndex = $imgs.length - 1;
+
+    for (let i = currentIndex + 1; i <= Math.min(maxIndex, currentIndex + preloadAheadCount); i++) {
+      const src = $($imgs[i]).attr('data-src');
+      this.preloadImage(src);
+    }
+    for (let i = currentIndex - 1; i >= Math.max(0, currentIndex - preloadBehindCount); i--) {
+      const src = $($imgs[i]).attr('data-src');
+      this.preloadImage(src);
+    }
+  }
+
+  preloadImage(src) {
+    if (!src || this.preloadedImageUrls.has(src)) {
+      return;
+    }
+    this.preloadedImageUrls.add(src);
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+  }
+
+  primeInitialPreload() {
+    const $imgs = this.$el.find('.libraryItemPicture img[data-src]');
+    const max = Math.min($imgs.length, 36);
+    for (let i = 0; i < max; i++) {
+      const src = $($imgs[i]).attr('data-src');
+      this.preloadImage(src);
+    }
+  }
+
   // override-able
   onItemClick(event) {
     const $item = $(event.currentTarget);
-    const hash = $item.attr("data-hash");
-    const album = Model.library.getAlbumByAlbumHash(hash);
+    let album = $item.data('album');
+    if (!album) {
+      const hash = $item.attr("data-hash");
+      album = Model.library.getAlbumByAlbumHash(hash);
+    }
+    if (!album) {
+      cl('warning album item click has no resolved album');
+      return;
+    }
     $(document).trigger('library-item-click', [album, $item]);
   };
 
@@ -240,6 +292,7 @@ export default class LibraryContentList {
     const isFavoriteClass = MetaUtil.isAlbumFavoriteFor(hash) ? 'isFavorite' : '';
     // Invert the logic to fix the backwards toggle
     const showPlayButton = !Settings.showPlayButton;
+    const showFormatOverlay = Settings.showFormatOverlay;
 
     let s = `<div class="libraryItem ${isFavoriteClass}" data-hash="${hash}">`; /* tabindex="0" */
     s += `<div class="libraryItemPicture">
@@ -258,6 +311,7 @@ export default class LibraryContentList {
                 </div>`;
     s += `</div>`;
     const $item = $(s);
+    $item.data('album', album);
 
     if (!showPlayButton) {
       $item.addClass('show-play-button');
@@ -270,12 +324,19 @@ export default class LibraryContentList {
       $item.removeClass('show-play-button');
     }
 
+    if (showFormatOverlay) {
+      $item.addClass('show-format-overlay');
+    } else {
+      $item.removeClass('show-format-overlay');
+    }
+
     return $item;
   }
 
-  updatePlayButtonVisibility() {
+  updateOverlayVisibility() {
     // Invert the logic to fix the backwards toggle
     const showPlayButton = !Settings.showPlayButton;
+    const showFormatOverlay = Settings.showFormatOverlay;
     const $items = this.$el.find('.libraryItem');
     
     $items.each((index, item) => {
@@ -285,11 +346,17 @@ export default class LibraryContentList {
       } else {
         $item.removeClass('show-play-button');
       }
+
+      if (showFormatOverlay) {
+        $item.addClass('show-format-overlay');
+      } else {
+        $item.removeClass('show-format-overlay');
+      }
     });
   }
 
   onSettingsChanged = () => {
     // Update all existing items in the library view
-    this.updatePlayButtonVisibility();
+    this.updateOverlayVisibility();
   }
 }

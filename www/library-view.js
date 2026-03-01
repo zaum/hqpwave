@@ -127,6 +127,7 @@ export default class LibraryView extends Subview {
       () => this.syncExpandCollapseButtonState());
     Util.addAppListener(this, 'library-expand-all-groups', this.onExpandAllGroups);
     Util.addAppListener(this, 'library-collapse-all-groups', this.onCollapseAllGroups);
+    Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
     Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
 
@@ -358,6 +359,13 @@ export default class LibraryView extends Subview {
     if (browse === 'favorite-tracks') {
       this.applyAllFilters();
     }
+  }
+
+  onMetaLoadResult = () => {
+    if (!Model.library || !Model.library.albums) {
+      return;
+    }
+    this.applyAllFilters();
   }
 
   /**
