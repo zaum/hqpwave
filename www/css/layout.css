@@ -1463,29 +1463,38 @@
     width: 28px;
     height: 28px;
     border: none;
-    border-radius: 50%;
     background: var(--accent);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
     cursor: default;
     pointer-events: none;
   }
 
   #snack #snackInner #snackIcon:before {
-    content: 'i';
+    content: '!';
     background-image: none;
     opacity: 1;
     filter: none;
-    color: #fff;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: 'Geist', sans-serif;
     font-size: 16px;
     font-weight: 700;
-    line-height: 28px;
-    text-align: center;
+    line-height: 1;
   }
 
   #snack #snackInner #snackClose {
     position: absolute;
     top: 18px;
     right: 28px;
+  }
+
+  #snack #snackInner #snackClose:before,
+  #toast #toastInner .closeButton:before,
+  #toast #toastClose:before {
+    opacity: 1;
+    filter: none;
   }
 
   #snack #snackInner #snackLine1 {
