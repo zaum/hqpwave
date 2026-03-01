@@ -7,7 +7,6 @@
 .iconButton:before,
 .libraryGroupLabel:before,
 .libraryGroupLabel .icon:before,
-.loadItem:before,
 .dropdownItem.isSelected:before {
   content: " ";
   display: block;

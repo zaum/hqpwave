@@ -4,14 +4,15 @@
 
 #playlistView {
   padding: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 #playlistMainView {
-  position: relative;
-  height: auto;
-  overflow: visible;
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -445,6 +446,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #historyView .viewHeader {
@@ -510,6 +513,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 #loadHeader {
@@ -567,10 +572,7 @@
 
 /* Center the playlist content */
 #playlistMainView {
-  max-width: 900px;
-  margin: 0 auto;
   padding: 24px 48px 80px;
-  width: 100%;
   box-sizing: border-box;
 }
 

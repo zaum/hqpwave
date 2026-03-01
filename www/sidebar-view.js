@@ -1,4 +1,5 @@
 import AppUtil from './app-util.js';
+import MetaUtil from './meta-util.js';
 import Model from './model.js';
 import Settings from './settings.js';
 import Util from './util.js';
@@ -183,15 +184,12 @@ class SidebarView {
     // Favorite albums count
     const favoriteAlbums = albums.filter(a => {
       const albumHash = a['@_hash'];
-      return window.hqpwv && window.hqpwv.MetaUtil && window.hqpwv.MetaUtil.isAlbumFavoriteFor(albumHash);
+      return MetaUtil.isAlbumFavoriteFor(albumHash);
     });
     $('#countFavoriteAlbums').text(favoriteAlbums.length);
 
     // Favorite tracks count - need to count from meta
-    let favoriteTrackCount = 0;
-    if (window.hqpwv && window.hqpwv.MetaUtil && window.hqpwv.MetaUtil.getFavoriteTrackCount) {
-      favoriteTrackCount = window.hqpwv.MetaUtil.getFavoriteTrackCount();
-    }
+    const favoriteTrackCount = MetaUtil.getFavoriteTrackCount();
     $('#countFavoriteTracks').text(favoriteTrackCount);
   }
 

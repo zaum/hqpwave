@@ -33,12 +33,6 @@ class MetaUtil {
   constructor() {}
 
   init() {
-    // Dev convenience
-    if (!window.hqpwv) {
-      window.hqpwv = {};
-    }
-    window.hqpwv.MetaUtil = this;
-
     this.isLoading = true;
 
     this.fetchInfo((result) => {
@@ -221,6 +215,19 @@ class MetaUtil {
       numViews = 0;
     }
     return numViews;
+  }
+
+  getFavoriteTrackCount() {
+    let count = 0;
+    for (const hash in this._tracks) {
+      if (!Object.prototype.hasOwnProperty.call(this._tracks, hash)) {
+        continue;
+      }
+      if (this.isTrackFavoriteFor(hash)) {
+        count += 1;
+      }
+    }
+    return count;
   }
 
   /**

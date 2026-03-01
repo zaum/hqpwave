@@ -39,6 +39,7 @@ export default class LoadPlaylistView  extends Subview {
 	}
 
   onShow() {
+    this.$el[0].scrollTop = 0;
     $(document).on('custom-playlists-changed', this.onMetaPlaylistsChanged);
     $(document).on('server-errors', this.onServerErrors);
     $(document).on('proxy-errors', this.onProxyErrors);

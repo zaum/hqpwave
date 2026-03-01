@@ -118,7 +118,7 @@ ViewUtil.setFocus = ($el, safariTimeoutValue=500) => {
   if (ViewUtil.isSafari) {
     setTimeout(() => $el.focus(), safariTimeoutValue);
   }  else {
-    this.$el.focus();
+    $el.focus();
   }
 };
 

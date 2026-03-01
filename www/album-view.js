@@ -17,6 +17,24 @@ import Values from './values.js';
 import ViewUtil from './view-util.js'
 import Native from './native.js';
 
+const decodeAlbumPath = (value) => {
+  let result = (typeof value === 'string') ? value : '';
+  try {
+    result = decodeURIComponent(result);
+  } catch (e) {
+    // keep raw if not URI-encoded
+  }
+  const entityMap = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'"
+  };
+  result = result.replace(/&(amp|lt|gt|quot|apos);/g, (m, name) => entityMap[name] || m);
+  return result;
+};
+
 /**
  * Album view containing a header and a list of track list items.
  * todo put top area in its own class
@@ -160,7 +178,7 @@ hide() {
     const imgPath = DataUtil.getAlbumImageUrl(this.album);
     this.setAlbumImageByIndex(0, [imgPath]);
 
-    const albumPath = this.album?.['@_path'] || '';
+    const albumPath = decodeAlbumPath(this.album?.['@_path'] || '');
     this.albumImageLoadSessionId += 1;
     const sessionId = this.albumImageLoadSessionId;
     if (albumPath) {
@@ -242,9 +260,10 @@ hide() {
     AlbumUtil.updateGenreButtons($('#albumViewGenreButtons'), this.album);
 
     const rawPath = this.album['@_path'] || '';
-    $("#albumViewPath").text(rawPath);
+    const displayPath = decodeAlbumPath(rawPath);
+    $("#albumViewPath").text(displayPath);
     const isDesktopLike = !Util.isTouch;
-    ViewUtil.setDisplayed(this.$openFolderButton, isDesktopLike && !!rawPath);
+    ViewUtil.setDisplayed(this.$openFolderButton, isDesktopLike && !!displayPath);
 
     const albumHash = this.getAlbumHash();
     MetaUtil.isAlbumFavoriteFor(albumHash)
@@ -460,7 +479,7 @@ hide() {
     if (Util.isTouch) {
       return;
     }
-    const path = this.album?.['@_path'];
+    const path = decodeAlbumPath(this.album?.['@_path'] || '');
     if (!path) {
       return;
     }

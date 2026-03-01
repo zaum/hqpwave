@@ -42,6 +42,7 @@ const normalizeRequestedPath = (inputPath) => {
   }
   pathToOpen = pathToOpen.trim();
   pathToOpen = pathToOpen.replace(/^file:\/+/i, '');
+
   if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(pathToOpen)) {
     pathToOpen = pathToOpen.slice(1);
   }

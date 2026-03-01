@@ -6,6 +6,7 @@ import LibraryAlbumsList from './library-albums-list.js';
 import LibraryDataUtil from './library-data-util.js';
 import LibraryGroupUtil from './library-group-util.js';
 import SidebarView from './sidebar-view.js';
+import MetaUtil from './meta-util.js';
 import Model from './model.js';
 import Service from './service.js';
 import Settings from './settings.js';
@@ -258,7 +259,7 @@ export default class LibraryView extends Subview {
       // 1. Sidebar: Browse filter
       if (browse === 'favorite-albums') {
         const albumHash = album['@_hash'];
-        if (!window.hqpwv || !window.hqpwv.MetaUtil || !window.hqpwv.MetaUtil.isAlbumFavoriteFor(albumHash)) {
+        if (!MetaUtil.isAlbumFavoriteFor(albumHash)) {
           return false;
         }
       } else if (browse === 'favorite-tracks') {
@@ -266,7 +267,7 @@ export default class LibraryView extends Subview {
         const tracks = album.track || [];
         const hasFavoriteTrack = tracks.some(t => {
           const trackHash = t['@_hash'];
-          return window.hqpwv && window.hqpwv.MetaUtil && window.hqpwv.MetaUtil.isTrackFavoriteFor(trackHash);
+          return MetaUtil.isTrackFavoriteFor(trackHash);
         });
         if (!hasFavoriteTrack) return false;
       }

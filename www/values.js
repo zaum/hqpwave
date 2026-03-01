@@ -24,14 +24,6 @@ class Values {
   _startTime = new Date().getTime();
   _coverCacheKey = Date.now();
 
-  constructor() {
-    // Dev convenience
-    if (!window.hqpwv) {
-      window.hqpwv = {};
-    }
-    window.hqpwv.Values = this;
-  }
-
   setValues(nativeGetInfoData) {
     this._hqpwvVersion = nativeGetInfoData['hqpwv_version'];
     this._hqpwvIp = nativeGetInfoData['server_ip_address'];

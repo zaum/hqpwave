@@ -19,14 +19,6 @@ class Model {
 
   hasLibrary;
 
-  constructor() {
-    // Dev convenience
-    if (!window.hqpwv) {
-      window.hqpwv = {};
-    }
-    window.hqpwv.Model = this;
-  }
-
   // @NonNull
 	get library() {
 		return this._library;

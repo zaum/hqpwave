@@ -262,16 +262,11 @@ export default class App {
   minKeyDuration = 350;
   resizeTimeoutId = 0;
   subviewZ = 100;
-  sidebarTransitionDurationMs = 260;
+  sidebarTransitionDurationMs = 0;
   libraryTransitionTimeoutId = 0;
   isLibraryTransitionInProgress = false;
 
   constructor() {
-    if (!window.hqpwv) {
-      window.hqpwv = {};
-    }
-    window.hqpwv.AppUtil = AppUtil;
-
     if (Util.isTouch) {
       $('html').addClass('isTouch');
     }
@@ -531,7 +526,7 @@ export default class App {
   // subview concrete show/hide logic
 
   togglePlaylistCompoundView() {
-    if (this.getTopSubview() == this.playlistView) {
+    if (this.isPlaylistViewUsable()) {
       this.hidePlaylist();
     } else {
       this.showPlaylistCompoundView();
@@ -539,8 +534,37 @@ export default class App {
   }
 
   showPlaylistCompoundView() {
+    if (ViewUtil.isVisible(this.playlistView.$el) && !this.isPlaylistViewUsable()) {
+      this.resetStalePlaylistViewState();
+    }
+
     this.showSubview(this.playlistView);
     Service.queueCommandFront(Commands.playlistGet());
+  }
+
+  isPlaylistViewUsable() {
+    if (!ViewUtil.isVisible(this.playlistView.$el)) {
+      return false;
+    }
+
+    const opacity = parseFloat(this.playlistView.$el.css('opacity'));
+    if (Number.isFinite(opacity) && opacity < 0.05) {
+      return false;
+    }
+
+    return ViewUtil.isVisible(this.playlistView.mainView.$el)
+      || ViewUtil.isVisible(this.playlistView.historyView.$el)
+      || ViewUtil.isVisible(this.playlistView.loadView.$el);
+  }
+
+  resetStalePlaylistViewState() {
+    this.playlistView.$el.css('opacity', 1);
+    this.playlistView.$el.css('filter', 'brightness(1)');
+
+    ViewUtil.setVisible(this.playlistView.mainView.$el, false);
+    ViewUtil.setVisible(this.playlistView.historyView.$el, false);
+    ViewUtil.setVisible(this.playlistView.loadView.$el, false);
+    ViewUtil.setVisible(this.playlistView.$el, false);
   }
 
   trackListItemToAlbum(album) {
