@@ -293,6 +293,15 @@ export default class LibraryView extends Subview {
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
         const $item = $(this.makeFavoriteTrackListItem(i, track));
+        const $coverImg = $item.find('.favoriteTrackCoverImg');
+        if ($coverImg.length > 0) {
+          $coverImg.on('error', () => {
+            $item.find('.favoriteTrackCover').addClass('isCoverMissing');
+          });
+          $coverImg.on('load', () => {
+            $item.find('.favoriteTrackCover').removeClass('isCoverMissing');
+          });
+        }
         $item.find('.favoriteButton').on('click tap', (e) => TrackListItemUtil.onFavoriteButtonClick(e));
         $item.find('.playButton').on('click tap', (e) => this.onFavoriteTrackPlayClick(e));
         this.$searchList.append($item);
@@ -310,6 +319,9 @@ export default class LibraryView extends Subview {
     const durationEmptyClass = durationText ? '' : 'isEmpty';
     const song = track['@_song'] || 'Track';
     const hash = track['@_hash'] || '';
+    const album = Model.library.getAlbumByTrackHash(hash);
+    const coverUrl = album ? DataUtil.getAlbumImageUrl(album) : '';
+    const coverMissingClass = coverUrl ? '' : 'isCoverMissing';
     const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
     const favoriteSelectedClass = isFavorite ? 'isSelected' : '';
     const numViews = MetaUtil.getNumViewsFor(hash);
@@ -330,6 +342,12 @@ export default class LibraryView extends Subview {
     s += `  <div class="albumItemLeft">`;
     s += `    <div class="playButton iconPlay" data-index="${index}" title="Play Track Now"></div>`;
     s += `    <span class="indexText">${index + 1}</span>`;
+    s += `  </div>`;
+    s += `  <div class="favoriteTrackCover ${coverMissingClass}">`;
+    if (coverUrl) {
+      s += `    <img class="favoriteTrackCoverImg" src="${coverUrl}" alt="">`;
+    }
+    s += `    <div class="favoriteTrackCoverFallback" aria-hidden="true"></div>`;
     s += `  </div>`;
     s += `  <div class="albumItemMain">`;
     s += `    <div class="song">${song}</div>`;

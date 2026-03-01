@@ -230,6 +230,7 @@ import TopBar from './top-bar.js';
 import TopBarUtil from './top-bar-util.js';
 import Util from './util.js';
 import Values from './values.js';
+import ViewTransition from './view-transition.js';
 import ViewUtil from './view-util.js';
 import SidebarView from './sidebar-view.js';
 
@@ -262,9 +263,7 @@ export default class App {
   minKeyDuration = 350;
   resizeTimeoutId = 0;
   subviewZ = 100;
-  sidebarTransitionDurationMs = 0;
-  libraryTransitionTimeoutId = 0;
-  isLibraryTransitionInProgress = false;
+  transitionDurationMs = 350;
   metaRetryTimeoutId = 0;
   metaRetryCount = 0;
   metaRetryMax = 3;
@@ -413,24 +412,38 @@ export default class App {
     }
   }
 
-  goToLibraryView() {
-    const closables = [this.hqpSettingsView, this.settingsView, this.playlistView, this.albumView];
-    for (let subview of closables) {
-      if (ViewUtil.isVisible(subview.$el)) {
-        this.hideSubview(subview);
-      }
-    }
+  /**
+   * Run a view transition through the overlay.
+   * swapFn is called when the overlay is fully opaque.
+   */
+  transition(swapFn) {
+    $(document).trigger('disable-user-input');
+    ViewTransition.run(() => {
+      swapFn();
+      $(document).trigger('enable-user-input');
+    }, this.transitionDurationMs);
+  }
 
-    ViewUtil.setVisible(this.libraryView.$el, true);
-    this.updatePageHolderSubviewClass(this.libraryView);
-    TopBarUtil.returnSubviewHeader(true);
-    TopBarUtil.updateFor(this.libraryView.$el, true);
-    ViewUtil.setFocus(this.libraryView.$el);
-    this.setActiveNavPill('library');
-    if (this.libraryView?.albumsList?.updateOverlayVisibility) {
-      this.libraryView.albumsList.updateOverlayVisibility();
-    }
-    $(document).trigger('enable-user-input');
+  goToLibraryView() {
+    this.transition(() => {
+      const closables = [this.hqpSettingsView, this.settingsView, this.playlistView, this.albumView];
+      for (let subview of closables) {
+        if (ViewUtil.isVisible(subview.$el)) {
+          subview.hide();
+        }
+      }
+
+      ViewUtil.setVisible(this.libraryView.$el, true);
+      this.libraryView.$el.css('opacity', 1);
+      this.updatePageHolderSubviewClass(this.libraryView);
+      TopBarUtil.returnSubviewHeader(true);
+      TopBarUtil.updateFor(this.libraryView.$el, true);
+      ViewUtil.setFocus(this.libraryView.$el);
+      this.setActiveNavPill('library');
+      if (this.libraryView?.albumsList?.updateOverlayVisibility) {
+        this.libraryView.albumsList.updateOverlayVisibility();
+      }
+    });
   }
 
   /**
@@ -593,38 +606,13 @@ export default class App {
   }
 
   switchSettingsSubview(currentSubview, targetSubview) {
-    this.showSubview(targetSubview);
-    setTimeout(() => {
+    this.transition(() => {
       currentSubview.hide();
-    }, 40);
-  }
-
-  showSubviewFromLibrary(subview, ...extra) {
-    if (this.isLibraryTransitionInProgress) {
-      return;
-    }
-
-    const topSubview = this.getTopSubview();
-    if (topSubview !== this.libraryView) {
-      this.showSubviewNow(subview, ...extra);
-      return;
-    }
-
-    this.isLibraryTransitionInProgress = true;
-    $(document).trigger('disable-user-input');
-    TopBarUtil.returnSubviewHeader(true);
-
-    this.$pageHolder.addClass('isSidebarTransitionCollapsed');
-    this.$pageHolder.addClass('isLibraryTransitioning');
-
-    clearTimeout(this.libraryTransitionTimeoutId);
-    this.libraryTransitionTimeoutId = setTimeout(() => {
-      this.$pageHolder.removeClass('isSidebarTransitionCollapsed');
-      this.$pageHolder.removeClass('isLibraryTransitioning');
-      this.updatePageHolderSubviewClass(subview);
-      this.showSubviewNow(subview, ...extra);
-      this.isLibraryTransitionInProgress = false;
-    }, this.sidebarTransitionDurationMs);
+      this.subviewZ++;
+      targetSubview.$el.css('z-index', this.subviewZ);
+      targetSubview.show();
+      this.updatePageHolderSubviewClass(targetSubview);
+    });
   }
 
   doAppTitleClick() {
@@ -704,33 +692,21 @@ export default class App {
       return;
     }
 
-    const topSubview = this.getTopSubview();
-    if (topSubview === this.libraryView && subview !== this.libraryView) {
-      this.showSubviewFromLibrary(subview, ...extra);
-      return;
-    }
+    this.transition(() => {
+      // Hide ALL other subviews behind the overlay so no old content
+      // can flash through during layout shifts (grid recalculation, etc.)
+      for (let other of this.subviews) {
+        if (other !== subview && ViewUtil.isVisible(other.$el)) {
+          other.hide();
+        }
+      }
 
-    this.showSubviewNow(subview, ...extra);
-  }
-
-  showSubviewNow(subview, ...extra) {
-    if (this.getTopSubview() === subview) {
-      $(document).trigger('enable-user-input');
-      return;
-    }
-
-    // Disable user input
-    // Subview *must* send 'enable-user-input' at end of its show()
-    $(document).trigger('disable-user-input');
-
-    TopBarUtil.returnSubviewHeader(true);
-
-    this.subviewZ++; // ha.
-    subview.$el.css('z-index', this.subviewZ);
-
-    subview.show(...extra);
-
-    this.updatePageHolderSubviewClass(subview);
+      TopBarUtil.returnSubviewHeader(true);
+      this.subviewZ++;
+      subview.$el.css('z-index', this.subviewZ);
+      subview.show(...extra);
+      this.updatePageHolderSubviewClass(subview);
+    });
   }
 
   hideSubview(subview) {
@@ -739,14 +715,21 @@ export default class App {
       return;
     }
 
-    // Disable user input
-    // Subview *must* send 'enable-user-input' at end of its hide()
-    $(document).trigger('disable-user-input');
+    this.transition(() => {
+      subview.hide();
 
-    this.updatePageHolderSubviewClassOnHide();
-    subview.hide();
-
-    this.postHideHeaderAndFocus(subview.$el);
+      // Make sure the view underneath is visible
+      const exposed = this.getTopSubview();
+      if (!exposed) {
+        // Nothing visible — show library as fallback
+        ViewUtil.setVisible(this.libraryView.$el, true);
+        this.libraryView.$el.css('opacity', 1);
+        this.updatePageHolderSubviewClass(this.libraryView);
+      } else {
+        this.updatePageHolderSubviewClass(exposed);
+      }
+      this.postHideHeaderAndFocus(subview.$el);
+    });
   }
 
   /**

@@ -152,6 +152,19 @@ label {
   font-family: 'Geist Mono', monospace;
 }
 
+/* View Transition Overlay — covers sidebar + main area between topbar and playbar */
+#viewTransitionOverlay {
+  position: fixed;
+  top: 80px;                         /* below topbar */
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 80px - 70px); /* stop above playbar */
+  background-color: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10000;                    /* above everything in the main area */
+}
+
 /* Subview Base */
 .subview {
   position: absolute;
@@ -159,7 +172,7 @@ label {
   height: 100%;
   overflow-y: scroll;
   background-color: var(--bg);
-  transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1), filter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  /* No opacity/filter transition — view switches are handled by the overlay */
   -webkit-overflow-scrolling: touch;
 }
 

@@ -11,7 +11,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   align-items: start;
-  transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1), filter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
 }
 
 #albumViewWrapper {
@@ -164,16 +164,24 @@
 
 #albumViewPictureBlur {
   position: absolute;
-  top: -240px;
-  bottom: -420px;
-  left: -380px;
-  right: -620px;
+  top: -300px;
+  bottom: -560px;
+  left: -500px;
+  right: -820px;
   filter: blur(170px);
-  opacity: 0.68;
+  opacity: 0.25;
   z-index: 1;
   object-fit: cover;
   pointer-events: none;
-  border-radius: 10px;
+  border-radius: 40px;
+  transform: scale(2.3);
+}
+
+@media (max-width: 768px) {
+  #albumViewPictureBlur {
+    transform: scale(1.9);
+    opacity: 0.36;
+  }
 }
 
 #albumViewImageNav {
@@ -893,6 +901,41 @@
   font-weight: 300;
   color: var(--text-3);
   text-align: center;
+}
+
+.favoriteTrackCover {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.favoriteTrackCoverImg,
+.favoriteTrackCoverFallback {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.favoriteTrackCoverImg {
+  object-fit: cover;
+}
+
+.favoriteTrackCoverFallback {
+  display: none;
+  background: var(--surface);
+}
+
+.favoriteTrackCover.isCoverMissing .favoriteTrackCoverFallback {
+  display: block;
+}
+
+.favoriteTrackCover.isCoverMissing .favoriteTrackCoverImg {
+  display: none;
 }
 
 .albumItemMain {

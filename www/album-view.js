@@ -105,7 +105,11 @@ export default class AlbumView extends Subview {
     $(document).on('new-track', this.onNewTrack);
     $(document).on('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
 
-    this.fadeInContent();
+    // Content is revealed by the ViewTransition overlay fade-out.
+    // Don't start a separate 520ms CSS opacity animation on texts/list —
+    // it would still be mid-fade when the overlay disappears, causing a flash.
+    this.$texts.css('opacity', 1);
+    this.$list.css('opacity', 1);
     this.onShowComplete();
   }
 

@@ -18,11 +18,10 @@
       "topbar topbar"
       "sidebar main"
       "playbar playbar";
-    transition: grid-template-columns 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    /* No transition — grid layout changes happen behind the view-transition overlay */
   }
 
-  #page.isSidebarCollapsed,
-  #page.isSidebarTransitionCollapsed {
+  #page.isSidebarCollapsed {
     --sidebar-w: var(--sidebar-collapsed);
   }
 
@@ -369,26 +368,6 @@
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-}
-
-#page.isSidebarTransitionCollapsed #sidebar {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#libraryView .library-main,
-#libraryView #timelineMinimapContainer,
-#libraryView #librarySearchList {
-  opacity: 1;
-  filter: brightness(1);
-  transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-#page.isLibraryTransitioning #libraryView .library-main,
-#page.isLibraryTransitioning #libraryView #timelineMinimapContainer,
-#page.isLibraryTransitioning #libraryView #librarySearchList {
-  opacity: 0;
-  filter: brightness(1.08);
 }
 
   .sidebar-scroll {
