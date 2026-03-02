@@ -206,17 +206,42 @@
   }
 
   .brand {
-    font-family: 'Playfair Display', serif;
-    font-size: 16px;
-    font-weight: 400;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
     color: var(--text);
+    cursor: pointer;
   }
 
-  .brand em {
-    font-style: italic;
-    color: var(--accent);
+  .brand-logo {
+    display: block;
+    width: 130px;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .brand-logo-text,
+  .brand-logo-mark-fill {
+    fill: var(--text);
+  }
+
+  .brand-logo-mark-stroke {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 19.98px;
+    stroke-linecap: round;
+    stroke-miterlimit: 7;
+    stroke-dasharray: 1400 500;
+    stroke-dashoffset: 0;
+  }
+
+  @keyframes brandWaveDraw {
+    0%   { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -1900; }
+  }
+
+  .brand.isStrokeAnimating .brand-logo-mark-stroke {
+    animation: brandWaveDraw 3s ease;
   }
 
   .nav-pill {

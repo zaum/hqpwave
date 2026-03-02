@@ -256,6 +256,7 @@ export default class App {
   $pageHolder = $('#page');
   $settingsButton = $('#settingsButton');
   $hqpSettingsButton = $('#hqpSettingsButton');
+  $brandLogo = $('#brandLogo');
   $navPills = $('.nav-pill');
 
   instanceId = Math.floor(Math.random() * 99999999);
@@ -267,6 +268,8 @@ export default class App {
   metaRetryTimeoutId = 0;
   metaRetryCount = 0;
   metaRetryMax = 3;
+  isBrandLogoAnimationRunning = false;
+  brandLogoAnimationCooldownUntil = 0;
 
   constructor() {
     if (Util.isTouch) {
@@ -332,6 +335,25 @@ export default class App {
       }
       this.showHqpSettingsView();
     });
+    this.$brandLogo.on('click', () => {
+      this.setActiveNavPill('library');
+      this.goToLibraryView();
+    });
+    this.$brandLogo.off('.brandLogoAnim');
+    this.$brandLogo.on('mouseenter.brandLogoAnim', () => {
+      this.triggerBrandLogoAnimation();
+    });
+    this.$brandLogo.on('animationend.brandLogoAnim', '.brand-logo-mark-stroke', () => {
+      this.isBrandLogoAnimationRunning = false;
+      this.brandLogoAnimationCooldownUntil = Date.now() + 250;
+      this.$brandLogo.removeClass('isStrokeAnimating');
+    });
+    this.$brandLogo.on('animationcancel.brandLogoAnim', '.brand-logo-mark-stroke', () => {
+      this.isBrandLogoAnimationRunning = false;
+      this.brandLogoAnimationCooldownUntil = Date.now() + 250;
+      this.$brandLogo.removeClass('isStrokeAnimating');
+    });
+    setTimeout(() => this.triggerBrandLogoAnimation(), 180);
     $("#appTitle").on("click", () => this.doAppTitleClick());
     $('#backToLibraryButton').on('click', () => this.goToLibraryView());
 
@@ -351,6 +373,15 @@ export default class App {
     FullAlbumOverlay.noop();
 
     this.init();
+  }
+
+  triggerBrandLogoAnimation() {
+    const now = Date.now();
+    if (this.isBrandLogoAnimationRunning || now < this.brandLogoAnimationCooldownUntil) {
+      return;
+    }
+    this.isBrandLogoAnimationRunning = true;
+    this.$brandLogo.addClass('isStrokeAnimating');
   }
 
   /**

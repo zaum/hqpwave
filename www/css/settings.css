@@ -881,10 +881,25 @@
 }
 
 .footer-brand {
-  font-family: 'Playfair Display', serif;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--text-3);
-  letter-spacing: 0.08em;
+}
+
+.footer-brand-logo {
+  display: block;
+  width: 120px;
+  height: auto;
+  filter: grayscale(1) saturate(0) brightness(0.55);
+  opacity: 0.8;
+}
+
+.footer-brand #footerVersion {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
 }
 
 .footer-project {
