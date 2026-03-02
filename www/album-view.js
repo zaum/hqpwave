@@ -35,6 +35,40 @@ const decodeAlbumPath = (value) => {
   return result;
 };
 
+const splitAlbumArtists = (value) => {
+  if (value === null || value === undefined) {
+    return [];
+  }
+
+  const raw = String(value).trim();
+  if (!raw) {
+    return [];
+  }
+
+  const normalized = raw.replace(/\s+(feat\.?|featuring|ft\.?|with|vs\.?)\s+/gi, ';');
+  const parts = normalized.split(/[,;/|&+]+/g);
+  const result = [];
+  const seen = new Set();
+
+  for (const part of parts) {
+    const artist = part.trim();
+    if (!artist) {
+      continue;
+    }
+    const key = artist.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    result.push(artist);
+    if (result.length >= 20) {
+      break;
+    }
+  }
+
+  return result.length ? result : [raw];
+};
+
 /**
  * Album view containing a header and a list of track list items.
  * todo put top area in its own class
@@ -76,7 +110,7 @@ export default class AlbumView extends Subview {
     this.contextMenu = new AlbumContextMenu($("#albumContextMenu"));
     this.trackMetaChangeHandler = TrackListItemUtil.makeTrackMetaChangeHandler(this.$list);
 
-    this.$artistButton.on('click tap', this.onArtistButton);
+    this.$artistButton.on('click tap', '.albumArtistPart', this.onArtistButton);
     $("#albumPlayNowButton").on("click tap", this.onPlayNowButton);
     $("#albumQueueButton").on("click tap", this.onQueueButton);
     this.$albumFavoriteButton.on('click tap', this.onAlbumFavoriteButton);
@@ -224,12 +258,9 @@ hide() {
       });
     }
 
-    let s = this.album['@_artist'] || '';
-    s = s.trim();
-    s = s || 'Artist';
-    this.$artistButton.html(s);
+    this.renderAlbumArtists(this.album['@_artist'] || '');
 
-    s = this.album['@_album'] || '';
+    let s = this.album['@_album'] || '';
     s = s.trim();
     s = s || 'Album';
     $("#albumViewTitle").html(s);
@@ -285,6 +316,23 @@ hide() {
 
   getAlbumHash() {
     return this.album?.['@_hash'] || this.album?.['hash'] || '';
+  }
+
+  renderAlbumArtists(artistValue) {
+    this.$artistButton.empty();
+
+    const artists = splitAlbumArtists(artistValue);
+    if (!artists.length) {
+      this.$artistButton.text('Artist');
+      return;
+    }
+
+    for (const artist of artists) {
+      const $artistPart = $('<button type="button" class="albumArtistPart"></button>');
+      $artistPart.text(artist);
+      $artistPart.attr('data-artist', artist);
+      this.$artistButton.append($artistPart);
+    }
   }
 
   makeListItem(index, item) {
@@ -425,9 +473,13 @@ hide() {
     return [overlayX, overlayY, overlayW, overlayH];
   }
 
-  onArtistButton = () => {
-    let s = this.album['@_artist'] || '';
-    s = s.trim();
+  onArtistButton = (event) => {
+    const $button = $(event.currentTarget);
+    let s = ($button.attr('data-artist') || '').trim();
+    if (!s) {
+      const artists = splitAlbumArtists(this.album?.['@_artist'] || '');
+      s = (artists[0] || '').trim();
+    }
     if (!s) {
       return;
     }

@@ -330,17 +330,35 @@
 
 #albumViewArtist,
 .hero-artist {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 4px;
   font-size: 13px;
   font-weight: 300;
   color: var(--text-2);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+#albumViewArtist .albumArtistPart {
+  appearance: none;
+  border: 0;
+  background: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
   cursor: pointer;
   transition: color 0.15s;
 }
 
-#albumViewArtist:hover,
-#albumViewArtist:focus-visible {
+#albumViewArtist .albumArtistPart:hover,
+#albumViewArtist .albumArtistPart:focus-visible {
   color: var(--text);
 }
 
