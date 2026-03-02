@@ -1,6 +1,9 @@
-# HQPWV
+<img src="./www/img/logo.svg" alt="logo" width=320px>
+<br><br><br>
 
-HQPWV is a local webserver that allows you to remotely control [HQPlayer](https://www.signalyst.com/consumer.html)  from any device on your network using a web browser.
+HQ Player Wave is a local webserver that allows you to remotely control [HQPlayer](https://www.signalyst.com/consumer.html)  from any device on your network using a web browser.
+
+Thanks to [Zeropointnine](https://github.com/zeropointnine) for this excellent program! I added a few new features and redesigned the interface. It was vibe-coded 99%!
 
 [Discussion thread on audiophilestyle](https://audiophilestyle.com/forums/topic/63831-hqpwv-hqplayer-web-viewer)
 
@@ -37,12 +40,4 @@ Executables are generated with `pkg` by simply entering:
 `pkg .`
 
 Front-end code consists of untranspiled, vanilla ES6 classes.
-
-# Roadmap, possible TODOs
-
-- Add DSD bitrates to the "Preset Rules" section.
-- Support random playback.
-- Pagination system for extra-large user libraries?
-- Consider supporting older versions of Desktop Safari and Mobile Safari
-- Consider signing executables for major and minor releases..
 
