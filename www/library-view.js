@@ -4,6 +4,7 @@ import Commands from './commands.js';
 import DataUtil from './data-util.js';
 import LibraryAlbumOptionsView from './library-album-options-view.js';
 import LibraryAlbumsList from './library-albums-list.js';
+import LibraryContentList from './library-content-list.js';
 import LibraryDataUtil from './library-data-util.js';
 import LibraryGroupUtil from './library-group-util.js';
 import SidebarView from './sidebar-view.js';
@@ -143,6 +144,7 @@ export default class LibraryView extends Subview {
     Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
     Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
     $(document).on('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
+    this.$el.on('click tap', '.libraryNoneAction', this.onEmptyStateResetClick);
 
     // Listen for sidebar filter changes
     $(document).on('sidebar-filters-changed', (e, filterState) => {
@@ -264,13 +266,18 @@ export default class LibraryView extends Subview {
     return result;
   }
 
-  showAlbumResults(filteredAlbums) {
-    ViewUtil.setDisplayed(this.$timelineView, true);
+  showAlbumResults(filteredAlbums, emptyStateContext = null) {
+    const isEmpty = filteredAlbums.length === 0;
+    ViewUtil.setDisplayed(this.$timelineView, isEmpty ? 'flex' : true);
     $('#timelineMinimapContainer').removeClass('isVisible');
     $('#libraryView').removeClass('hasMinimap');
     ViewUtil.setDisplayed(this.albumsList.$el, true);
     ViewUtil.setDisplayed(this.$searchList, false);
+    this.$timelineView.toggleClass('isEmptyState', isEmpty);
+    this.$searchList.removeClass('isEmptyState');
+    this.$scrollEl.toggleClass('hasCenteredEmptyState', isEmpty);
 
+    this.albumsList.setEmptyStateContext(emptyStateContext);
     this.albumsList.albums = filteredAlbums;
     this.albumsList.filteredSortedAlbumsDirty = true;
     this.albumsList.groupsDirty = true;
@@ -281,14 +288,18 @@ export default class LibraryView extends Subview {
     this.updateResultHeader('albums', filteredAlbums.length);
   }
 
-  showTrackResults(tracks) {
+  showTrackResults(tracks, emptyStateContext = null) {
+    const isEmpty = tracks.length === 0;
     ViewUtil.setDisplayed(this.$timelineView, false);
     $('#timelineMinimapContainer').removeClass('isVisible');
     $('#libraryView').removeClass('hasMinimap');
     ViewUtil.setDisplayed(this.albumsList.$el, false);
-    ViewUtil.setDisplayed(this.$searchList, true);
+    ViewUtil.setDisplayed(this.$searchList, isEmpty ? 'flex' : true);
+    this.$scrollEl.toggleClass('hasCenteredEmptyState', isEmpty);
+    this.$timelineView.removeClass('isEmptyState');
 
     this.$searchList.empty();
+    this.$searchList.toggleClass('isEmptyState', isEmpty);
     if (tracks.length > 0) {
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
@@ -307,7 +318,7 @@ export default class LibraryView extends Subview {
         this.$searchList.append($item);
       }
     } else {
-      this.$searchList.append('<div class="libraryItem" id="libraryNoneItem">No items</div>');
+      this.$searchList.append(LibraryContentList.makeListIsEmptyItem(emptyStateContext));
     }
 
     this.updateResultHeader('tracks', tracks.length);
@@ -425,6 +436,16 @@ export default class LibraryView extends Subview {
       return term.length > 0 ? term.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
     }).filter(s => s.length > 0);
 
+    const hasSidebarFilters = (formats && formats.length > 0)
+      || (genres && genres.length > 0)
+      || (periods && periods.length > 0)
+      || browse !== 'all-albums';
+    const hasSearchFilter = searchTerms.length > 0;
+    const emptyStateContext = {
+      hasSidebarFilters,
+      hasSearchFilter
+    };
+
     // Apply filters
     let filteredAlbums = allAlbums.filter(album => {
       // 1. Sidebar: Browse filter
@@ -491,9 +512,9 @@ export default class LibraryView extends Subview {
 
     if (browse === 'favorite-tracks') {
       const tracks = this.makeFavoriteTracks(filteredAlbums);
-      this.showTrackResults(tracks);
+      this.showTrackResults(tracks, emptyStateContext);
     } else {
-      this.showAlbumResults(filteredAlbums);
+      this.showAlbumResults(filteredAlbums, emptyStateContext);
     }
   }
 
@@ -737,5 +758,30 @@ export default class LibraryView extends Subview {
    */
   clearHeaderSearchFilter() {
     this.applyAllFilters();
+  }
+
+  onEmptyStateResetClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const action = $(event.currentTarget).attr('data-action');
+
+    if (this._globalSearchDebounceTimer) {
+      clearTimeout(this._globalSearchDebounceTimer);
+      this._globalSearchDebounceTimer = null;
+    }
+
+    if (action === 'clear-filters') {
+      SidebarView.resetFilters();
+      return;
+    }
+
+    if (this.$globalSearchInput && this.$globalSearchInput.length > 0) {
+      this.$globalSearchInput.val('');
+    }
+    if (this.$globalSearchClear && this.$globalSearchClear.length > 0) {
+      this.$globalSearchClear.css('display', 'none');
+    }
+    this.clearHeaderSearchFilter();
   }
 }

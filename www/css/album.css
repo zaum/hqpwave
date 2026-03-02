@@ -110,8 +110,9 @@
   inset: -20px;
   background: var(--cover-color, #2a2010);
   filter: blur(60px) saturate(0.5);
-  opacity: 0.35;
+  opacity: 0.45;
   transform: scale(1.1);
+  mix-blend-mode: screen; 
 }
 
 .hero-bg-fade {

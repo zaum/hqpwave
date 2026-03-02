@@ -26,10 +26,12 @@ export default class LibraryContentList {
 
   intersectionObs;
   preloadedImageUrls;
+  emptyStateContext;
 
   constructor($el) {
     this.$el = $el;
     this.preloadedImageUrls = new Set();
+    this.emptyStateContext = null;
     const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0 };
     this.intersectionObs = new IntersectionObserver(this.onIntersection, config);
     $(document).on('album-favorite-changed', this.onAlbumFavoriteChanged);
@@ -68,7 +70,12 @@ export default class LibraryContentList {
   clear() {
     this.intersectionObs.disconnect();
     this.preloadedImageUrls.clear();
+    this.$el.removeClass('isEmptyState');
     this.$el.empty();
+  }
+
+  setEmptyStateContext(context) {
+    this.emptyStateContext = context || null;
   }
 
   /**
@@ -79,6 +86,7 @@ export default class LibraryContentList {
 
     const isLibraryEmpty = (Model.library.albums.length == 0);
     if (isLibraryEmpty) {
+      this.$el.addClass('isEmptyState');
       const $item = LibraryContentList.makeLibraryIsEmptyItem();
       this.$el.append($item);
       return;
@@ -86,7 +94,8 @@ export default class LibraryContentList {
     const isEmpty = (this.albums.length == 0) || (this.groups.length == 0)
       || (this.groups.length == 1 && this.groups[0].length == 0);
     if (isEmpty) {
-      const $item = LibraryContentList.makeListIsEmptyItem();
+      this.$el.addClass('isEmptyState');
+      const $item = LibraryContentList.makeListIsEmptyItem(this.emptyStateContext);
       this.$el.append($item);
       return;
     }
@@ -184,8 +193,22 @@ export default class LibraryContentList {
     return $(s);
   }
 
-  static makeListIsEmptyItem() {
-    const s = `<div class="libraryItem" id="libraryNoneItem">No items</div>`;
+  static makeListIsEmptyItem(context = null) {
+    const hasSidebarFilters = !!(context && context.hasSidebarFilters);
+    const hasSearchFilter = !!(context && context.hasSearchFilter);
+
+    let s = `<div class="libraryItem" id="libraryNoneItem">`;
+    s += `<div class="libraryNoneTitle">No items</div>`;
+
+    if (hasSearchFilter) {
+      s += `<div class="libraryNoneHint"><span class="libraryNoneArrow" aria-hidden="true">↑</span><span>Your search is narrowing your results. Refine it or <a href="#" class="libraryNoneAction" data-action="clear-search">clear search</a>.</span></div>`;
+    }
+
+    if (hasSidebarFilters) {
+      s += `<div class="libraryNoneHint"><span class="libraryNoneArrow" aria-hidden="true">←</span><span>Active sidebar filters are narrowing your results. Adjust them or <a href="#" class="libraryNoneAction" data-action="clear-filters">clear filters</a>.</span></div>`;
+    }
+
+    s += `</div>`;
     return $(s);
   }
 
