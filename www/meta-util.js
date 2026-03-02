@@ -101,6 +101,7 @@ class MetaUtil {
     const url = `${Values.META_ENDPOINT}?info`;
     $.ajax({
       url: url,
+      cache: false,
       timeout: META_REQUEST_TIMEOUT_MS,
       error: onError,
       success: onSuccess
@@ -133,6 +134,7 @@ class MetaUtil {
     const url = `${Values.META_ENDPOINT}?getMain`;
     $.ajax({
       url: url,
+      cache: false,
       timeout: META_REQUEST_TIMEOUT_MS,
       error: onError,
       success: onSuccess
@@ -140,7 +142,7 @@ class MetaUtil {
   }
 
   get isEnabled() {
-    return (Settings.isMetaEnabled && this.isReady); // todo isServerEnabled?
+    return (this.isReady === true); // Data availability, not gated by setting
   }
 
   get tracks() {

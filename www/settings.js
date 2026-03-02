@@ -8,7 +8,6 @@ class Settings {
 
   storage = window.localStorage; // todo handle disabledness
 
-  _metaEnabled;
   _librarySearchType;
   _librarySearchValue;
   _librarySortType;
@@ -29,8 +28,6 @@ class Settings {
 
   initFromLocalStorage() {
     let s;
-
-    this._metaEnabled = this.storage.getItem('metaEnabled') || 'true';
 
     this._librarySearchType = this.storage.getItem('librarySearchType') || 'all';
 
@@ -83,17 +80,6 @@ class Settings {
     if (!this._abRule) {
       this._abRule = AbRuleView.getDefaultValues();
     }
-  }
-
-  get isMetaEnabled() {
-    return (this._metaEnabled === 'true');
-  }
-
-  set isMetaEnabled(b) {
-    const s = (b === true || b === 'true') ? 'true' : 'false';
-    this._metaEnabled = s;
-    this.storage.setItem('metaEnabled', s);
-    $(document).trigger('settings-meta-changed');
   }
 
   get librarySearchType() {

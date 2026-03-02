@@ -291,7 +291,6 @@ export default class App {
     Util.addAppListener(this, 'busy-end', this.updateBusyClass);
     Util.addAppListener(this, 'model-playlist-updated', this.updateMostStateClasses);
     Util.addAppListener(this, 'model-status-updated', this.updateMostStateClasses);
-    Util.addAppListener(this, 'settings-meta-changed', this.onSettingsMetaChanged);
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'proxy-errors', this.showHqpDisconnectedSnack);
     Util.addAppListener(this, 'server-errors', this.showServerErrorsSnack);
@@ -512,9 +511,7 @@ export default class App {
     Native.getInfo(this.instanceId, (data) => {
       Values.setValues(data);
     });
-    if (Settings.isMetaEnabled) {
-      MetaUtil.init();
-    }
+    MetaUtil.init();
 
     const step3 = (data) => {
       if (data.error != undefined) {
@@ -803,7 +800,7 @@ export default class App {
   }
 
   updateMetaEnabledClass() {
-    const b = (MetaUtil.isEnabled && Model.library.albums.length > 0);
+    const b = (MetaUtil.isReady === true && Model.library.albums.length > 0);
     if (b) {
       this.$pageHolder.addClass("isMetaEnabled");
     } else {
@@ -1022,13 +1019,6 @@ export default class App {
     this.applyLibrarySearchFromAlbum(artist);
   }
 
-  onSettingsMetaChanged() {
-    if (Settings.isMetaEnabled && !MetaUtil.isReady && !MetaUtil.isFailed && !MetaUtil.isLoading) {
-      MetaUtil.init();
-    }
-    this.updateMetaEnabledClass();
-  }
-
   onMetaLoadResult(isSuccess) {
     this.updateMetaEnabledClass();
 
@@ -1041,7 +1031,7 @@ export default class App {
       return;
     }
 
-    if (!Settings.isMetaEnabled || MetaUtil.isLoading) {
+    if (MetaUtil.isLoading) {
       return;
     }
     if (this.metaRetryCount >= this.metaRetryMax) {
@@ -1054,7 +1044,7 @@ export default class App {
     }
     this.metaRetryTimeoutId = setTimeout(() => {
       this.metaRetryTimeoutId = 0;
-      if (!Settings.isMetaEnabled || MetaUtil.isLoading || MetaUtil.isReady) {
+      if (MetaUtil.isLoading || MetaUtil.isReady) {
         return;
       }
       MetaUtil.init();

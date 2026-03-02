@@ -366,12 +366,19 @@ const showPromptAndExit = () => {
 };
 
 // Save meta json before exiting
-process.on( "SIGINT", function() {
+const gracefulShutdown = (signal) => {
   if (meta.getIsDirty()) {
     meta.saveFile();
   }
-  log.x('done');
+  log.x(`done (${signal})`);
   process.exit();
+};
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('beforeExit', () => {
+  if (meta.getIsDirty()) {
+    meta.saveFile();
+  }
 });
 
 // ---

@@ -18,7 +18,6 @@ export default class SettingsView extends Subview {
   $closeButton;
   $themeDarkCheckbox;
   $themeLightCheckbox;
-  $metaCheckbox;
   $showPlayButtonCheckbox;
   $showFormatOverlayCheckbox;
   $highlightColorPicker;
@@ -28,7 +27,6 @@ export default class SettingsView extends Subview {
   constructor() {
     super($("#settingsView"));
     this.$closeButton = this.$el.find('#settingsCloseButton');
-    this.$metaCheckbox = this.$el.find('#settingsMetaCheckbox');
     this.$themeDarkCheckbox = this.$el.find('#themeDark');
     this.$themeLightCheckbox = this.$el.find('#themeLight');
     this.$closeButton.on('click tap', (e) => $(document).trigger('settings-view-close'));
@@ -36,7 +34,6 @@ export default class SettingsView extends Subview {
 
     this.$themeDarkCheckbox.on('click tap', this.onThemeCheckbox);
     this.$themeLightCheckbox.on('click tap', this.onThemeCheckbox);
-    this.$metaCheckbox.on('click tap', this.onMetaCheckbox);
     this.$showPlayButtonCheckbox = this.$el.find('#settingsShowPlayButtonCheckbox');
     this.$showPlayButtonCheckbox.on('click tap', this.onShowPlayButtonCheckbox);
     this.$showFormatOverlayCheckbox = this.$el.find('#settingsShowFormatOverlayCheckbox');
@@ -85,8 +82,6 @@ export default class SettingsView extends Subview {
 
     this.updateThemeCheckbox();
 
-    this.updateMetaCheckbox();
-
     this.updateShowPlayButtonCheckbox();
 
     this.updateShowFormatOverlayCheckbox();
@@ -114,14 +109,6 @@ export default class SettingsView extends Subview {
     } else {
       this.$themeDarkCheckbox.removeClass('active');
       this.$themeLightCheckbox.addClass('active');
-    }
-  }
-
-  updateMetaCheckbox() {
-    if (Settings.isMetaEnabled) {
-      this.$metaCheckbox.addClass('isChecked');
-    } else {
-      this.$metaCheckbox.removeClass('isChecked');
     }
   }
 
@@ -174,11 +161,6 @@ export default class SettingsView extends Subview {
     this.updateThemeCheckbox();
     // And update the theme
     AppUtil.updateColorTheme();
-  };
-
-  onMetaCheckbox = () => {
-    Settings.isMetaEnabled = !Settings.isMetaEnabled;
-    this.updateMetaCheckbox();
   };
 
   updateShowPlayButtonCheckbox() {

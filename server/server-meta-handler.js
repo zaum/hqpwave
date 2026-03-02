@@ -6,6 +6,11 @@ const meta = require('./meta');
 
 const doGet = (request, response) => {
 
+  // Prevent caching of metadata responses
+  response.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.set('Pragma', 'no-cache');
+  response.set('Expires', '0');
+
   if (request.query['info'] !== undefined) {
     response.send({
       'isEnabled': meta.getIsEnabled(),

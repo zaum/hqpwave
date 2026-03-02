@@ -102,6 +102,24 @@ const loadData = () => {
     o[HISTORY_KEY] = [];
   }
   data = o;
+
+  // Migrate string "true"/"false" favorites to boolean
+  for (const hash in data[TRACKS_KEY]) {
+    const entry = data[TRACKS_KEY][hash];
+    if (entry['favorite'] === 'true') entry['favorite'] = true;
+    else if (entry['favorite'] === 'false') entry['favorite'] = false;
+  }
+  for (const hash in data[ALBUMS_KEY]) {
+    const entry = data[ALBUMS_KEY][hash];
+    if (entry['favorite'] === 'true') entry['favorite'] = true;
+    else if (entry['favorite'] === 'false') entry['favorite'] = false;
+  }
+
+  // Log loaded favorites count
+  const albumFavs = Object.values(data[ALBUMS_KEY]).filter(a => a['favorite'] === true || a['favorite'] === 'true').length;
+  const trackFavs = Object.values(data[TRACKS_KEY]).filter(t => t['favorite'] === true || t['favorite'] === 'true').length;
+  log.x(`  ${albumFavs} favorite albums, ${trackFavs} favorite tracks, ${data[HISTORY_KEY].length} history items`);
+
   return true;
 };
 
@@ -164,8 +182,9 @@ const updateTrackFavorite = (hash, isFavorite) => {
     track = {};
     data[TRACKS_KEY][hash] = track;
   }
-  track['favorite'] = isFavorite;
-  activityTouch();
+  const boolValue = (isFavorite === true || isFavorite === 'true');
+  track['favorite'] = boolValue;
+  activitySaveMetaAndStartTimeout();
   return track['favorite'];
 };
 
@@ -175,7 +194,8 @@ const updateAlbumFavorite = (hash, isFavorite) => {
     album = {};
     data[ALBUMS_KEY][hash] = album;
   }
-  album['favorite'] = isFavorite;
+  const boolValue = (isFavorite === true || isFavorite === 'true');
+  album['favorite'] = boolValue;
   activitySaveMetaAndStartTimeout();
   return album['favorite'];
 };
