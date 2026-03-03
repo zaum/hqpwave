@@ -17,6 +17,7 @@ class Settings {
   _colorTheme;
   _showPlayButton;
   _showFormatOverlay;
+  _showLogoAnimation;
   _presetsArray;
   _currentRule;
   _thresholdRule;
@@ -48,6 +49,7 @@ class Settings {
     this._colorTheme = this.storage.getItem('colorTheme') || 'dark';
     this._showPlayButton = this.storage.getItem('showPlayButton') || 'true';
     this._showFormatOverlay = this.storage.getItem('showFormatOverlay') || 'true';
+    this._showLogoAnimation = this.storage.getItem('showLogoAnimation') || 'true';
     this._highlightColor = this.storage.getItem('highlightColor') || '#e8c88a';
     this._playerBackgroundColor = this.storage.getItem('playerBackgroundColor') || '#111112';
 
@@ -213,6 +215,17 @@ class Settings {
     this._showFormatOverlay = s;
     this.storage.setItem('showFormatOverlay', s);
     $(document).trigger('settings-show-format-overlay-changed');
+  }
+
+  get showLogoAnimation() {
+    return (this._showLogoAnimation === 'true');
+  }
+
+  set showLogoAnimation(b) {
+    const s = (b === true || b === 'true') ? 'true' : 'false';
+    this._showLogoAnimation = s;
+    this.storage.setItem('showLogoAnimation', s);
+    $(document).trigger('settings-show-logo-animation-changed');
   }
 
   get presetsArray() {

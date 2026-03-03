@@ -398,9 +398,27 @@
   color: var(--text-3);
 }
 
+#albumViewStats .albumStatsItem,
+#albumViewStats .albumStatsSeparator {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+#albumViewStats .albumStatsItem {
+  color: var(--text-2);
+}
+
+#albumViewStats .albumStatsSeparator {
+  margin: 0 0.32em;
+}
+
 #albumViewStats .albumFormatText {
   color: var(--accent);
   font-size: inherit;
+}
+
+#albumViewStats .albumFormatText + .albumFormatText {
+  margin-left: 0.35em;
 }
 
 .hero-meta-item {
@@ -422,6 +440,9 @@
 
 #albumViewPerformer,
 #albumViewComposer {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
   font-size: 12px;
   color: var(--text-3);
   font-weight: 300;
@@ -429,16 +450,20 @@
 
 #albumViewPerformer .metaCaption,
 #albumViewComposer .metaCaption {
-  color: var(--text-2);
+  font-size: inherit;
+  line-height: inherit;
+  color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
 #albumViewPerformer .metaValue,
 #albumViewComposer .metaValue {
-  color: var(--text-3);
+  font-size: inherit;
+  line-height: inherit;
+  color: var(--text-2);
   display: inline-block;
-  margin-left: 10px;
+  margin-left: 0;
   text-transform: none;
   letter-spacing: normal;
 }
@@ -1036,14 +1061,16 @@
 }
 
 .albumItemMain .extraLine .caption {
-  color: var(--text-2);
+  color: var(--text-3);
   font-size: inherit;
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
 .albumItemMain .extraLine .extraValue {
+  color: var(--text-2);
   font-size: 1.08em;
+  margin-left: 0.33em;
 }
 
 .trackItemMeta {

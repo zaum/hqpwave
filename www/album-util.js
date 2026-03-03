@@ -28,27 +28,26 @@ export default class AlbumUtil {
     const date = fullDate ? fullDate.substring(0, 4) : null;
     const bitrateText = AlbumUtil.getBitrateText(album);
     const filetypeText = AlbumUtil.getFiletypeText(album);
-    const bitrateDisplayText = bitrateText ? `<span class="albumFormatText">${bitrateText}&nbsp;</span>` : '';
-    const formatText = filetypeText ? `<span class="albumFormatText">${filetypeText}&nbsp;</span>` : '';
+    const formatItems = [];
+    if (bitrateText) {
+      formatItems.push(`<span class="albumStatsItem albumFormatText">${bitrateText}</span>`);
+    }
+    if (filetypeText) {
+      formatItems.push(`<span class="albumStatsItem albumFormatText">${filetypeText}</span>`);
+    }
 
-    let s = '';
-    if (bitrateText || filetypeText) {
-      let s2 = '';
-      if (bitrateDisplayText) {
-        s2 = bitrateDisplayText;
-      }
-      if (formatText) {
-        s2 = s2 ? s2 + formatText : formatText;
-      }
-      s = s ? (s + ' • ' + s2) : s2;
+    const items = [];
+    if (formatItems.length) {
+      items.push(formatItems.join(' '));
     }
     if (duration) {
-      s = s ? s + (' • ' + duration) : duration;
+      items.push(`<span class="albumStatsItem">${duration}</span>`);
     }
     if (date) {
-      s = s ? (s + ' • ' + date) : date;
+      items.push(`<span class="albumStatsItem">${date}</span>`);
     }
-    return s;
+
+    return items.join('<span class="albumStatsSeparator">•</span>');
   }
 
   /**

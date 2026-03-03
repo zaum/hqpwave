@@ -20,6 +20,7 @@ export default class SettingsView extends Subview {
   $themeLightCheckbox;
   $showPlayButtonCheckbox;
   $showFormatOverlayCheckbox;
+  $showLogoAnimationCheckbox;
   $highlightColorPicker;
   $playerBackgroundColorPicker;
   infoView;
@@ -38,6 +39,8 @@ export default class SettingsView extends Subview {
     this.$showPlayButtonCheckbox.on('click tap', this.onShowPlayButtonCheckbox);
     this.$showFormatOverlayCheckbox = this.$el.find('#settingsShowFormatOverlayCheckbox');
     this.$showFormatOverlayCheckbox.on('click tap', this.onShowFormatOverlayCheckbox);
+    this.$showLogoAnimationCheckbox = this.$el.find('#settingsShowLogoAnimationCheckbox');
+    this.$showLogoAnimationCheckbox.on('click tap', this.onShowLogoAnimationCheckbox);
     this.$highlightColorPicker = this.$el.find('#highlightColorPicker');
     this.$highlightColorPicker.on('change', this.onHighlightColorChange);
     this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
@@ -85,6 +88,8 @@ export default class SettingsView extends Subview {
     this.updateShowPlayButtonCheckbox();
 
     this.updateShowFormatOverlayCheckbox();
+
+    this.updateShowLogoAnimationCheckbox();
 
     this.updateHighlightColorPicker();
 
@@ -174,11 +179,8 @@ export default class SettingsView extends Subview {
   }
 
   onShowPlayButtonCheckbox = () => {
-    // Invert the logic to fix the backwards toggle
     Settings.showPlayButton = !Settings.showPlayButton;
     this.updateShowPlayButtonCheckbox();
-    // Update library view play button visibility
-    $(document).trigger('settings-show-play-button-changed');
   }
 
   updateShowFormatOverlayCheckbox() {
@@ -194,6 +196,20 @@ export default class SettingsView extends Subview {
   onShowFormatOverlayCheckbox = () => {
     Settings.showFormatOverlay = !Settings.showFormatOverlay;
     this.updateShowFormatOverlayCheckbox();
-    $(document).trigger('settings-show-format-overlay-changed');
+  }
+
+  updateShowLogoAnimationCheckbox() {
+    if (Settings.showLogoAnimation) {
+      this.$showLogoAnimationCheckbox.addClass('isChecked');
+      this.$showLogoAnimationCheckbox.prop('checked', true);
+    } else {
+      this.$showLogoAnimationCheckbox.removeClass('isChecked');
+      this.$showLogoAnimationCheckbox.prop('checked', false);
+    }
+  }
+
+  onShowLogoAnimationCheckbox = () => {
+    Settings.showLogoAnimation = !Settings.showLogoAnimation;
+    this.updateShowLogoAnimationCheckbox();
   }
 }

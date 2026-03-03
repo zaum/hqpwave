@@ -6,6 +6,7 @@
 
 const dgram = require('dgram');
 const net = require("net");
+const readline = require('readline');
 const fastXmlParser = require('fast-xml-parser');
 
 const log = require('./log');
@@ -13,6 +14,8 @@ const log = require('./log');
 const TROUBLESHOOTING_URL = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
 const UDP_ADDRESS = "239.192.0.199";
 const PORT = 4321;
+const DISCOVERY_RETRY_INTERVAL_MS = 1500;
+const DISCOVERY_GIVE_UP_MS = 5 * 60 * 1000;
 const XML_HEADER = `<?xml version="1.0" encoding="UTF-8"?>`;
 const POSSIBLY_MULTICHUNK_STARTS = ['<LibraryGet', '<PlaylistGet', '<GetFilters'];
 const POSSIBLY_MULTICHUNK_ENDS = ['</LibraryGet>', '</PlaylistGet>', '</GetFilters>'];
@@ -20,6 +23,16 @@ const XML_PARSER_OPTIONS = { ignoreAttributes : false };
 
 let initCallback;
 let timeoutId;
+let discoveryStartedAt = 0;
+let discoveryAttemptCount = 0;
+let connectAttemptCount = 0;
+let hasDiscoveryStatusLine = false;
+let isExitKeypressActive = false;
+let exitRequested = false;
+let exitReadlineInterface;
+let exitOnDataHandler;
+let exitOnKeypressHandler;
+let exitOnLineHandler;
 
 /** UDP socket used for 'discovery' command. */
 let discoSocket;
@@ -65,11 +78,34 @@ const onDiscoSocketListening = () => {
   log.x(`udp socket listening on ${discoSocket.address().address}:${discoSocket.address().port}`);
   discoSocket.setMulticastLoopback(true);
   log.x(`waiting for response from HQPlayer...`);
-  timeoutId = setTimeout(onDiscoveryTimeout, 1500);
+  enableStartupExitHotkey();
+  discoveryStartedAt = Date.now();
+  discoveryAttemptCount = 0;
+  connectAttemptCount = 0;
+  runDiscoveryAttempt();
+};
+
+const runDiscoveryAttempt = () => {
+  discoveryAttemptCount++;
   sendUdpCommand(`<discover>hqplayer</discover>`);
+  timeoutId = setTimeout(onDiscoveryTimeout, DISCOVERY_RETRY_INTERVAL_MS);
+};
+
+const writeDiscoveryStatus = (message) => {
+  hasDiscoveryStatusLine = true;
+  process.stdout.write(`\r\x1b[2K${message}`);
+};
+
+const clearDiscoveryStatus = () => {
+  if (!hasDiscoveryStatusLine) {
+    return;
+  }
+  process.stdout.write(`\r\x1b[2K`);
+  hasDiscoveryStatusLine = false;
 };
 
 const onDiscoSocketMessage = (msg, rinfo) => {
+  clearDiscoveryStatus();
   log.x(`udp socket received message from ${rinfo.address}:${rinfo.port}`);
   if (!msg.toString().includes('<discover')) {
     log.x(`  unrecognized message, ignoring:`, msg.toString().substr(0,30));
@@ -96,27 +132,47 @@ const onDiscoSocketMessage = (msg, rinfo) => {
 
   log.x('  ' + o['@_name']);
 
+  if (validHqpIps.includes(rinfo.address)) {
+    return;
+  }
   validHqpIps.push(rinfo.address);
   validHqpHostnames.push(o['@_name']);
 };
 
 const onDiscoveryTimeout = () => {
   if (validHqpIps.length == 0) {
-    printNoResponse();
+    const elapsedMs = Date.now() - discoveryStartedAt;
+    if (elapsedMs >= DISCOVERY_GIVE_UP_MS) {
+      clearDiscoveryStatus();
+      printNoResponse();
+      return;
+    }
+    const secondsElapsed = Math.floor(elapsedMs / 1000);
+    const secondsRemaining = Math.ceil((DISCOVERY_GIVE_UP_MS - elapsedMs) / 1000);
+    writeDiscoveryStatus(`HQPlayer retry #${discoveryAttemptCount + 1} | elapsed ${secondsElapsed}s | left ${secondsRemaining}s`);
+    runDiscoveryAttempt();
     return;
   }
   if (validHqpIps.length > 1) {
+    clearTimeout(timeoutId);
+    clearDiscoveryStatus();
+    disableExitKeypress();
     doSelectInstance();
     return;
   }
 
+  clearTimeout(timeoutId);
+  clearDiscoveryStatus();
+  disableExitKeypress();
   hqpIp = validHqpIps[0];
   initSocket();
 };
 
 const printNoResponse = () => {
+  clearTimeout(timeoutId);
   log.x(`--------------------------------`);
   log.x(`ERROR: No response from HQPlayer`);
+  log.x(`Tried to discover HQPlayer for ${Math.round(DISCOVERY_GIVE_UP_MS / 1000)} seconds.`);
   log.x(`TIPS:`);
   log.x(`1. Make sure HQPlayer is currently running`);
   log.x(`2. Make sure HQPlayer's Settings dialog is not open.`);
@@ -168,6 +224,7 @@ const sendUdpCommand = (message) => {
 };
 
 const initSocket = () => {
+  connectAttemptCount++;
   log.x(`connecting to tcp socket ${hqpIp}:${PORT}`);
   // Note, could also create connection using hostname instead of IP.
   // IP has proven to be more reliable when reconnecting windows hqpwv server to mac hqplayer, fwiw.
@@ -179,6 +236,7 @@ const initSocket = () => {
   socket.on("data", onData);
   socket.on("ready", () => {
     log.x('tcp socket ready');
+    disableExitKeypress();
     if (initCallback) {
       initCallback(hqpIp);
       initCallback = null;
@@ -196,6 +254,23 @@ const onSocketError = (error) => {
   if (responseCallback) {
     doCallback({error: "socket_error"});
   }
+
+  if (initCallback) {
+    const elapsedMs = Date.now() - discoveryStartedAt;
+    if (elapsedMs >= DISCOVERY_GIVE_UP_MS) {
+      reset();
+      clearDiscoveryStatus();
+      printNoResponse();
+      return;
+    }
+    const secondsElapsed = Math.floor(elapsedMs / 1000);
+    const secondsRemaining = Math.ceil((DISCOVERY_GIVE_UP_MS - elapsedMs) / 1000);
+    writeDiscoveryStatus(`HQPlayer connect retry #${connectAttemptCount + 1} | elapsed ${secondsElapsed}s | left ${secondsRemaining}s`);
+    reset();
+    setTimeout(initSocket, 2000);
+    return;
+  }
+
   reset();
   // Try to reconnect
   setTimeout(initSocket, 2000);
@@ -398,10 +473,106 @@ const reset = () => {
 };
 
 const exitOnKeypress = () => {
+  if (isExitKeypressActive) {
+    return;
+  }
+  isExitKeypressActive = true;
+
   log.x('Press any key to exit');
-  process.stdin.setRawMode(true);
+
+  const requestExit = () => {
+    if (exitRequested) {
+      return;
+    }
+    exitRequested = true;
+
+    try {
+      if (process.stdin.isTTY && process.stdin.setRawMode) {
+        process.stdin.setRawMode(false);
+      }
+    } catch (error) { }
+
+    if (exitReadlineInterface) {
+      try {
+        exitReadlineInterface.close();
+      } catch (error) { }
+      exitReadlineInterface = null;
+    }
+
+    process.exit(1);
+  };
+
+  try {
+    readline.emitKeypressEvents(process.stdin);
+  } catch (error) {
+    // no-op fallback to data event below
+  }
+
+  if (process.stdin.isTTY && process.stdin.setRawMode) {
+    try {
+      process.stdin.setRawMode(true);
+    } catch (error) {
+      // no-op fallback to non-raw mode
+    }
+  }
+
   process.stdin.resume();
-  process.stdin.on('data', process.exit.bind(process, 1))
+  exitOnKeypressHandler = requestExit;
+  exitOnDataHandler = requestExit;
+  process.stdin.once('keypress', exitOnKeypressHandler);
+  process.stdin.once('data', exitOnDataHandler);
+
+  if (!exitReadlineInterface) {
+    try {
+      exitReadlineInterface = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: true
+      });
+      exitOnLineHandler = requestExit;
+      exitReadlineInterface.once('line', exitOnLineHandler);
+    } catch (error) {
+      // no-op
+    }
+  }
+};
+
+const disableExitKeypress = () => {
+  if (!isExitKeypressActive) {
+    return;
+  }
+
+  if (exitOnKeypressHandler) {
+    process.stdin.off('keypress', exitOnKeypressHandler);
+    exitOnKeypressHandler = null;
+  }
+  if (exitOnDataHandler) {
+    process.stdin.off('data', exitOnDataHandler);
+    exitOnDataHandler = null;
+  }
+  if (exitReadlineInterface && exitOnLineHandler) {
+    exitReadlineInterface.off('line', exitOnLineHandler);
+    exitOnLineHandler = null;
+  }
+
+  if (exitReadlineInterface) {
+    try {
+      exitReadlineInterface.close();
+    } catch (error) { }
+    exitReadlineInterface = null;
+  }
+
+  try {
+    if (process.stdin.isTTY && process.stdin.setRawMode) {
+      process.stdin.setRawMode(false);
+    }
+  } catch (error) { }
+
+  isExitKeypressActive = false;
+};
+
+const enableStartupExitHotkey = () => {
+  exitOnKeypress();
 };
 
 module.exports = {

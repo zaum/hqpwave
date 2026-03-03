@@ -313,18 +313,17 @@ export default class LibraryContentList {
     const albumText = album['@_album'];
     const bits = AlbumUtil.getBitrateText(album);
     const isFavoriteClass = MetaUtil.isAlbumFavoriteFor(hash) ? 'isFavorite' : '';
-    // Invert the logic to fix the backwards toggle
-    const showPlayButton = !Settings.showPlayButton;
+    const showPlayButton = Settings.showPlayButton;
     const showFormatOverlay = Settings.showFormatOverlay;
 
     let s = `<div class="libraryItem ${isFavoriteClass}" data-hash="${hash}">`; /* tabindex="0" */
     s += `<div class="libraryItemPicture">
                  <img data-src="${imgPath}" />
-                 ${showPlayButton ? `` : `<div class="libraryItemPlayBtn" title="Play Album">
+                 <div class="libraryItemPlayBtn" title="Play Album">
                    <svg viewBox="0 0 24 24" fill="currentColor">
                      <path d="M8 5v14l11-7z"/>
                    </svg>
-                 </div>`}
+                 </div>
                  <div class="libraryItemBits">${bits}</div>
                </div>`;
     s += `<div class="libraryItemTexts">
@@ -336,16 +335,17 @@ export default class LibraryContentList {
     const $item = $(s);
     $item.data('album', album);
 
-    if (!showPlayButton) {
+    if (showPlayButton) {
       $item.addClass('show-play-button');
-      $item.find('.libraryItemPlayBtn').on('click tap', (e) => {
-        e.stopPropagation();
-        const commands = Commands.playlistAddUsingAlbumAndIndices(album, 0, -1);
-        AppUtil.doPlaylistAdds(commands, true, true);
-      });
     } else {
       $item.removeClass('show-play-button');
     }
+
+    $item.find('.libraryItemPlayBtn').on('click tap', (e) => {
+      e.stopPropagation();
+      const commands = Commands.playlistAddUsingAlbumAndIndices(album, 0, -1);
+      AppUtil.doPlaylistAdds(commands, true, true);
+    });
 
     if (showFormatOverlay) {
       $item.addClass('show-format-overlay');
@@ -357,14 +357,13 @@ export default class LibraryContentList {
   }
 
   updateOverlayVisibility() {
-    // Invert the logic to fix the backwards toggle
-    const showPlayButton = !Settings.showPlayButton;
+    const showPlayButton = Settings.showPlayButton;
     const showFormatOverlay = Settings.showFormatOverlay;
     const $items = this.$el.find('.libraryItem');
     
     $items.each((index, item) => {
       const $item = $(item);
-      if (!showPlayButton) {
+      if (showPlayButton) {
         $item.addClass('show-play-button');
       } else {
         $item.removeClass('show-play-button');

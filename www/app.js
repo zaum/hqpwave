@@ -298,6 +298,7 @@ export default class App {
     Util.addAppListener(this, 'proxy-errors', this.showHqpDisconnectedSnack);
     Util.addAppListener(this, 'server-errors', this.showServerErrorsSnack);
     Util.addAppListener(this, 'service-response-handled', this.onServiceResponseHandled);
+    Util.addAppListener(this, 'settings-show-logo-animation-changed', this.onShowLogoAnimationChanged);
 
     Util.addAppListener(this, 'library-item-click', this.showAlbumView);
     Util.addAppListener(this, 'album-view-close-button', this.hideAlbumView);
@@ -353,6 +354,7 @@ export default class App {
       this.brandLogoAnimationCooldownUntil = Date.now() + 250;
       this.$brandLogo.removeClass('isStrokeAnimating');
     });
+    this.updateBrandLogoAnimationState();
     setTimeout(() => this.triggerBrandLogoAnimation(), 180);
     $("#appTitle").on("click", () => this.doAppTitleClick());
     $('#backToLibraryButton').on('click', () => this.goToLibraryView());
@@ -376,12 +378,28 @@ export default class App {
   }
 
   triggerBrandLogoAnimation() {
+    if (!Settings.showLogoAnimation) {
+      return;
+    }
     const now = Date.now();
     if (this.isBrandLogoAnimationRunning || now < this.brandLogoAnimationCooldownUntil) {
       return;
     }
     this.isBrandLogoAnimationRunning = true;
     this.$brandLogo.addClass('isStrokeAnimating');
+  }
+
+  updateBrandLogoAnimationState() {
+    if (Settings.showLogoAnimation) {
+      return;
+    }
+
+    this.isBrandLogoAnimationRunning = false;
+    this.$brandLogo.removeClass('isStrokeAnimating');
+  }
+
+  onShowLogoAnimationChanged = () => {
+    this.updateBrandLogoAnimationState();
   }
 
   /**
