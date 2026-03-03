@@ -96,7 +96,19 @@ export default class AlbumUtil {
     if (!(rate > 0) || !(bits > 0)) {
       return '';
     }
-    return `${Math.floor(rate / 1000)}/${bits}`;
+
+    let sampleRateText = '';
+    let bitDepthText = '';
+
+    // In library metadata, bits===1 is used for DSD.
+    if (bits === 1) {
+      sampleRateText = `${rate / 1000000} MHz`;
+    } else {
+      sampleRateText = `${rate / 1000} kHz`;
+      bitDepthText = `${bits} bit`;
+    }
+
+    return bitDepthText ? `${sampleRateText} ${bitDepthText}` : sampleRateText;
   }
 
   /** Returns album total duration display text, or empty string if fail. */
