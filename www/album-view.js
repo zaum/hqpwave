@@ -1,4 +1,3 @@
-import AlbumContextMenu from './album-context-menu.js';
 import AlbumUtil from './album-util.js'
 import App from './app.js';
 import AppUtil from './app-util.js'
@@ -81,7 +80,6 @@ export default class AlbumView extends Subview {
   $artistButton;
   $albumFavoriteButton;
   listItems$;
-  contextMenu;
   trackMetaChangeHandler;
 
   album = null;
@@ -107,7 +105,6 @@ export default class AlbumView extends Subview {
     this.$prevImageButton = this.$el.find('#albumViewPrevImageButton');
     this.$nextImageButton = this.$el.find('#albumViewNextImageButton');
 
-    this.contextMenu = new AlbumContextMenu($("#albumContextMenu"));
     this.trackMetaChangeHandler = TrackListItemUtil.makeTrackMetaChangeHandler(this.$list);
 
     this.$artistButton.on('click tap', '.albumArtistPart', this.onArtistButton);
@@ -165,7 +162,6 @@ export default class AlbumView extends Subview {
   }
 
 hide() {
-    this.contextMenu.hide();
     $(document).off('model-status-updated', this.updateHighlightedTrack);
     $(document).off('new-track', this.onNewTrack);
     $(document).off('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
@@ -203,7 +199,7 @@ hide() {
       const item = this.tracks[i];
       const $item = $(this.makeListItem(i, item));
       $item.on("click tap", e => this.onItemClick(e));
-      $item.find(".moreButton").on("click tap", e => this.onItemContextButtonClick(e));
+      $item.find(".queueTrackButton").on("click tap", e => this.onQueueTrackButtonClick(e));
       $item.find(".favoriteButton").on("click tap", e => TrackListItemUtil.onFavoriteButtonClick(e));
       $item.find(".playButton").on("click tap", e => this.onPlayButtonClick(e));
       this.listItems$.push($item);
@@ -268,8 +264,9 @@ hide() {
     const $performer = $('#albumViewPerformer');
     const performer = this.album['@_performer'];
     if (performer) {
-      s = `Performed by ${this.album['@_performer']}`;
-      $performer.text(s);
+      $performer.empty();
+      $performer.append($('<span class="metaCaption">Performed by</span>'));
+      $performer.append($('<span class="metaValue"></span>').text(this.album['@_performer']));
       ViewUtil.setDisplayed($performer, true);
       if ($performer[0].scrollHeight > $performer[0].clientHeight) {
         $performer.addClass('pseudoEllipse');
@@ -284,8 +281,9 @@ hide() {
     const $composer = $('#albumViewComposer');
     const composer = this.album['@_composer'];
     if (composer) {
-      s = `Composed by ${this.album['@_composer']}`;
-      $composer.text(s);
+      $composer.empty();
+      $composer.append($('<span class="metaCaption">Composed by</span>'));
+      $composer.append($('<span class="metaValue"></span>').text(this.album['@_composer']));
       ViewUtil.setDisplayed($composer, true);
       if ($composer[0].scrollHeight > $composer[0].clientHeight) {
         $composer.addClass('pseudoEllipse');
@@ -347,13 +345,13 @@ hide() {
 
     let extra = '';
     if (item['@_performer']) {
-      extra += `<div class='extraLine'><span class='caption'>Performer:</span> ${item['@_performer']}</div>`;
+      extra += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${item['@_performer']}</span></div>`;
     }
     if (item['@_artist']) { // song's artist (not album's artist)
-      extra += `<div class='extraLine'><span class='caption'>Artist:</span> ${item['@_artist']}</div>`;
+      extra += `<div class='extraLine'><span class='caption'>Artist</span> <span class='extraValue'>${item['@_artist']}</span></div>`;
     }
     if (item['@_composer']) {
-      extra += `<div class='extraLine'><span class='caption'>Composer:</span> ${item['@_composer']}</div>`;
+      extra += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${item['@_composer']}</span></div>`;
     }
 
     let s = '';
@@ -375,7 +373,7 @@ hide() {
     s += `      <div class="favoriteIcon"></div>`;
     s += `    </div>`;
     s += `  </div>`;
-    s += `  <div class="albumItemContext iconButton moreButton" data-index="${index}"></div>`;
+    s += `  <button type="button" class="iconButton albumItemQueueButton queueTrackButton" data-index="${index}" title="Add Track To Queue" aria-label="Add Track To Queue"><div class="iconPlus" aria-hidden="true"></div></button>`;
     s += `</div>`;
     return $(s);
     // also: [$]["name"] is filename; [$]["hash"];
@@ -520,22 +518,32 @@ hide() {
     // ...
   }
 
-  onItemContextButtonClick(event) {
-    event.stopPropagation(); // prevent listitem from responding to same event
-    const $button = $(event.currentTarget);
-    const index = parseInt($button.attr("data-index"));
-    this.contextMenu.show(this.$el, $button, this.album, index);
-  }
-
   onPlayButtonClick(event) {
     event.stopPropagation();
     const $button = $(event.currentTarget);
     const index = parseInt($button.attr("data-index"));
     const startIndex = index;
-    const endIndex = index;
+    const endIndex = (this.tracks && this.tracks.length > 0)
+      ? this.tracks.length - 1
+      : startIndex;
     const isPlayNow = true;
     const commands = Commands.playlistAddUsingAlbumAndIndices(this.album, startIndex, endIndex, isPlayNow);
     AppUtil.doPlaylistAdds(commands, isPlayNow, isPlayNow);
+  }
+
+  onQueueTrackButtonClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const $button = $(event.currentTarget).closest('.queueTrackButton');
+    const $row = $button.closest('.albumItem');
+    const index = parseInt($row.attr('data-index'));
+    if (!(index >= 0)) {
+      return;
+    }
+    const startIndex = index;
+    const endIndex = index;
+    const commands = Commands.playlistAddUsingAlbumAndIndices(this.album, startIndex, endIndex);
+    AppUtil.doPlaylistAdds(commands, false, false);
   }
 
   onOpenFolderButtonClick = (event) => {

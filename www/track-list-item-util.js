@@ -200,13 +200,13 @@ export default class TrackListItemUtil {
     }
     let extraLines = '';
     if (songPerformer) {
-      extraLines += `<div class='extraLine'><span class='caption'>Performer:</span> ${songPerformer}</div>`;
+      extraLines += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${songPerformer}</span></div>`;
     }
     if (songArtist) {
-      extraLines += `<div class='extraLine'><span class='caption'>Artist:</span> ${songArtist}</div>`;
+      extraLines += `<div class='extraLine'><span class='caption'>Artist</span> <span class='extraValue'>${songArtist}</span></div>`;
     }
     if (songComposer) {
-      extraLines += `<div class='extraLine'><span class='caption'>Composer:</span> ${songComposer}</div>`;
+      extraLines += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${songComposer}</span></div>`;
     }
     if (extraLines) {
       result += `<div class="extra">${extraLines}</div>`;

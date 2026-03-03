@@ -28,15 +28,17 @@ export default class AlbumUtil {
     const date = fullDate ? fullDate.substring(0, 4) : null;
     const bitrateText = AlbumUtil.getBitrateText(album);
     const filetypeText = AlbumUtil.getFiletypeText(album);
+    const bitrateDisplayText = bitrateText ? `<span class="albumFormatText">${bitrateText}&nbsp;</span>` : '';
+    const formatText = filetypeText ? `<span class="albumFormatText">${filetypeText}&nbsp;</span>` : '';
 
     let s = '';
     if (bitrateText || filetypeText) {
       let s2 = '';
-      if (bitrateText) {
-        s2 = bitrateText;
+      if (bitrateDisplayText) {
+        s2 = bitrateDisplayText;
       }
-      if (filetypeText) {
-        s2 = s2 ? s2 + ' ' + filetypeText : filetypeText;
+      if (formatText) {
+        s2 = s2 ? s2 + formatText : formatText;
       }
       s = s ? (s + ' • ' + s2) : s2;
     }

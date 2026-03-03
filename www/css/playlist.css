@@ -238,6 +238,7 @@
 
 .trackItem .extra {
   margin-top: 2px;
+  padding-top: 4px;
 }
 
 .trackItem .extraLine {
@@ -247,6 +248,13 @@
 
 .trackItem .extraLine .caption {
   color: var(--text-2);
+  font-size: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.trackItem .extraLine .extraValue {
+  font-size: 1.08em;
 }
 
 .trackItem .nonLibraryInfo {

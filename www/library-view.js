@@ -339,13 +339,13 @@ export default class LibraryView extends Subview {
 
     let extra = '';
     if (track['@_performer']) {
-      extra += `<div class='extraLine'><span class='caption'>Performer:</span> ${track['@_performer']}</div>`;
+      extra += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${track['@_performer']}</span></div>`;
     }
     if (track['@_artist']) {
-      extra += `<div class='extraLine'><span class='caption'>Artist:</span> ${track['@_artist']}</div>`;
+      extra += `<div class='extraLine'><span class='caption'>Artist</span> <span class='extraValue'>${track['@_artist']}</span></div>`;
     }
     if (track['@_composer']) {
-      extra += `<div class='extraLine'><span class='caption'>Composer:</span> ${track['@_composer']}</div>`;
+      extra += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${track['@_composer']}</span></div>`;
     }
 
     let s = '';
@@ -405,7 +405,8 @@ export default class LibraryView extends Subview {
       return;
     }
 
-    const commands = Commands.playlistAddUsingAlbumAndIndices(album, trackIndex, trackIndex, true);
+    const endIndex = albumTracks.length > 0 ? albumTracks.length - 1 : trackIndex;
+    const commands = Commands.playlistAddUsingAlbumAndIndices(album, trackIndex, endIndex, true);
     AppUtil.doPlaylistAdds(commands, true, true);
   }
 
