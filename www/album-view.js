@@ -265,7 +265,7 @@ hide() {
     const performer = this.album['@_performer'];
     if (performer) {
       $performer.empty();
-      $performer.append($('<span class="metaCaption">Performed by</span>'));
+      $performer.append($('<span class="metaCaption">Performed by </span>'));
       $performer.append($('<span class="metaValue"></span>').text(this.album['@_performer']));
       ViewUtil.setDisplayed($performer, true);
       if ($performer[0].scrollHeight > $performer[0].clientHeight) {
@@ -282,7 +282,7 @@ hide() {
     const composer = this.album['@_composer'];
     if (composer) {
       $composer.empty();
-      $composer.append($('<span class="metaCaption">Composed by</span>'));
+      $composer.append($('<span class="metaCaption">Composed by </span>'));
       $composer.append($('<span class="metaValue"></span>').text(this.album['@_composer']));
       ViewUtil.setDisplayed($composer, true);
       if ($composer[0].scrollHeight > $composer[0].clientHeight) {

@@ -54,7 +54,7 @@ export default class PlaybarView {
 
     this.$playingText = this.$el.find("#playingText");
     this.$systemMessage = $("#playbarSystemMessage");
-    this.$trackCurrentTime = this.$el.find("#playingTrackCurrentTime");
+    this.$trackCurrentTime = this.$el.find(".playingTrackCurrentTime");
     this.showRemaining = false;
     this.$trackCurrentTime.on('click tap', () => {
       this.showRemaining = !this.showRemaining;

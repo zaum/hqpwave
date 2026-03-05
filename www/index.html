@@ -37,24 +37,45 @@
 
     <!-- Top Bar -->
     <header id="topBar">
+      <!-- Back to Library Button -->
+      <button id="backToLibraryButton" title="Back to Library" aria-label="Back to Library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M19 12H5" />
+          <path d="M12 19l-7-7 7-7" />
+        </svg>
+      </button>
+
       <div id="brandLogo" class="brand" aria-label="HQ Player Wave" title="HQ Player Wave">
         <svg class="brand-logo" viewBox="0 0 498 223" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
           <g class="brand-logo-text">
-            <path d="M367.083,87.106l3.574,0l0,-8.571l9.705,0l0,8.571l3.574,0l0,-20.339l-3.574,0l0,8.455l-9.705,0l0,-8.455l-3.574,0l0,20.339Z"/>
-            <path d="M410.696,87.716l2.295,-2.557l-2.324,-1.976c1.337,-1.772 2.063,-3.952 2.063,-6.247l0,-0.058c0,-5.724 -4.358,-10.46 -10.605,-10.46c-6.247,0 -10.663,4.794 -10.663,10.518l0,0.058c0,5.724 4.358,10.46 10.605,10.46c2.383,0 4.475,-0.697 6.189,-1.918l2.441,2.179Zm-8.571,-3.545c-4.039,0 -6.915,-3.283 -6.915,-7.235l0,-0.058c0,-3.952 2.818,-7.177 6.857,-7.177c4.039,0 6.915,3.283 6.915,7.235l0,0.058c0,1.424 -0.349,2.731 -1.046,3.806l-3.516,-3.196l-2.295,2.615l3.487,2.964c-0.959,0.61 -2.15,0.988 -3.487,0.988Z"/>
-            <path d="M367.083,121.973l3.574,0l0,-6.537l4.039,0c4.475,0 8.136,-2.383 8.136,-6.944l0,-0.058c0,-4.097 -2.993,-6.799 -7.729,-6.799l-8.019,0l0,20.339Zm3.574,-9.763l0,-7.322l4.155,0c2.673,0 4.387,1.249 4.387,3.632l0,0.058c0,2.121 -1.685,3.632 -4.387,3.632l-4.155,0Z"/>
-            <path d="M389.689,121.973l14.266,0l0,-3.254l-10.692,0l0,-17.085l-3.574,0l0,20.339Z"/>
-            <path d="M409.127,121.973l3.661,0l2.092,-4.91l9.617,0l2.063,4.91l3.777,0l-8.949,-20.484l-3.312,0l-8.949,20.484Zm7.06,-8.077l3.487,-8.136l3.516,8.136l-7.002,0Z"/>
-            <path d="M439.809,121.973l3.603,0l0,-8.106l8.077,-12.232l-4.097,0l-5.753,9.007l-5.695,-9.007l-4.213,0l8.077,12.32l0,8.019Z"/>
-            <path d="M457.824,121.973l15.225,0l0,-3.196l-11.651,0l0,-5.462l10.198,0l0,-3.196l-10.198,0l0,-5.288l11.506,0l0,-3.196l-15.08,0l0,20.339Z"/>
-            <path d="M480.487,121.973l3.574,0l0,-7.09l4.475,0l4.998,7.09l4.213,0l-5.491,-7.7c2.847,-0.814 4.852,-2.818 4.852,-6.16l0,-0.058c0,-1.772 -0.61,-3.283 -1.685,-4.387c-1.307,-1.278 -3.312,-2.034 -5.869,-2.034l-9.065,0l0,20.339Zm3.574,-10.257l0,-6.828l5.201,0c2.644,0 4.213,1.191 4.213,3.37l0,0.058c0,2.063 -1.627,3.399 -4.184,3.399l-5.23,0Z"/>
-            <path d="M372.604,156.985l3.08,0l4.998,-14.615l4.998,14.615l3.08,0l7.09,-20.484l-3.748,0l-4.852,15.08l-4.998,-15.138l-3.022,0l-4.998,15.138l-4.852,-15.08l-3.864,0l7.09,20.484Z"/>
-            <path d="M398.347,156.839l3.661,0l2.092,-4.91l9.617,0l2.063,4.91l3.777,0l-8.949,-20.484l-3.312,0l-8.949,20.484Zm7.06,-8.077l3.487,-8.136l3.516,8.136l-7.002,0Z"/>
-            <path d="M430.047,156.985l3.138,0l8.455,-20.484l-3.864,0l-6.102,15.632l-6.131,-15.632l-3.952,0l8.455,20.484Z"/>
-            <path d="M448.323,156.839l15.225,0l0,-3.196l-11.651,0l0,-5.462l10.198,0l0,-3.196l-10.198,0l0,-5.288l11.506,0l0,-3.196l-15.08,0l0,20.339Z"/>
+            <path
+              d="M367.083,87.106l3.574,0l0,-8.571l9.705,0l0,8.571l3.574,0l0,-20.339l-3.574,0l0,8.455l-9.705,0l0,-8.455l-3.574,0l0,20.339Z" />
+            <path
+              d="M410.696,87.716l2.295,-2.557l-2.324,-1.976c1.337,-1.772 2.063,-3.952 2.063,-6.247l0,-0.058c0,-5.724 -4.358,-10.46 -10.605,-10.46c-6.247,0 -10.663,4.794 -10.663,10.518l0,0.058c0,5.724 4.358,10.46 10.605,10.46c2.383,0 4.475,-0.697 6.189,-1.918l2.441,2.179Zm-8.571,-3.545c-4.039,0 -6.915,-3.283 -6.915,-7.235l0,-0.058c0,-3.952 2.818,-7.177 6.857,-7.177c4.039,0 6.915,3.283 6.915,7.235l0,0.058c0,1.424 -0.349,2.731 -1.046,3.806l-3.516,-3.196l-2.295,2.615l3.487,2.964c-0.959,0.61 -2.15,0.988 -3.487,0.988Z" />
+            <path
+              d="M367.083,121.973l3.574,0l0,-6.537l4.039,0c4.475,0 8.136,-2.383 8.136,-6.944l0,-0.058c0,-4.097 -2.993,-6.799 -7.729,-6.799l-8.019,0l0,20.339Zm3.574,-9.763l0,-7.322l4.155,0c2.673,0 4.387,1.249 4.387,3.632l0,0.058c0,2.121 -1.685,3.632 -4.387,3.632l-4.155,0Z" />
+            <path d="M389.689,121.973l14.266,0l0,-3.254l-10.692,0l0,-17.085l-3.574,0l0,20.339Z" />
+            <path
+              d="M409.127,121.973l3.661,0l2.092,-4.91l9.617,0l2.063,4.91l3.777,0l-8.949,-20.484l-3.312,0l-8.949,20.484Zm7.06,-8.077l3.487,-8.136l3.516,8.136l-7.002,0Z" />
+            <path
+              d="M439.809,121.973l3.603,0l0,-8.106l8.077,-12.232l-4.097,0l-5.753,9.007l-5.695,-9.007l-4.213,0l8.077,12.32l0,8.019Z" />
+            <path
+              d="M457.824,121.973l15.225,0l0,-3.196l-11.651,0l0,-5.462l10.198,0l0,-3.196l-10.198,0l0,-5.288l11.506,0l0,-3.196l-15.08,0l0,20.339Z" />
+            <path
+              d="M480.487,121.973l3.574,0l0,-7.09l4.475,0l4.998,7.09l4.213,0l-5.491,-7.7c2.847,-0.814 4.852,-2.818 4.852,-6.16l0,-0.058c0,-1.772 -0.61,-3.283 -1.685,-4.387c-1.307,-1.278 -3.312,-2.034 -5.869,-2.034l-9.065,0l0,20.339Zm3.574,-10.257l0,-6.828l5.201,0c2.644,0 4.213,1.191 4.213,3.37l0,0.058c0,2.063 -1.627,3.399 -4.184,3.399l-5.23,0Z" />
+            <path
+              d="M372.604,156.985l3.08,0l4.998,-14.615l4.998,14.615l3.08,0l7.09,-20.484l-3.748,0l-4.852,15.08l-4.998,-15.138l-3.022,0l-4.998,15.138l-4.852,-15.08l-3.864,0l7.09,20.484Z" />
+            <path
+              d="M398.347,156.839l3.661,0l2.092,-4.91l9.617,0l2.063,4.91l3.777,0l-8.949,-20.484l-3.312,0l-8.949,20.484Zm7.06,-8.077l3.487,-8.136l3.516,8.136l-7.002,0Z" />
+            <path
+              d="M430.047,156.985l3.138,0l8.455,-20.484l-3.864,0l-6.102,15.632l-6.131,-15.632l-3.952,0l8.455,20.484Z" />
+            <path
+              d="M448.323,156.839l15.225,0l0,-3.196l-11.651,0l0,-5.462l10.198,0l0,-3.196l-10.198,0l0,-5.288l11.506,0l0,-3.196l-15.08,0l0,20.339Z" />
           </g>
-          <ellipse class="brand-logo-mark-fill" cx="279.018" cy="148.145" rx="11.929" ry="11.67"/>
-          <path class="brand-logo-mark-stroke" d="M70.651,71.038c-0,0 16.048,39.49 28.708,70.644c2.49,6.127 8.444,10.134 15.057,10.134c6.613,0 12.567,-4.007 15.057,-10.134c7.7,-18.949 17.047,-41.948 24.747,-60.897c2.49,-6.127 8.444,-10.134 15.057,-10.134c6.613,0 12.567,4.007 15.057,10.134c7.7,18.949 17.047,41.948 24.747,60.897c2.49,6.127 8.444,10.134 15.057,10.134c6.613,-0 12.567,-4.007 15.057,-10.134c7.7,-18.949 17.047,-41.948 24.747,-60.897c2.49,-6.127 8.444,-10.134 15.057,-10.134c6.613,0 12.567,4.007 15.057,10.134c12.39,30.49 27.923,68.713 27.923,68.713"/>
+          <ellipse class="brand-logo-mark-fill" cx="279.018" cy="148.145" rx="11.929" ry="11.67" />
+          <path class="brand-logo-mark-stroke"
+            d="M70.651,71.038c-0,0 16.048,39.49 28.708,70.644c2.49,6.127 8.444,10.134 15.057,10.134c6.613,0 12.567,-4.007 15.057,-10.134c7.7,-18.949 17.047,-41.948 24.747,-60.897c2.49,-6.127 8.444,-10.134 15.057,-10.134c6.613,0 12.567,4.007 15.057,10.134c7.7,18.949 17.047,41.948 24.747,60.897c2.49,6.127 8.444,10.134 15.057,10.134c6.613,-0 12.567,-4.007 15.057,-10.134c7.7,-18.949 17.047,-41.948 24.747,-60.897c2.49,-6.127 8.444,-10.134 15.057,-10.134c6.613,0 12.567,4.007 15.057,10.134c12.39,30.49 27.923,68.713 27.923,68.713" />
         </svg>
       </div>
       <nav class="topbar-nav">
@@ -64,11 +85,7 @@
         <div class="nav-pill" data-view="history">History</div>
       </nav>
       <div class="search-wrap">
-        <div
-          class="search-help"
-          role="img"
-          aria-label="Search syntax help"
-          tabindex="0">i</div>
+        <div class="search-help" role="img" aria-label="Search syntax help" tabindex="0">i</div>
         <div class="search-help-tooltip" role="tooltip" aria-hidden="true">
           <div class="search-help-title">SEARCH OPTIONS</div>
           <div class="search-help-line"><span>Text:</span> genre, artist, album, track name...</div>
@@ -77,12 +94,14 @@
           <div class="search-help-line"><span>Sample rate:</span> 44.1, 96, 192, 44100hz, 44.1khz...</div>
           <div class="search-help-line"><span>Tip:</span> use commas for AND search</div>
           <div class="search-help-examples">EXAMPLES</div>
-          <div class="search-help-example-line"><span>Rock, 1990-2000, 192</span> → Rock releases from 1990-2000 at 192 kHz</div>
-          <div class="search-help-example-line"><span>Jazz, DSD, -1980</span> → Jazz albums in DSD released up to 1980</div>
+          <div class="search-help-example-line"><span>Rock, 1990-2000, 192</span> → Rock releases from 1990-2000 at 192
+            kHz</div>
+          <div class="search-help-example-line"><span>Jazz, DSD, -1980</span> → Jazz albums in DSD released up to 1980
+          </div>
         </div>
         <div class="search-icon"></div>
-        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…" autocomplete="off"
-          id="globalSearchInput">
+        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…"
+          autocomplete="off" id="globalSearchInput">
         <div class="search-clear" id="globalSearchClear">×</div>
       </div>
       <div class="topbar-right">
@@ -271,14 +290,6 @@
       </div>
     </aside>
 
-    <!-- Back to Library Button -->
-    <button id="backToLibraryButton" title="Back to Library" aria-label="Back to Library">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5"/>
-        <path d="M12 19l-7-7 7-7"/>
-      </svg>
-    </button>
-
     <!-- View Transition Overlay (covers sidebar + main + everything below topbar) -->
     <div id="viewTransitionOverlay"></div>
 
@@ -316,12 +327,14 @@
             <div id="albumViewImageNav">
               <button id="albumViewPrevImageButton" class="albumViewImageNavButton" aria-label="Previous album image">
                 <svg class="albumViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
-                  <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+                  <path
+                    d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
                 </svg>
               </button>
               <button id="albumViewNextImageButton" class="albumViewImageNavButton" aria-label="Next album image">
                 <svg class="albumViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
-                  <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+                  <path
+                    d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
                 </svg>
               </button>
             </div>
@@ -342,13 +355,16 @@
                 <div id="albumViewGenreButtons"></div>
                 <div id="albumViewPathRow">
                   <div id="albumViewPath"></div>
-                  <button id="albumViewOpenFolderButton" class="albumPathAction" title="Open folder" aria-label="Open album folder">↗</button>
+                  <button id="albumViewOpenFolderButton" class="albumPathAction" title="Open folder"
+                    aria-label="Open album folder">↗</button>
                 </div>
                 <div id="albumViewButtons">
                   <div id="albumPlayNowButton" class="textButton">
                     <div class="iconPlay"></div>Play
                   </div>
-                  <div id="albumQueueButton" class="textButton"><div class="iconPlus" aria-hidden="true"></div>Add to queue</div>
+                  <div id="albumQueueButton" class="textButton">
+                    <div class="iconPlus" aria-hidden="true"></div>Add to queue
+                  </div>
                   <div id="albumFavoriteButton" class="iconButton favoriteButton">
                     <div class="favoriteIcon"></div>
                   </div>
@@ -600,11 +616,16 @@
                 </div>
                 <div class="row-right">
                   <div class="color-presets" id="playerBackgroundColorPresets">
-                    <div class="color-preset" data-color="#3a3026" style="background: #3a3026;" title="Espresso Beige"></div>
-                    <div class="color-preset" data-color="#1a1a1c" style="background: #1a1a1c;" title="Graphite Gray"></div>
-                    <div class="color-preset" data-color="#5a4d3f" style="background: #5a4d3f;" title="Walnut Beige"></div>
-                    <div class="color-preset" data-color="#cdbda7" style="background: #cdbda7;" title="Linen Beige"></div>
-                    <div class="color-preset" data-color="#f1efeb" style="background: #f1efeb;" title="Pearl Gray"></div>
+                    <div class="color-preset" data-color="#3a3026" style="background: #3a3026;" title="Espresso Beige">
+                    </div>
+                    <div class="color-preset" data-color="#1a1a1c" style="background: #1a1a1c;" title="Graphite Gray">
+                    </div>
+                    <div class="color-preset" data-color="#5a4d3f" style="background: #5a4d3f;" title="Walnut Beige">
+                    </div>
+                    <div class="color-preset" data-color="#cdbda7" style="background: #cdbda7;" title="Linen Beige">
+                    </div>
+                    <div class="color-preset" data-color="#f1efeb" style="background: #f1efeb;" title="Pearl Gray">
+                    </div>
                     <div class="color-preset custom" id="playerBackgroundColorCustom" title="Custom">
                       <input type="color" id="playerBackgroundColorPicker" value="#111112" class="colorPickerInput">
                     </div>
@@ -659,7 +680,8 @@
               <div class="settings-card-row">
                 <div>
                   <div class="row-label">Backup Data</div>
-                  <div class="row-desc">Download a local copy of all your metadata (play counts, favorites, history, and custom playlists)</div>
+                  <div class="row-desc">Download a local copy of all your metadata (play counts, favorites, history, and
+                    custom playlists)</div>
                 </div>
                 <div class="row-right">
                   <a href="#" id="metaDownload" class="textButton">Download backup</a>
@@ -691,9 +713,11 @@
                     settings</span></div>
                 <div class="hotkey-row"><span class="key-badge">ESC</span><span class="key-action">Close modal</span>
                 </div>
-                <div class="hotkey-row"><span class="key-badge">←</span><span class="key-action">Overlay previous image</span>
+                <div class="hotkey-row"><span class="key-badge">←</span><span class="key-action">Overlay previous
+                    image</span>
                 </div>
-                <div class="hotkey-row"><span class="key-badge">→</span><span class="key-action">Overlay next image</span>
+                <div class="hotkey-row"><span class="key-badge">→</span><span class="key-action">Overlay next
+                    image</span>
                 </div>
               </div>
             </div>
@@ -749,12 +773,14 @@
       <img id="fullOverlayImage" alt="">
       <button id="fullOverlayPrevButton" class="fullOverlayArrow" aria-label="Previous image">
         <svg class="fullOverlayArrowIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
-          <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+          <path
+            d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
         </svg>
       </button>
       <button id="fullOverlayNextButton" class="fullOverlayArrow" aria-label="Next image">
         <svg class="fullOverlayArrowIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
-          <path d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z"/>
+          <path
+            d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
         </svg>
       </button>
 
@@ -765,6 +791,7 @@
     <footer id="playbarView">
       <div id="musicPlaying" class="music-playing">
         <svg width="24" height="24" viewBox="0 0 24 24">
+          <!-- All bars same height and y -->
           <rect class="bar" x="2" y="10" width="3" height="10" rx="1" />
           <rect class="bar" x="7" y="10" width="3" height="10" rx="1" />
           <rect class="bar" x="12" y="10" width="3" height="10" rx="1" />
@@ -778,7 +805,7 @@
         <div class="playingArtist" id="playingArtist">-</div>
         <div class="playingTitle" id="playingTitle">-</div>
       </div>
-      <div id="playbarButtons">
+      <div class="playbar-center">
         <div id="transportButtons">
           <div id="stopButton" class="iconButton"></div>
           <div id="seekBackwardButton" class="iconButton"></div>
@@ -789,17 +816,17 @@
           <div id="nextButton" class="iconButton"></div>
           <div id="seekForwardButton" class="iconButton"></div>
         </div>
-        <div id="playingTrackArea">
-          <div id="playingTrackCurrentTime"></div>
-          <div id="playProgressView">
-            <div id="playProgressInner">
-              <div id="playProgressThumb"></div>
-            </div>
-          </div>
-          <div id="playingTrackLength"></div>
-        </div>
-        <div id="playingTrackCurrentTime" style="margin-left:12px;margin-right:8px;"></div>
       </div>
+      <div id="playingTrackArea">
+        <div class="playingTrackCurrentTime"></div>
+        <div id="playProgressView">
+          <div id="playProgressInner">
+            <div id="playProgressThumb"></div>
+          </div>
+        </div>
+        <div id="playingTrackLength"></div>
+      </div>
+      <div class="playingTrackCurrentTime mobile-time-display"></div>
       <div class="pb-right">
         <div id="volumeMobileToggle" class="iconButton toggleButton" aria-label="Volume" title="Volume"></div>
         <div id="volumeInline" class="volume-inline">
