@@ -13,8 +13,9 @@ const xmlEscapeAttribute = (value) => {
 	if (value === null || value === undefined) {
 		return '';
 	}
+	// Temporarily DO NOT encode the & character in XML attributes
 	return String(value)
-		.replace(/&/g, '&amp;')
+		//.replace(/&/g, '&amp;')
 		.replace(/"/g, '&quot;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;')

@@ -1,3 +1,21 @@
+  @keyframes pulse-glow {
+    0% {
+      box-shadow: none;
+    }
+    50% {
+      box-shadow: 0 0 18px 1px var(--accent);
+    }
+    100% {
+      box-shadow: none;
+    }
+  }
+  @media (max-width: 768px) {
+    .music-playing.isPlaying ~ .pb-cover {
+      animation: pulse-glow 2.8s linear infinite;
+      /* fallback for browsers not supporting animation */
+      box-shadow: none;
+    }
+  }
   /* Back arrow and search row for mobile */
   .search-row {
     display: flex;
