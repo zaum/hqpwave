@@ -111,6 +111,50 @@ export default class AppUtil {
       default:
         cl('warning bad val', Settings.colorTheme)
     }
+    AppUtil.updateAccentColorCSS(Settings.highlightColor);
+  }
+
+  static updateAccentColorCSS(accentColor) {
+    document.documentElement.style.setProperty('--accent', accentColor);
+    const rgb = AppUtil.hexToRgb(accentColor);
+    if (!rgb) {
+      return;
+    }
+
+    const isLightTheme = document.documentElement.classList.contains('lightTheme');
+    const accentBgAlpha = isLightTheme ? 0.1 : 0.07;
+    const accentHiAlpha = isLightTheme ? 0.2 : 0.16;
+
+    document.documentElement.style.setProperty('--accent-bg', `rgba(${rgb.r},${rgb.g},${rgb.b},${accentBgAlpha})`);
+    document.documentElement.style.setProperty('--accent-hi', `rgba(${rgb.r},${rgb.g},${rgb.b},${accentHiAlpha})`);
+  }
+
+  static hexToRgb(hexColor) {
+    if (!hexColor || typeof hexColor !== 'string') {
+      return null;
+    }
+
+    const normalized = hexColor.trim().replace('#', '');
+    const isShort = normalized.length === 3;
+    const isLong = normalized.length === 6;
+    if (!isShort && !isLong) {
+      return null;
+    }
+
+    const expanded = isShort
+      ? normalized.split('').map((char) => char + char).join('')
+      : normalized;
+
+    if (!/^[0-9a-fA-F]{6}$/.test(expanded)) {
+      return null;
+    }
+
+    const value = parseInt(expanded, 16);
+    return {
+      r: (value >> 16) & 255,
+      g: (value >> 8) & 255,
+      b: value & 255,
+    };
   }
 
   /**

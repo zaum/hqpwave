@@ -276,8 +276,8 @@ export default class App {
       $('html').addClass('isTouch');
     }
     AppUtil.updateColorTheme();
-    // Initialize accent color CSS variable
-    document.documentElement.style.setProperty('--accent', Settings.highlightColor);
+    // Initialize accent color CSS variables
+    AppUtil.updateAccentColorCSS(Settings.highlightColor);
     // Initialize player background color
     document.documentElement.style.setProperty('--player-bg', Settings.playerBackgroundColor);
     ViewUtil.setVisible($('html'), true);

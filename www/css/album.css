@@ -58,10 +58,10 @@
 
 
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
 
   #albumView {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 2fr;
     padding: 32px 0 0 24px;
     gap: 24px;
     overflow-y: auto;
@@ -87,13 +87,26 @@
   #albumViewPicture,
   .cover {
     height: auto;
-    width: 280px;
+    width: 100%;
+    max-width: 320px;
     max-height: none;
   }
 
   #albumViewInfo,
   .album-hero {
     padding-bottom: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  #albumView {
+    grid-template-columns: 1fr;
+  }
+
+  #albumViewPicture,
+  .cover {
+    width: 240px;
+    max-width: 100%;
   }
 }
 

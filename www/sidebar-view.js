@@ -18,6 +18,10 @@ class SidebarView {
   $formatChips;
   $genreList;
   $browseItems;
+  $topBar;
+  isMobileSidebarMode = false;
+  desktopCollapsedBeforeMobile = false;
+  topBarResizeObserver = null;
 
   // Filter state
   activeFormats = new Set();
@@ -30,6 +34,15 @@ class SidebarView {
   constructor() {
     this.$el = $('#sidebar');
     this.$page = $('#page');
+    this.$topBar = $('#topBar');
+
+    // Observe #page class changes to update toggle visibility (for view switches)
+    if (window.MutationObserver) {
+      const observer = new MutationObserver(() => {
+        this.updateTogglePlacementForViewport();
+      });
+      observer.observe(this.$page.get(0), { attributes: true, attributeFilter: ['class'] });
+    }
 
     // Wrap existing content in a scroll container so the toggle
     // can stay centered and not move with scroll.
@@ -53,6 +66,11 @@ class SidebarView {
       this.toggleCollapsed();
     });
     this.syncToggleIcon();
+    this.handleViewportChange = () => {
+      this.updateTogglePlacementForViewport();
+    };
+    $(window).on('resize', this.handleViewportChange);
+    this.updateTogglePlacementForViewport();
 
     this.$resetButton = $('#resetFilters');
     this.$formatChips = this.$el.find('.fchip');
@@ -134,15 +152,87 @@ class SidebarView {
     this.syncToggleIcon();
   }
 
+  updateTogglePlacementForViewport() {
+    const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
+
+    if (isMobileViewport && !this.isMobileSidebarMode) {
+      this.isMobileSidebarMode = true;
+      this.desktopCollapsedBeforeMobile = this.$page.hasClass('isSidebarCollapsed');
+      this.$page.addClass('isSidebarCollapsed');
+    } else if (!isMobileViewport && this.isMobileSidebarMode) {
+      this.isMobileSidebarMode = false;
+      this.$page.toggleClass('isSidebarCollapsed', this.desktopCollapsedBeforeMobile);
+    }
+
+    if (this.isMobileSidebarMode) {
+      this.ensureTopBarObserver();
+      const $topBar = $('#topBar');
+      const isLibraryView = this.$page.hasClass('libraryView');
+      if (isLibraryView) {
+        if ($topBar.length > 0 && !this.$toggle.parent().is($topBar)) {
+          $topBar.prepend(this.$toggle);
+        }
+        this.$toggle.addClass('isMobileToggle');
+        this.$toggle.show();
+      } else {
+        this.$toggle.removeClass('isMobileToggle');
+        this.$toggle.hide();
+      }
+    } else {
+      this.disconnectTopBarObserver();
+      if (!this.$toggle.parent().is(this.$el)) {
+        this.$el.append(this.$toggle);
+      }
+      this.$toggle.removeClass('isMobileToggle');
+      this.$toggle.show();
+    }
+
+    this.updateMobileSidebarTopOffset();
+    this.syncToggleIcon();
+  }
+
+  ensureTopBarObserver() {
+    if (!window.ResizeObserver || this.topBarResizeObserver || !this.$topBar || this.$topBar.length === 0) {
+      return;
+    }
+    this.topBarResizeObserver = new ResizeObserver(() => {
+      this.updateMobileSidebarTopOffset();
+    });
+    this.topBarResizeObserver.observe(this.$topBar.get(0));
+  }
+
+  disconnectTopBarObserver() {
+    if (!this.topBarResizeObserver) {
+      return;
+    }
+    this.topBarResizeObserver.disconnect();
+    this.topBarResizeObserver = null;
+  }
+
+  updateMobileSidebarTopOffset() {
+    if (!this.$page || this.$page.length === 0) {
+      return;
+    }
+
+    if (this.isMobileSidebarMode && this.$topBar && this.$topBar.length > 0) {
+      const topOffset = Math.round(this.$topBar.outerHeight() || 0);
+      this.$page.css('--mobile-main-top', `${topOffset}px`);
+      return;
+    }
+
+    this.$page.css('--mobile-main-top', '0px');
+  }
+
   syncToggleIcon() {
     const isCollapsed = this.$page.hasClass('isSidebarCollapsed');
     this.$toggle.toggleClass('isCollapsed', isCollapsed);
+    const isMobile = this.isMobileSidebarMode;
     if (isCollapsed) {
-      this.$toggle.attr('aria-label', 'Expand sidebar');
-      this.$toggle.attr('title', 'Show sidebar');
+      this.$toggle.attr('aria-label', isMobile ? 'Open filters' : 'Expand sidebar');
+      this.$toggle.attr('title', isMobile ? 'Show filters' : 'Show sidebar');
     } else {
-      this.$toggle.attr('aria-label', 'Collapse sidebar');
-      this.$toggle.attr('title', 'Hide sidebar');
+      this.$toggle.attr('aria-label', isMobile ? 'Close filters' : 'Collapse sidebar');
+      this.$toggle.attr('title', isMobile ? 'Hide filters' : 'Hide sidebar');
     }
   }
 
@@ -310,20 +400,6 @@ class SidebarView {
   initPeriodFilters() {
     const $periodItems = this.$periodList.find('.period-item');
 
-    $periodItems.on('mouseenter', (e) => {
-      const $item = $(e.currentTarget);
-      if (!this.activePeriods.has($item[0])) {
-        $item.find('.period-name').css('color', 'var(--text)');
-      }
-    });
-
-    $periodItems.on('mouseleave', (e) => {
-      const $item = $(e.currentTarget);
-      if (!this.activePeriods.has($item[0])) {
-        $item.find('.period-name').css('color', 'var(--text-2)');
-      }
-    });
-
     $periodItems.on('click', (e) => {
       const $item = $(e.currentTarget);
       const isShiftClick = e.shiftKey;
@@ -332,7 +408,6 @@ class SidebarView {
       if (!isShiftClick && !this.periodMultiSelect && isAlreadySelected) {
         this.activePeriods.delete($item[0]);
         $item.removeClass('active');
-        $item.find('.period-name').css('color', 'var(--text-2)');
         this.onFiltersChanged();
         return;
       }
@@ -340,17 +415,14 @@ class SidebarView {
       if (!isShiftClick && !this.periodMultiSelect) {
         this.activePeriods.clear();
         this.$periodList.find('.period-item').removeClass('active');
-        this.$periodList.find('.period-name').css('color', 'var(--text-2)');
       }
 
       if (this.activePeriods.has($item[0])) {
         this.activePeriods.delete($item[0]);
         $item.removeClass('active');
-        $item.find('.period-name').css('color', 'var(--text-2)');
       } else {
         this.activePeriods.add($item[0]);
         $item.addClass('active');
-        $item.find('.period-name').css('color', 'var(--text)');
       }
 
       this.periodMultiSelect = this.activePeriods.size > 1;
@@ -376,7 +448,6 @@ class SidebarView {
     // Clear period filters
     this.activePeriods.clear();
     this.$periodList.find('.period-item').removeClass('active');
-    this.$periodList.find('.period-name').css('color', 'var(--text-2)');
     this.periodMultiSelect = false;
 
     // Reset browse to "All Albums"
@@ -424,7 +495,6 @@ class SidebarView {
   resetPeriodFilter() {
     this.activePeriods.clear();
     this.$periodList.find('.period-item').removeClass('active');
-    this.$periodList.find('.period-name').css('color', 'var(--text-2)');
     this.periodMultiSelect = false;
     this.onFiltersChanged();
   }

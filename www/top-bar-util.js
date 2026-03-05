@@ -20,6 +20,10 @@ class TopBarUtil {
   // Animation lock to prevent double animations
   isAnimating = false;
 
+  COLLAPSE_THRESHOLD = 30; // px - scroll distance to collapse topbar first-row
+
+  _mq1024 = window.matchMedia('(max-width: 1024px)');
+
   constructor() {
     this.VIEW_HEADER_HEIGHT = window.innerWidth <= 480 ? 120 : 52;
     this.THRESHOLD = this.VIEW_HEADER_HEIGHT * 0.5;
@@ -27,6 +31,13 @@ class TopBarUtil {
     this.$libraryHeader = this.$libraryView.find('.viewHeader');
     // Set initial padding to accommodate the visible header
     this.$libraryView.css('padding-top', '');
+
+    // Reset topbar-scrolled when leaving small viewport
+    this._mq1024.addEventListener('change', () => {
+      if (!this._mq1024.matches) {
+        TopBar.$el.removeClass('topbar-scrolled');
+      }
+    });
   }
 
   /**
@@ -123,6 +134,20 @@ class TopBarUtil {
    */
   onSubviewScroll($subview) {
     this.updateFor($subview);
+    this._updateTopbarScrollState($subview);
+  }
+
+  /**
+   * Toggle topbar first-row collapse based on scroll position (≤1024px only).
+   */
+  _updateTopbarScrollState($subview) {
+    if (!this._mq1024.matches) return;
+    const y = $subview[0].scrollTop;
+    if (y > this.COLLAPSE_THRESHOLD) {
+      TopBar.$el.addClass('topbar-scrolled');
+    } else {
+      TopBar.$el.removeClass('topbar-scrolled');
+    }
   }
 }
 

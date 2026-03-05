@@ -18,7 +18,8 @@ export default class VolumePanel {
   $plus1;
   $minus1;
   $minus3;
-
+  $track;
+  $fill;
   volume = null;
 
   constructor($el) {
@@ -29,7 +30,12 @@ export default class VolumePanel {
     this.$plus1 = this.$el.find('#volumeUp1');
     this.$minus1 = this.$el.find('#volumeDown1');
     this.$minus3 = this.$el.find('#volumeDown3');
-
+    this.$track = this.$el.find('.volume-inline-track');
+    this.$fill = this.$el.find('.volume-inline-fill');
+    if (this.$fill.length === 0) {
+      this.$fill = $('<div class="volume-inline-fill"></div>');
+      this.$track.append(this.$fill);
+    }
     this.$plus3.on('click tap', (e) => this.adjustVolume(3));
     this.$plus1.on('click tap', (e) => this.adjustVolume(1));
     this.$minus1.on('click tap', (e) => this.adjustVolume(-1));
@@ -70,6 +76,12 @@ export default class VolumePanel {
     }
     const s = (!isNaN(this.volume)) ? (this.volume + 'dB') : ' ';
     this.$text.text(s);
+    // Update accent fill
+    if (this.$fill && !isNaN(this.volume)) {
+      let ratio = (this.volume + 40) / 80;
+      ratio = Math.max(0, Math.min(1, ratio));
+      this.$fill.css('width', (ratio * 100) + '%');
+    }
 	}
 
   adjustVolume(amount) {

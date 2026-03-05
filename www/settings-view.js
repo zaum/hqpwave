@@ -128,7 +128,7 @@ export default class SettingsView extends Subview {
   }
 
   updateHighlightColorCSS() {
-    document.documentElement.style.setProperty('--accent', Settings.highlightColor);
+    AppUtil.updateAccentColorCSS(Settings.highlightColor);
   }
 
   onHighlightColorChange = () => {

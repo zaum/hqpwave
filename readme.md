@@ -41,3 +41,13 @@ Executables are generated with `pkg` by simply entering:
 
 Front-end code consists of untranspiled, vanilla ES6 classes.
 
+# Responsive breakpoints
+
+The UI uses a unified, project-wide breakpoint set:
+
+- `max-width: 1024px` → tablet / small desktop adjustments
+- `max-width: 768px` → mobile layout switch
+- `max-width: 480px` → compact mobile fine-tuning
+
+Guideline: prefer these three breakpoints for new responsive rules to keep behavior consistent across views.
+

@@ -24,6 +24,7 @@ export default class ProgressView {
     this.$thumb = this.$el.find('#playProgressThumb');
 
     this.$thumb.on('mousedown touchstart', this.startDrag);
+    this.$inner.on('mousedown touchstart', this.startDrag);
     this.$el.on('click tap', this.onTrackClick);
 
     this.update(0.0);
@@ -49,7 +50,7 @@ export default class ProgressView {
     this.updateVisState = document.visibilityState;
 
     const shouldSetCss = (lastSeconds != seconds || seconds == -1);
-    if (shouldSetCss) {
+    if (shouldSetCss && this.$thumb && this.$thumb.length) {
       const delta = this.seconds - lastSeconds;
       const shouldAnimate = (delta >= 0) && (delta < 2.2)
           && Model.status.isPlaying && !this.isDragging
@@ -66,6 +67,7 @@ export default class ProgressView {
 
   startDrag = (e) => {
     this.isDragging = true;
+    if (this.$thumb && this.$thumb.length) this.$thumb.addClass('isDragging');
     $(window).on("mousemove touchmove", this.onDrag);
     $(window).on("mouseup touchend touchcancel", this.endDrag);
     const ratio = this.eventToRatioX(e);
@@ -83,6 +85,7 @@ export default class ProgressView {
 
   endDrag = (e) => {
     this.isDragging = false;
+    if (this.$thumb && this.$thumb.length) this.$thumb.removeClass('isDragging');
     $(window).off("mouseup touchend touchcancel");
     $(window).off("mousemove touchmove");
 

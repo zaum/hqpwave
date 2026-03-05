@@ -44,6 +44,8 @@ export default class LibraryView extends Subview {
   constructor() {
     super($("#libraryView"));
     this.$scrollEl = this.$el.find('.library-main');
+    // Library scrolls inside .library-main, so also bind scroll there for topbar collapse
+    this.$scrollEl.on('scroll', () => TopBarUtil.onSubviewScroll(this.$scrollEl));
     this.$title = this.$el.find('#libraryTitle');
     this.$title.addClass('clickable');
     this.$title.on('click tap', () => (this.$scrollEl[0] || this.$el[0]).scrollTop = 0);

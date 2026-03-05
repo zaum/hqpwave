@@ -242,23 +242,37 @@
   transform: translateY(0);
 }
 
+@media (max-width: 1024px) {
+  .search-help,
+  .search-help-tooltip {
+    display: none;
+  }
+}
+
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
-  background-size: contain;
-  background-repeat: no-repeat;
+  width: 16px;
+  height: 16px;
+  background-color: var(--text-2);
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 1;
+  z-index: 2;
 }
 
 .search-input {
   width: 100%;
-  padding: 8px 36px 8px 34px;
+  padding: 8px 36px 8px 40px; /* left padding a nagyító miatt */
   background: var(--surface);
   border: 1px solid var(--border-md);
   border-radius: 8px;
@@ -268,6 +282,8 @@
   outline: none;
   transition: border-color 0.18s;
   letter-spacing: 0.01em;
+  box-sizing: border-box;
+  display: block;
 }
 
 .search-input::placeholder {
@@ -280,15 +296,15 @@
 
 .search-clear {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 14px;
   color: var(--text-3);
   cursor: pointer;
   transition: color 0.15s;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -297,7 +313,7 @@
   background-repeat: no-repeat;
   background-position: center;
   opacity: 0.8;
-  z-index: 10;
+  z-index: 3;
   pointer-events: auto;
   display: none;
 }
