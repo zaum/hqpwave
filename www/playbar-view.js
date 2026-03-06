@@ -106,25 +106,31 @@ export default class PlaybarView {
 
   _initCircularProgress() {
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    if (isMobile && !this.circularProgress) {
-      this.circularProgress = new CircularProgress(this.$playButtonContainer, {
-        size: 44,
-        stroke: 4
-      });
-    } else if (!isMobile && this.circularProgress) {
-      this.circularProgress.destroy();
-      this.circularProgress = null;
+    const createCircular = () => {
+      if (!this.circularProgress) {
+        this.circularProgress = new CircularProgress(this.$playButtonContainer, {
+          size: 56, // larger, to provide spacing
+          stroke: 4
+        });
+      }
+    };
+    const destroyCircular = () => {
+      if (this.circularProgress) {
+        this.circularProgress.destroy();
+        this.circularProgress = null;
+      }
+    };
+    if (isMobile) {
+      createCircular();
+    } else {
+      destroyCircular();
     }
     window.addEventListener('resize', () => {
       const nowMobile = window.matchMedia('(max-width: 768px)').matches;
-      if (nowMobile && !this.circularProgress) {
-        this.circularProgress = new CircularProgress(this.$playButtonContainer, {
-          size: 44,
-          stroke: 4
-        });
-      } else if (!nowMobile && this.circularProgress) {
-        this.circularProgress.destroy();
-        this.circularProgress = null;
+      if (nowMobile) {
+        createCircular();
+      } else {
+        destroyCircular();
       }
     });
   }

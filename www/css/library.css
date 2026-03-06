@@ -272,7 +272,7 @@
 
 .search-input {
   width: 100%;
-  padding: 8px 36px 8px 40px; /* left padding a nagyító miatt */
+  padding: 8px 36px 8px 40px; /* left padding for the magnifier icon */
   background: var(--surface);
   border: 1px solid var(--border-md);
   border-radius: 8px;

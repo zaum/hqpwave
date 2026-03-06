@@ -1281,7 +1281,7 @@
 
 @media (max-width: 768px) {
   #stopButton {
-    display: none;
+    display: inline-block;
   }
 }
 
@@ -1321,29 +1321,60 @@
   position: relative;
 }
 
+/* Ensure play button container always matches circular progress size and is centered */
 #playButtonContainer {
   position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
   vertical-align: middle;
 }
 
 @media (max-width: 768px) {
-  #playButton {
-    width: 28px;
-    height: 28px;
+  #playButtonContainer {
+    width: 56px;
+    height: 56px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  #playButtonContainer {
-    width: 36px;
-    height: 36px;
+  #playButton {
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .circular-progress {
-    width: 36px !important;
-    height: 36px !important;
+    width: 56px !important;
+    height: 56px !important;
+    pointer-events: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    display: block;
   }
+/* Always allow clicks through circular progress SVG */
+.circular-progress {
+  pointer-events: none !important;
+}
+
+  #transportButtons {
+    gap: 12px;
+  }
+}
 }
 
 #playButton:before {
@@ -1464,7 +1495,7 @@
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
   font-weight: 300;
-  color: var(--text-3);
+  color: var(--text-2);
   flex-shrink: 0;
 }
 
@@ -1482,11 +1513,10 @@
   color: var(--text-3);
 }
 
-@media (max-width: 480px) {
-
+@media (max-width: 768px) {
   .playingTrackCurrentTime:not(.mobile-time-display),
   #playingTrackLength {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -1500,8 +1530,13 @@
   .mobile-time-display {
     margin-right: 4px !important;
     margin-left: 4px !important;
+    min-width: 40px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-2);
   }
 }
+
 
 #playProgressView {
   flex: 1 1 0;
@@ -1519,6 +1554,7 @@
     display: none !important;
   }
 }
+
 
 .isStopped #playProgressView,
 .isBusy #playProgressView {

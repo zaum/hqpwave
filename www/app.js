@@ -293,7 +293,7 @@ export default class App {
     Util.addAppListener(this, 'busy-start', this.updateBusyClass);
     Util.addAppListener(this, 'busy-end', this.updateBusyClass);
     Util.addAppListener(this, 'model-playlist-updated', this.updateMostStateClasses);
-    Util.addAppListener(this, 'model-status-updated', this.updateMostStateClasses);
+    Util.addAppListener(this, 'model-status-updated', () => this.playbarView.update());
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'proxy-errors', this.showHqpDisconnectedSnack);
     Util.addAppListener(this, 'server-errors', this.showServerErrorsSnack);
@@ -1154,13 +1154,15 @@ export default class App {
 
   showHqpDisconnectedSnack(errorCode) {
     const title = `HQPWV Server has lost connection to HQPlayer`;
-    let msg = `Make sure HQPlayer is running. <span class="colorTextLess"><a href="${Values.TROUBLESHOOTING_HREF}">Troubleshooting tips<a>.</span>`;
+    // let msg = `Make sure HQPlayer is running. <span class="colorTextLess"><a href="${Values.TROUBLESHOOTING_HREF}">Troubleshooting tips<a>.</span>`;
+    let msg = `Make sure HQPlayer is running.`;
     SnackView.show('hqp-disconnected', title, msg);
   }
 
   showServerErrorsSnack(statusCode) {
     const title = `HQPWV Server is not responding`;
-    let msg = `Restart server if necessary. <span class="colorTextLess"><a href="${Values.TROUBLESHOOTING_HREF}">Troubleshooting tips<a>.</span>`;
+    // let msg = `Restart server if necessary. <span class="colorTextLess"><a href="${Values.TROUBLESHOOTING_HREF}">Troubleshooting tips<a>.</span>`;
+    let msg = `Restart server if necessary.`;
     SnackView.show('server-error', title, msg);
   }
 }
