@@ -27,22 +27,7 @@
   gap: 0;
 }
 
-#backToLibraryButton {
-  display: none;
-  background: none;
-  border: none;
-  padding: 0 8px 0 0;
-  margin-right: 4px;
-  align-items: center;
-  height: 36px;
-  cursor: pointer;
-}
 
-#backToLibraryButton svg {
-  width: 24px;
-  height: 24px;
-  stroke: var(--text-2);
-}
 
 @media (max-width: 768px) {
   .search-row {
@@ -174,7 +159,7 @@
     min-height: 0;
     padding-bottom: 16px;
     border-bottom: none;
-    transition: row-gap 300ms ease, padding 300ms ease, min-height 300ms ease;
+    transition: row-gap 150ms ease, padding 150ms ease, min-height 150ms ease;
   }
 
   .brand-logo {
@@ -191,7 +176,11 @@
   #topBar>.topbar-right {
     max-height: 60px;
     overflow: hidden;
-    transition: max-height 300ms ease, opacity 200ms ease;
+    /* Use transform + opacity (GPU-accelerated) instead of max-height
+       to avoid layout jank and make the hide/show smoother. */
+    transition: transform 120ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 120ms ease;
+    will-change: transform, opacity;
+    transform: translateZ(0) translateY(0);
   }
 
   /* Collapsed state: first row hidden, only search visible */
@@ -204,7 +193,9 @@
   #topBar.topbar-scrolled>.brand,
   #topBar.topbar-scrolled .topbar-nav,
   #topBar.topbar-scrolled>.topbar-right {
+    /* Move the elements out of view using transform (no reflow), fade them out */
     max-height: 0;
+    transform: translateY(-100%);
     opacity: 0;
     pointer-events: none;
   }
@@ -249,7 +240,9 @@
       "nav nav nav";
     row-gap: 12px;
     column-gap: 6px;
-    transition: gap 300ms ease, padding 300ms ease;
+    transition: gap 150ms ease, padding 150ms ease;
+    will-change: gap, padding;
+    transform: translateZ(0);
   }
 
   #topBar>.brand,
@@ -274,7 +267,10 @@
   #topBar>.topbar-right {
     max-height: 60px;
     overflow: hidden;
-    transition: max-height 300ms ease, opacity 200ms ease;
+    /* Use transform + opacity for smoother, GPU-accelerated animation */
+    transition: transform 120ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 120ms ease;
+    will-change: transform, opacity;
+    transform: translateZ(0) translateY(0);
   }
 
   /* Collapsed state */
@@ -288,6 +284,7 @@
   #topBar.topbar-scrolled .topbar-nav,
   #topBar.topbar-scrolled>.topbar-right {
     max-height: 0;
+    transform: translateY(-100%);
     opacity: 0;
     pointer-events: none;
   }
@@ -390,9 +387,13 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+
 .nav-pill.isDisabled {
   pointer-events: none;
   opacity: 0.4;
+}
+.nav-pill.active {
+  opacity: 1 !important;
 }
 
 .lightTheme .nav-pill:hover:not(.isDisabled) {
@@ -452,41 +453,55 @@
 #hqpSettingsButton:before {
   content: "";
   display: block;
-  width: 20px !important;
-  height: 20px !important;
-  background-image: url("./../img/icons/sound-wave-1.svg") !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
+  width: 26px !important;
+  height: 26px !important;
+  background-color: var(--text-2);
+  -webkit-mask-image: url("./../img/icons/sound-wave-1.svg");
+  mask-image: url("./../img/icons/sound-wave-1.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
   opacity: 0.7 !important;
 }
-
-#hqpSettingsButton:hover {
-  background-color: var(--raised) !important;
-}
-
-#settingsButton {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 32px !important;
-  height: 32px !important;
-  background-color: transparent !important;
-  cursor: pointer;
-}
-
-#settingsButton:before {
-  content: "";
-  display: block;
-  width: 20px !important;
-  height: 20px !important;
-  background-image: url("./../img/icons/settings_thin_white_24dp.svg") !important;
-  background-size: contain !important;
-  background-repeat: no-repeat !important;
-  opacity: 0.7 !important;
+#hqpSettingsButton.active:before {
+  background-color: var(--accent);
+  opacity: 1 !important;
 }
 
 #settingsButton:hover {
   background-color: var(--raised) !important;
+}
+
+/* Acute kiemelés settings/hqpSettings gombokra */
+.iconButton.active {
+  background: var(--accent-bg) !important;
+}
+.iconButton.active:before {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Upscaler ikon nagyobb, settings vékonyabb, aktív szín kiemelés */
+#settingsButton:before {
+  content: "";
+  display: block;
+  width: 18px !important;
+  height: 18px !important;
+  background-color: var(--text-2);
+  -webkit-mask-image: url("./../img/icons/settings_thin_white_24dp.svg");
+  mask-image: url("./../img/icons/settings_thin_white_24dp.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  opacity: 0.7 !important;
+}
+#settingsButton.active:before {
+  background-color: var(--accent);
+  opacity: 1 !important;
 }
 
 
@@ -592,13 +607,8 @@
   background: rgba(0, 0, 0, 0.28);
 }
 
-.sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
-}
 
-.lightTheme .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.32);
-}
+/* Only one instance needed, move to the end for clarity */
 
 #sidebarToggle {
   position: absolute;
@@ -1007,38 +1017,35 @@
    BACK TO LIBRARY BUTTON
    ═══════════════════════════════════════════════════════════════ */
 
+
+/* default sizing so the button isn't huge or offscreen on pages without specific placement */
 #backToLibraryButton {
-  position: fixed;
-  z-index: 300;
+  position: absolute;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-2);
-  padding: 0;
-  transition: color 0.15s ease, transform 0.15s ease;
-  outline: none;
-  pointer-events: auto;
-}
-
-#backToLibraryButton:hover {
-  color: var(--text);
-  transform: scale(1.1);
-}
-
-#backToLibraryButton:active {
-  transform: scale(0.95);
+  z-index: 350;
 }
 
 #backToLibraryButton svg {
-  width: 30px;
-  height: 30px;
-  stroke-width: 1.2;
+  width: 20px;
+  height: 20px;
 }
+
+/* Remove unwanted background/outline on the back button */
+#backToLibraryButton {
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+}
+
+#backToLibraryButton:hover {
+  background: transparent;
+}
+
+
 
 /* Hidden when library view is active */
 #page.libraryView #backToLibraryButton {
@@ -1262,6 +1269,17 @@
 #transportButtons .iconButton {
   border-color: transparent;
   background: transparent;
+  transition: all 0.15s ease;
+}
+
+#transportButtons .iconButton:hover {
+  background: var(--raised);
+  transform: scale(1.05);
+}
+
+#transportButtons .iconButton:hover:before {
+  opacity: 1 !important;
+  filter: brightness(1.2);
 }
 
 #playButton {
@@ -1279,9 +1297,26 @@
   background-image: url("./../img/icons/stop_white_24dp.svg");
 }
 
-@media (max-width: 768px) {
-  #stopButton {
-    display: inline-block;
+
+#stopButton,
+#playButton,
+#previousButton,
+#nextButton {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 20 !important;
+}
+
+@media (max-width: 1024px), (max-width: 768px), (max-width: 480px) {
+  #nextButton {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 }
 
@@ -1321,6 +1356,14 @@
   position: relative;
 }
 
+#nextButton {
+  margin-left: 4px;
+}
+
+#nextButton:before {
+  background-image: url("./../img/icons/skip_next_white_24dp.svg");
+}
+
 /* Ensure play button container always matches circular progress size and is centered */
 #playButtonContainer {
   position: relative;
@@ -1355,10 +1398,11 @@
     justify-content: center;
   }
 
+
   .circular-progress {
     width: 56px !important;
     height: 56px !important;
-    pointer-events: none;
+    pointer-events: none !important;
     position: absolute;
     left: 50%;
     top: 50%;
@@ -1366,6 +1410,7 @@
     z-index: 1;
     display: block;
   }
+
 /* Always allow clicks through circular progress SVG */
 .circular-progress {
   pointer-events: none !important;
@@ -1374,7 +1419,6 @@
   #transportButtons {
     gap: 12px;
   }
-}
 }
 
 #playButton:before {
@@ -1416,6 +1460,15 @@
 
 #playButton:hover {
   background: var(--accent);
+  transform: translate(-50%, -50%);
+  outline: none;
+  box-shadow: none;
+}
+
+/* Ensure transport hover scale doesn't shift the centered play button: keep translate and add scale */
+#transportButtons .iconButton#playButton:hover,
+#playButton:hover {
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
 @media (max-width: 480px) {
@@ -1426,18 +1479,19 @@
   }
 }
 
-#nextButton {
-  margin-right: 4px;
-}
 
-#nextButton:before {
-  background-image: url("./../img/icons/skip_next_white_24dp.svg");
-}
-
-.isStopped #nextButton {
-  pointer-events: none;
-}
-
+  #playButton {
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 .isStopped #nextButton:before {
   opacity: 0.5;
 }
@@ -1478,7 +1532,23 @@
 
   #seekBackwardButton,
   #seekForwardButton {
-    display: none;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transition: all 0.15s ease;
+  }
+
+  #seekBackwardButton:hover,
+  #seekForwardButton:hover {
+    background: var(--raised);
+    transform: scale(1.05);
+  }
+
+  #seekBackwardButton:hover:before,
+  #seekForwardButton:hover:before {
+    opacity: 1 !important;
+    filter: brightness(1.2);
   }
 }
 
@@ -2172,11 +2242,11 @@
   background: rgba(0, 0, 0, 0.28);
 }
 
-.sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.28);
 }
 
-.lightTheme .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+.lightTheme .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.32);
 }
 
@@ -2197,11 +2267,4 @@
   scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
 }
 
-/*
-  The following pseudo-element is not widely supported and is commented out for compatibility:
-  button::-moz-focus-inner { border: 0; padding: 0; }
-*/
-/* button::-moz-focus-inner {
-  border: 0;
-  padding: 0;
-} */
+/* The -moz-focus-inner pseudo-element is Firefox-specific; rules are omitted for cross-browser compatibility. */

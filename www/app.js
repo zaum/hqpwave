@@ -439,8 +439,19 @@ export default class App {
   }
 
   setActiveNavPill(view) {
+    // Remove all nav-pill and iconButton highlights
     this.$navPills.removeClass('active');
-    this.$navPills.filter(`[data-view="${view}"]`).addClass('active');
+    this.$settingsButton.removeClass('active');
+    this.$hqpSettingsButton.removeClass('active');
+
+    // Acute kiemelés logika
+    if (view === 'settings') {
+      this.$settingsButton.addClass('active');
+    } else if (view === 'hqpSettings') {
+      this.$hqpSettingsButton.addClass('active');
+    } else {
+      this.$navPills.filter(`[data-view="${view}"]`).addClass('active');
+    }
   }
 
   hideSettingsViews(isDirect = false) {
@@ -498,9 +509,7 @@ export default class App {
    * Show history view.
    */
   showHistoryView() {
-    this.showPlaylistCompoundView();
-    // Trigger history view switch
-    this.playlistView.mainToHistoryView();
+    this.playlistView.showSubview("history");
   }
 
   /**
@@ -602,8 +611,8 @@ export default class App {
     if (ViewUtil.isVisible(this.playlistView.$el) && !this.isPlaylistViewUsable()) {
       this.resetStalePlaylistViewState();
     }
-
     this.showSubview(this.playlistView);
+    this.playlistView.showSubview("playlist");
     Service.queueCommandFront(Commands.playlistGet());
   }
 
@@ -645,10 +654,12 @@ export default class App {
 
   showSettingsView() {
     this.showSubview(this.settingsView);
+    this.setActiveNavPill('settings');
   }
 
   showHqpSettingsView() {
     this.showSubview(this.hqpSettingsView);
+    this.setActiveNavPill('hqpSettings');
   }
 
   switchSettingsSubview(currentSubview, targetSubview) {

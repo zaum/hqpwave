@@ -545,11 +545,16 @@
   margin-top: 1px;
 }
 
+
 .historyItemTime {
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
-  color: var(--text-3);
+  color: var(--text-2);
   flex-shrink: 0;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  align-items: center;
 }
 
 /* ═══════════════════════════════════════════════════════════════

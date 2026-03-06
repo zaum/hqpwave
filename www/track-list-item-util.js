@@ -45,32 +45,25 @@ export default class TrackListItemUtil {
    * @param array elements have properties `data` and `ago`
    */
   static populateHistoryList($holder, tracks, agoStrings) {
-
     const result = [];
-
     for (let i = 0; i < tracks.length; i++) {
-
       const track = tracks[i];
       const agoString = agoStrings[i];
-
       const $albumLine = TrackListItemUtil.makeAlbumHeaderIfNecessary(i, tracks);
       if ($albumLine) {
         $holder.append($albumLine);
         $albumLine.find('.albumLineButton').on('click tap', TrackListItemUtil.onAlbumButton);
       }
-
       let $item;
       if (Object.keys(track).length == 0) {
         $item = TrackListItemUtil.makeNonLibraryHistoryItem(agoString);
       } else {
-        $item = TrackListItemUtil.makeListItem(i, tracks, agoString, false); // no delete button for history
+        $item = TrackListItemUtil.makeListItem(i, tracks, agoString, false, true); // no delete, hide drag for history
         $item.find(".favoriteButton").on("click tap", TrackListItemUtil.onFavoriteButtonClick);
       }
-
       $holder.append($item);
       result.push($item);
     }
-
     return result;
   }
 
@@ -98,19 +91,15 @@ export default class TrackListItemUtil {
    * @param leftText
    * @param showDeleteButton whether to show the delete button (default: true)
    */
-  static makeListItem(index, array, leftText="", showDeleteButton = true) {
-
+  static makeListItem(index, array, leftText="", showDeleteButton = true, hideDragIcon = false) {
     const item = array[index];
     const itemPrevious = (index > 0) ? array[index - 1] : null;
     const itemNext = (index < array.length - 1) ? array[index + 1] : null;
-
     const album = TrackListItemUtil.getAlbumForTrackDataItem(item);
     const albumPrevious = TrackListItemUtil.getAlbumForTrackDataItem(itemPrevious);
     const albumNext = TrackListItemUtil.getAlbumForTrackDataItem(itemNext);
-
     const isSameAsPrevious = (album && !albumPrevious) || (album && (album == albumPrevious));
     const isSameAsNext = (album && album == albumNext);
-
     let groupingClass = '';
     if (album) {
       groupingClass = !isSameAsNext ? 'groupLast' : 'groupMiddle';
@@ -125,21 +114,22 @@ export default class TrackListItemUtil {
         groupingClass = 'groupSingle';
       }
     }
-
     const hash = item['@_hash'] || Model.library.getHashForPlaylistItem(item) || '';
     const seconds = parseFloat(item['@_length']);
     const durationText = seconds ? Util.durationText(seconds) : '';
     const durationEmptyClass = durationText ? '' : 'isEmpty';
-
     let s = '';
     s += `<div class="trackItem ${groupingClass}" data-index="${index}" data-hash="${hash}">`;
-    s += `  <div class="left"><div class="iconButton dragHandleButton"></div>${leftText}</div>`;
+    s += `  <div class="left historyItemTime">`;
+    if (!hideDragIcon) {
+      s += `<div class="iconButton dragHandleButton"></div>`;
+    }
+    s += `${leftText}</div>`;
     const mainText = album 
         ? TrackListItemUtil.makeMainContents(item, album)
         : TrackListItemUtil.makeNonLibraryMainContents(item, album);
     s += `  <div class="main">${mainText}</div>`;
     s += `  <div class="trackItemDurationCol ${durationEmptyClass}"><span class="trackItemDuration">${durationText}</span></div>`;
-
     if (hash) {
       const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
       const favoriteSelectedClass = isFavorite ? 'isSelected' : '';
@@ -158,7 +148,7 @@ export default class TrackListItemUtil {
 
   static makeNonLibraryHistoryItem(agoString) {
     let s = `<div class="trackItem groupSingle">`;
-    s +=    `  <div class="left">${agoString}</div>`;
+    s +=    `  <div class="left historyItemTime">${agoString}</div>`;
     s +=    `  <div class="main">Unknown track</div>`;
     s +=    `</div>`;
     return $(s);

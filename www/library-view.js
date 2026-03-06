@@ -44,8 +44,10 @@ export default class LibraryView extends Subview {
   constructor() {
     super($("#libraryView"));
     this.$scrollEl = this.$el.find('.library-main');
-    // Library scrolls inside .library-main, so also bind scroll there for topbar collapse
-    this.$scrollEl.on('scroll', () => TopBarUtil.onSubviewScroll(this.$scrollEl));
+    // Throttled scroll handler for better performance on mobile
+    // Increase throttle slightly to reduce work during fast scrolls and prevent jank
+    this._throttledScrollHandler = this._throttle(() => TopBarUtil.onSubviewScroll(this.$scrollEl), 50); // ~20fps
+    this.$scrollEl.on('scroll', this._throttledScrollHandler);
     this.$title = this.$el.find('#libraryTitle');
     this.$title.addClass('clickable');
     this.$title.on('click tap', () => (this.$scrollEl[0] || this.$el[0]).scrollTop = 0);
@@ -759,6 +761,22 @@ export default class LibraryView extends Subview {
   /**
    * Clear header search filter and show all albums.
    */
+  /**
+   * Simple throttle function for performance optimization
+   */
+  _throttle(func, limit) {
+    let inThrottle;
+    return function() {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    }
+  }
+
   clearHeaderSearchFilter() {
     this.applyAllFilters();
   }

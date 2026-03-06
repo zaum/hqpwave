@@ -42,7 +42,7 @@
   border-radius: 4px;
 }
 
-.library-main::-webkit-scrollbar-thumb:hover {
+.library-main::-webkit-scrollbar-thumb {
   background: var(--border-hi);
 }
 

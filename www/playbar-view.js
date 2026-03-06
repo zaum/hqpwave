@@ -57,8 +57,10 @@ export default class PlaybarView {
     this.$trackCurrentTime = this.$el.find(".playingTrackCurrentTime");
     this.showRemaining = false;
     this.$trackCurrentTime.on('click tap', () => {
-      this.showRemaining = !this.showRemaining;
-      this._updateCurrentSeconds();
+      if (window.innerWidth < 768) {
+        this.showRemaining = !this.showRemaining;
+        this._updateCurrentSeconds();
+      }
     });
     this.$trackLength = this.$el.find("#playingTrackLength");
     this.$showPlaylistButton = this.$el.find("#showPlaylistButton");

@@ -12,11 +12,14 @@ export default class Subview {
 
   $el;
   $list;
+  _throttledScrollHandler;
 
   constructor($el, $list = null) {
     this.$el = $el;
     this.$list = $list;
-    this.$el.on("scroll", e => this.onScroll(e));
+    // Throttled scroll handler for better performance on mobile
+    this._throttledScrollHandler = this._throttle((e) => this.onScroll(e), 16); // ~60fps
+    this.$el.on("scroll", this._throttledScrollHandler);
   }
 
   /**
@@ -46,5 +49,21 @@ export default class Subview {
   onScroll(e) {
     // Delegate to TopBarUtil - animation lock in top-bar-util.js prevents double animations
     TopBarUtil.onSubviewScroll(this.$el);
+  }
+
+  /**
+   * Simple throttle function for performance optimization
+   */
+  _throttle(func, limit) {
+    let inThrottle;
+    return function() {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    }
   }
 }

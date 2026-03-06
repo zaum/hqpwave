@@ -73,10 +73,12 @@ li:before {
 }
 
 input,
-html input[disabled],
-input::-moz-focus-inner {
+html input[disabled] {
   all: unset;
 }
+
+/* Firefox inner focus pseudo-element adjusted separately for compatibility */
+/* Firefox-specific inner focus pseudo-element omitted to avoid issues in non-Firefox browsers */
 
 /* Scrollbar */
 ::-webkit-scrollbar {
@@ -93,9 +95,7 @@ input::-moz-focus-inner {
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-hi);
-}
+/* Remove :hover on pseudo-element for broader compatibility; keep base thumb style above */
 
 /* Utility Classes */
 .noTransition {

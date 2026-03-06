@@ -40,18 +40,21 @@ export default class PlaylistCompoundView extends Subview {
     this.loadView.$el.off('transitionend');
   }
 
-  show() {
+
+  /**
+   * Egyszerűsített nézetváltó: csak az adott nézetet mutatja, a többit elrejti.
+   * @param {"playlist"|"history"|"load"} type
+   */
+  showSubview(type = "playlist") {
     this._clearStaleHandlers();
     super.show();
     this.$el.css('transform', '');
-
-    ViewUtil.setVisible(this.historyView.$el, false);
-    ViewUtil.setVisible(this.loadView.$el, false);
-    ViewUtil.setVisible(this.mainView.$el, true);
-    this.mainView.$el.css('left', '0%');
-    this.mainView.onShow();
-
-    // Enable user input immediately, not just after animation
+    ViewUtil.setVisible(this.mainView.$el, type === "playlist");
+    ViewUtil.setVisible(this.historyView.$el, type === "history");
+    ViewUtil.setVisible(this.loadView.$el, type === "load");
+    if (type === "playlist") this.mainView.onShow();
+    if (type === "history") this.historyView.onShow();
+    if (type === "load") this.loadView.onShow();
     $(document).trigger('enable-user-input');
   }
 
@@ -100,50 +103,29 @@ export default class PlaylistCompoundView extends Subview {
 
   mainToHistoryView() {
     this.mainView.onHide();
-    this.historyView.onShow();
-
-    this.mainView.$el.css('left', '-100%');
-    ViewUtil.setVisible(this.mainView.$el, false);
-
-    this.historyView.$el.css('left', '0%');
-    ViewUtil.setVisible(this.historyView.$el, true);
+    this.showSubview("history");
   }
 
   historyToMainView() {
     this.historyView.onHide();
-    this.mainView.onShow();
-
-    this.historyView.$el.css('left', '100%');
-    ViewUtil.setVisible(this.historyView.$el, false);
+    this.showSubview("playlist");
     this.historyView.clear();
-
-    this.mainView.$el.css('left', '0%');
-    ViewUtil.setVisible(this.mainView.$el, true);
   }
 
   mainToLoadView() {
     this.mainView.onHide();
-    this.loadView.onShow();
-
-    this.mainView.$el.css('left', '-100%');
-    ViewUtil.setVisible(this.mainView.$el, false);
-
-    this.loadView.$el.css('left', '0%');
-    ViewUtil.setVisible(this.loadView.$el, true);
+    this.showSubview("load");
   }
 
   loadToMainView() {
     this.loadView.onHide();
-    this.mainView.onShow();
-
+    this.showSubview("playlist");
     // Safety-net retry: in case the PlaylistGet done before closing
     // returned stale data, fetch again after HQPlayer has had more time.
     setTimeout(() => Service.queueCommandFront(Commands.playlistGet()), 1200);
+  }
 
-    this.loadView.$el.css('left', '100%');
-    ViewUtil.setVisible(this.loadView.$el, false);
-
-    this.mainView.$el.css('left', '0%');
-    ViewUtil.setVisible(this.mainView.$el, true);
+  showPlaylistCompoundView() {
+    this.showSubview("playlist");
   }
 }
