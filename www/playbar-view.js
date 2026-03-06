@@ -564,6 +564,8 @@ export default class PlaybarView {
     if (url && url !== this._coverUrl) {
       this._coverUrl = url;
       this.$coverImg.attr('src', url);
+      // Notify app that playbar cover changed so top-bar can update promptly
+      try { $(document).trigger('playbar-cover-updated'); } catch (e) {}
     }
   }
 

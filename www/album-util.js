@@ -38,7 +38,7 @@ export default class AlbumUtil {
 
     const items = [];
     if (formatItems.length) {
-      items.push(formatItems.join(' '));
+      items.push(formatItems.join(' <span class="albumStatsSeparator">•</span> '));
     }
     if (duration) {
       items.push(`<span class="albumStatsItem">${duration}</span>`);

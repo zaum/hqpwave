@@ -161,7 +161,7 @@ export default class HqpFiltersView {
       displayString += ' ' + bitDepthText;
     }
     if (formatLabel) {
-      displayString += ' (' + formatLabel + ')';
+      displayString = displayString ? displayString + ' • ' + formatLabel : formatLabel;
     }
     
     if (displayString != lastOutputBitrateString) {

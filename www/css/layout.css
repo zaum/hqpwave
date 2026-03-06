@@ -405,6 +405,10 @@
   background: var(--accent-bg);
 }
 
+/* When an album is loaded in the playbar but album view isn't shown,
+   visually indicate availability (clickable) on the Album nav pill. */
+/* no special marker for album pill; use isDisabled/active like other nav pills */
+
 .lightTheme .nav-pill.active {
   background: var(--accent-bg);
 }

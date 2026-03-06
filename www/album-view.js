@@ -184,14 +184,16 @@ hide() {
 
   populate(album) {
     this.album = album;
-    this.tracks = AlbumUtil.getTracksOf(this.album);
 
     this.listItems$ = [];
     this.$list.empty();
 
     if (!this.album) {
+      this.tracks = [];
       return;
     }
+
+    this.tracks = AlbumUtil.getTracksOf(this.album);
 
     this.updateInfoArea();
 

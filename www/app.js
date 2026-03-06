@@ -297,6 +297,7 @@ export default class App {
     Util.addAppListener(this, 'busy-end', this.updateBusyClass);
     Util.addAppListener(this, 'model-playlist-updated', this.updateMostStateClasses);
     Util.addAppListener(this, 'model-status-updated', () => { this.playbarView.update(); this.updateMostStateClasses(); });
+    Util.addAppListener(this, 'playbar-cover-updated', this.updateMostStateClasses);
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'proxy-errors', this.showHqpDisconnectedSnack);
     Util.addAppListener(this, 'server-errors', this.showServerErrorsSnack);
@@ -523,6 +524,28 @@ export default class App {
     if (album) {
       this.showAlbumView(album);
       return;
+    }
+
+    // If we couldn't resolve an album via metadata/playlist, try matching
+    // the playbar cover URL to a library album hash (coversEndpoint + hash).
+    const coverUrl = (this.playbarView && this.playbarView._coverUrl) ? this.playbarView._coverUrl : null;
+    if (coverUrl && Model.hasLibrary) {
+      try {
+        const base = Values.imagesEndpoint;
+        if (coverUrl.startsWith(base)) {
+          const rest = coverUrl.substring(base.length);
+          const hash = rest.split('?')[0];
+          if (hash) {
+            const found = Model.library.getAlbumByAlbumHash(hash);
+            if (found) {
+              this.showAlbumView(found);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        // ignore and fall through to default behavior
+      }
     }
 
     if (ViewUtil.isVisible(this.albumView.$el)) {
@@ -813,7 +836,12 @@ export default class App {
     }
 
     // Album tab disabled state
-    const hasCurrentAlbum = !!this.getCurrentAlbum();
+    // Consider an album 'loaded' not only when we can resolve a library album,
+    // but also when status metadata or the playbar cover URL is present.
+    const statusMeta = Model.status?.metadata || {};
+    const hasCurrentAlbum = !!this.getCurrentAlbum()
+      || Boolean(statusMeta['@_album'] || statusMeta['@_uri'])
+      || (!!this.playbarView && !!this.playbarView._coverUrl);
     const isAlbumVisible = ViewUtil.isVisible(this.albumView.$el);
 
     if (hasCurrentAlbum || isAlbumVisible) {
@@ -821,6 +849,8 @@ export default class App {
     } else {
       this.$navPills.filter('[data-view="album"]').addClass('isDisabled');
     }
+
+    // No extra visual marker; nav-pill enabled/disabled is handled by `isDisabled` only.
 
     this.updateBusyClass();
   }
