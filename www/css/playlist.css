@@ -181,14 +181,14 @@
 }
 
 .trackItem .dragHandleButton {
-  opacity: 0;
+  opacity: 0.5;
   cursor: grab;
   width: 20px;
   height: 20px;
 }
 
 .trackItem:hover .dragHandleButton {
-  opacity: 0.5;
+  opacity: 1;
 }
 
 .trackItem .dragHandleButton:hover {
@@ -425,13 +425,13 @@
 }
 
 .playlistItem .dragHandleButton {
-  opacity: 0;
+  opacity: 0.5;
   transition: opacity 0.15s;
   cursor: grab;
 }
 
 .playlistItem:hover .dragHandleButton {
-  opacity: 0.5;
+  opacity: 1;
 }
 
 .playlistItem .dragHandleButton:hover {
@@ -637,25 +637,25 @@
 
 /* History View - Centered */
 #historyView .viewHeader {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 20px 48px;
 }
 
 #historyList {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
 /* Load Playlist View - Centered */
 #loadPlaylistView .viewHeader {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 20px 48px;
 }
 
 #loadCustomList,
 #loadHqpList {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
 }

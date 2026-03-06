@@ -46,7 +46,7 @@ Util.durationTextHoursMinutes = (totalSeconds) => {
   const hours = Math.floor(totalSeconds / 3600);
   const secondsRemainder = totalSeconds - (hours * 3600);
   const minutes = Math.round(secondsRemainder / 60);
-  const result = hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+  const result = hours ? `${hours}\u202Fh ${minutes}\u202Fm` : `${minutes}\u202Fm`;
   return result;
 };
 
@@ -124,11 +124,11 @@ Util.hasMatch = (arrayOfObjects, objectKey, value) => {
 Util.makeHowLongAgoString = (ms) => {
   let min = (ms / (1000 * 60));
   if (min < 50) {
-    return Math.round(min) + 'm';
+    return Math.round(min) + '\u202Fm';
   }
   let hr  = (ms / (1000 * 60 * 60));
   if (hr < 22) {
-    return Math.round(hr) + 'h';
+    return Math.round(hr) + '\u202Fh';
   }
   let day = (ms / (1000 * 60 * 60 * 24));
   if (day < 6.5) {

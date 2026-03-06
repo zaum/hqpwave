@@ -61,8 +61,11 @@ window.renderTimelineMinimap = function (years) {
     if (!scrollContainer) return;
 
     // Use $minimap for inner dimensions (same as dot positioning)
-    const minimapRect = $minimap[0].getBoundingClientRect();
-    const containerRect = $container[0].getBoundingClientRect();
+    const minimapRect = ViewUtil.getRect($minimap[0], (newRect) => {
+      // nothing to cache here; future clicks will measure fresh, but if
+      // the rect changed after load we don't need to mutate other state now.
+    });
+    const containerRect = ViewUtil.getRect($container[0], (newRect) => {});
 
     // Get click position relative to minimap
     const y = e.clientY - minimapRect.top;
@@ -293,7 +296,7 @@ export default class App {
     Util.addAppListener(this, 'busy-start', this.updateBusyClass);
     Util.addAppListener(this, 'busy-end', this.updateBusyClass);
     Util.addAppListener(this, 'model-playlist-updated', this.updateMostStateClasses);
-    Util.addAppListener(this, 'model-status-updated', () => this.playbarView.update());
+    Util.addAppListener(this, 'model-status-updated', () => { this.playbarView.update(); this.updateMostStateClasses(); });
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'proxy-errors', this.showHqpDisconnectedSnack);
     Util.addAppListener(this, 'server-errors', this.showServerErrorsSnack);

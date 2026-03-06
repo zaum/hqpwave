@@ -110,7 +110,7 @@ export default class PlaylistSavePanel {
       cl('warning save playlist failed', e);
       successCallback(false);
     };
-    const url = `${Values.PLAYLIST_ENDPOINT}?savePlaylist&name=${filename}`;
+    const url = `${Values.PLAYLIST_ENDPOINT}?savePlaylist&name=${encodeURIComponent(filename)}`;
     $.post( { url: url, data: { data: data }, error: onError, success: onSuccess } );
   }
 }

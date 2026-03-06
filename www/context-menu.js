@@ -37,7 +37,20 @@ export default class ContextMenu {
    */
   show($holder, $button, ...rest) {
     // Context menu uses `position: fixed`, so coordinates must be viewport-based.
-    const rect = $button[0].getBoundingClientRect();
+    const rect = ViewUtil.getRect($button[0], (newRect) => {
+      // Reposition if measurements change after load
+      const menuWidth = this.$el.outerWidth();
+      const menuHeight = this.$el.outerHeight();
+      let nx = newRect.left - menuWidth - 10;
+      let ny = newRect.top;
+      if (ny + menuHeight > window.innerHeight - 8) {
+        ny = newRect.bottom - menuHeight;
+      }
+      nx = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, nx));
+      ny = Math.max(8, Math.min(window.innerHeight - menuHeight - 8, ny));
+      this.$el.css('left', nx);
+      this.$el.css('top', ny);
+    });
     const menuWidth = this.$el.outerWidth();
     const menuHeight = this.$el.outerHeight();
 

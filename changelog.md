@@ -45,5 +45,22 @@
 ### General
 - Clicking "Library" in the header now scrolls to the top of the page
 - Various minor UI refinements and simplifications
+
+## March 6, 2026 — Layout / FOUC fixes
+
+- Preload `css/main.css` in `www/index.html` to reduce flash-of-unstyled-content.
+- Added guarded reflow and measurement helpers in `www/view-util.js` (`forceReflow`, `getRect`).
+- Replaced direct layout-forcing calls with safe helpers in:
+  - `www/progress-view.js`
+  - `www/dropdown.js`
+  - `www/app-util.js`
+  - `www/context-menu.js`
+  - `www/library-album-options-view.js`
+  - `www/playlist-view.js`
+  - `www/app.js`
+
+These changes defer or retry layout reads until `window.load` when necessary, avoiding the
+"Layout was forced before the page was fully loaded" console warning while preserving
+immediate behavior in normal runtime.
 ```
 

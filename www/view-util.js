@@ -46,15 +46,55 @@ ViewUtil.setDisplayed = ($el, b) => {
 ViewUtil.setCssSync = ($element, myFunction) => {
   $element.addClass('noTransition');
   myFunction();  // A function that should set the element's css.
-  $element[0].offsetHeight;  // This triggers a reflow, flushing the CSS changes.
+  ViewUtil.forceReflow($element);
   $element.removeClass('noTransition');
 }
 
 ViewUtil.setCssPropertySync = ($element, $property, $value) => {
   $element.addClass('noTransition');
   $element.css($property, $value);
-  $element[0].offsetHeight;
+  ViewUtil.forceReflow($element);
   $element.removeClass('noTransition');
+};
+
+/**
+ * Force a reflow safely. If the page hasn't finished loading, defer the reflow
+ * until the window 'load' event to avoid forcing layout before stylesheets are ready.
+ */
+ViewUtil.forceReflow = ($element) => {
+  if (!($element && $element.length)) return;
+  if (document.readyState !== 'complete') {
+    window.addEventListener('load', () => {
+      try { $element[0].offsetHeight; } catch (e) { /* ignore */ }
+    }, { once: true });
+  } else {
+    try { $element[0].offsetHeight; } catch (e) { /* ignore */ }
+  }
+};
+
+/**
+ * Return the element's bounding client rect immediately and, if the document
+ * is not fully loaded, call `onReady` once after `load` with an updated rect.
+ * This preserves synchronous behavior while providing a safe retry for cases
+ * where stylesheets may not yet be applied.
+ */
+ViewUtil.getRect = (element, onReady) => {
+  if (!element) return { top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 };
+  let rect;
+  try {
+    rect = element.getBoundingClientRect();
+  } catch (e) {
+    rect = { top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 };
+  }
+  if (onReady && document.readyState !== 'complete') {
+    window.addEventListener('load', () => {
+      try {
+        const newRect = element.getBoundingClientRect();
+        onReady(newRect);
+      } catch (e) { /* ignore */ }
+    }, { once: true });
+  }
+  return rect;
 };
 
 /**

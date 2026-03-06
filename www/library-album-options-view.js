@@ -108,10 +108,15 @@ export default class LibraryAlbumOptionsView {
     
     // Position the fixed dropdown at the button location
     if ($button) {
-      const buttonRect = $button[0].getBoundingClientRect();
+      const buttonRect = ViewUtil.getRect($button[0], (newRect) => {
+        dropdown.$el.css({
+          'top': newRect.bottom + 'px',
+          'left': (newRect.left - 175 + 36) + 'px'
+        });
+      });
       dropdown.$el.css({
         'top': buttonRect.bottom + 'px',
-        'left': (buttonRect.left - 175 + 36) + 'px' // Align right edge of dropdown with button
+        'left': (buttonRect.left - 175 + 36) + 'px'
       });
     }
     

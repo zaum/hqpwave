@@ -50,7 +50,7 @@ export default class Dropdown {
 
   show() {
     ViewUtil.setDisplayed(this.$el, true);
-    this.$el[0].offsetHeight;
+    ViewUtil.forceReflow(this.$el);
     ViewUtil.setVisible(this.$el, true);
     this.$el.addClass('animIn');
   }

@@ -56,7 +56,7 @@ export default class LoadPlaylistContextMenu extends ContextMenu {
       ToastView.show(`<span class="colorAccent">Couldn't delete playlist</span>`, 4000);
     };
     const name = Util.getFilenameFromPath(this.playlistUri);
-    const url = `${Values.PLAYLIST_ENDPOINT}?deletePlaylist&name=${name}`;
+    const url = `${Values.PLAYLIST_ENDPOINT}?deletePlaylist&name=${encodeURIComponent(name)}`;
     $.ajax( { url: url, error: onError, success: onSuccess } );
   }
 }

@@ -222,9 +222,14 @@ export default class PlaylistView extends Subview {
     // Store original positions to avoid vibration
     this.originalPositions = [];
     this.$list.find('.trackItem:not(.isDragging)').each((i, el) => {
+      const rect = ViewUtil.getRect(el, (newRect) => {
+        // update stored rect if measurements change after load
+        const obj = this.originalPositions.find(o => o.element === el);
+        if (obj) obj.rect = newRect;
+      });
       this.originalPositions.push({
         element: el,
-        rect: el.getBoundingClientRect()
+        rect: rect
       });
     });
 
@@ -252,7 +257,9 @@ export default class PlaylistView extends Subview {
     let targetIndex = -1;
 
     $items.each((i, el) => {
-      const rect = el.getBoundingClientRect();
+      const rect = ViewUtil.getRect(el, (newRect) => {
+        // no-op: future calls will get updated rect; keep behavior immediate
+      });
       const midY = rect.top + rect.height / 2;
       if (clientY < midY && targetIndex === -1) {
         targetIndex = i;

@@ -12,7 +12,7 @@ export default class AppUtil {
   // todo experiment
   static doButtonAnim($button) {
     $button.addClass('buttonBlink');
-    $button[0].offsetHeight;  // Forces sync style/css changes
+    ViewUtil.forceReflow($button);  // Forces sync style/css changes (deferred until load if needed)
     $button.removeClass('buttonBlink');
   }
 

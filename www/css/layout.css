@@ -1569,6 +1569,11 @@
   flex-shrink: 0;
 }
 
+/* Hide the mobile-only time display by default (desktop). It will be shown
+   via the media query below for small screens. */
+.mobile-time-display {
+  display: none;
+}
 #playingTrackLength {
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
@@ -1598,6 +1603,7 @@
 
   .playingTrackCurrentTime[style],
   .mobile-time-display {
+    display: block !important;
     margin-right: 4px !important;
     margin-left: 4px !important;
     min-width: 40px;

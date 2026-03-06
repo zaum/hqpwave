@@ -57,7 +57,7 @@ export default class ProgressView {
           && (this.updateVisState == 'visible' && lastUpdateVisState == 'visible');
       if (shouldAnimate && !this.$thumb.hasClass('isAnimating')) {
         this.$thumb.addClass('isAnimating');
-        this.$thumb[0].offsetHeight; // force reflow
+        ViewUtil.forceReflow(this.$thumb); // force reflow (deferred until load if needed)
       } else if (!shouldAnimate && this.$thumb.hasClass('isAnimating')) {
         this.$thumb.removeClass('isAnimating');
       }
