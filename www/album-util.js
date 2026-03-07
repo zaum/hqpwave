@@ -28,6 +28,7 @@ export default class AlbumUtil {
     const date = fullDate ? fullDate.substring(0, 4) : null;
     const bitrateText = AlbumUtil.getBitrateText(album);
     const filetypeText = AlbumUtil.getFiletypeText(album);
+
     const formatItems = [];
     if (bitrateText) {
       formatItems.push(`<span class="albumStatsItem albumFormatText">${bitrateText}</span>`);
@@ -36,18 +37,20 @@ export default class AlbumUtil {
       formatItems.push(`<span class="albumStatsItem albumFormatText">${filetypeText}</span>`);
     }
 
-    const items = [];
-    if (formatItems.length) {
-      items.push(formatItems.join(' <span class="albumStatsSeparator">•</span> '));
-    }
+    const left = formatItems.length ? `<div class="albumStatsLeft">${formatItems.join(' ')}</div>` : '';
+
+    const rightParts = [];
     if (duration) {
-      items.push(`<span class="albumStatsItem">${duration}</span>`);
+      rightParts.push(`<span class="albumStatsItem albumDuration">${duration}</span>`);
     }
     if (date) {
-      items.push(`<span class="albumStatsItem">${date}</span>`);
+      rightParts.push(`<span class="albumStatsItem albumDate">${date}</span>`);
     }
+    const right = rightParts.length ? `<div class="albumStatsRight">${rightParts.join('<span class="albumStatsDot" aria-hidden="true">•</span>')}</div>` : '';
 
-    return items.join('<span class="albumStatsSeparator">•</span>');
+    const divider = left && right ? `<span class="albumStatsDivider" aria-hidden="true"></span>` : '';
+
+    return `<div class="albumStatsRow">${left}${divider}${right}</div>`;
   }
 
   /**

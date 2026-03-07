@@ -44,21 +44,26 @@ export default class TrackListItemUtil {
    * @param $holder
    * @param array elements have properties `data` and `ago`
    */
-  static populateHistoryList($holder, tracks, agoStrings) {
+  static populateHistoryList($holder, tracks, agoStrings, dateKeys = []) {
     const result = [];
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
       const agoString = agoStrings[i];
-      const $albumLine = TrackListItemUtil.makeAlbumHeaderIfNecessary(i, tracks);
+      const dateKey = (dateKeys && dateKeys[i]) ? dateKeys[i] : '';
+      const datePrev = (i > 0) ? ((dateKeys && dateKeys[i-1]) ? dateKeys[i-1] : '') : '';
+      const dateNext = (i < tracks.length - 1) ? ((dateKeys && dateKeys[i+1]) ? dateKeys[i+1] : '') : '';
+      const sameDatePrev = dateKey && datePrev && (dateKey === datePrev);
+      const sameDateNext = dateKey && dateNext && (dateKey === dateNext);
+      const $albumLine = TrackListItemUtil.makeAlbumHeaderIfNecessary(i, tracks, agoString, dateKey, sameDatePrev, sameDateNext);
       if ($albumLine) {
         $holder.append($albumLine);
         $albumLine.find('.albumLineButton').on('click tap', TrackListItemUtil.onAlbumButton);
       }
       let $item;
       if (Object.keys(track).length == 0) {
-        $item = TrackListItemUtil.makeNonLibraryHistoryItem(agoString);
+        $item = TrackListItemUtil.makeNonLibraryHistoryItem(agoString, dateKey, sameDatePrev, sameDateNext);
       } else {
-        $item = TrackListItemUtil.makeListItem(i, tracks, agoString, false, true); // no delete, hide drag for history
+        $item = TrackListItemUtil.makeListItem(i, tracks, agoString, false, true, dateKey, sameDatePrev, sameDateNext); // no delete, hide drag for history
         $item.find(".favoriteButton").on("click tap", TrackListItemUtil.onFavoriteButtonClick);
       }
       $holder.append($item);
@@ -91,7 +96,7 @@ export default class TrackListItemUtil {
    * @param leftText
    * @param showDeleteButton whether to show the delete button (default: true)
    */
-  static makeListItem(index, array, leftText="", showDeleteButton = true, hideDragIcon = false) {
+  static makeListItem(index, array, leftText="", showDeleteButton = true, hideDragIcon = false, dateKey = '', sameDatePrev = false, sameDateNext = false) {
     const item = array[index];
     const itemPrevious = (index > 0) ? array[index - 1] : null;
     const itemNext = (index < array.length - 1) ? array[index + 1] : null;
@@ -119,12 +124,40 @@ export default class TrackListItemUtil {
     const durationText = seconds ? Util.durationText(seconds) : '';
     const durationEmptyClass = durationText ? '' : 'isEmpty';
     let s = '';
-    s += `<div class="trackItem ${groupingClass}" data-index="${index}" data-hash="${hash}">`;
-    s += `  <div class="left historyItemTime">`;
-    if (!hideDragIcon) {
-      s += `<div class="iconButton dragHandleButton"></div>`;
+    let itemClasses = `${groupingClass}`;
+    if (album) {
+      itemClasses += ' albumTrack';
     }
-    s += `${leftText}</div>`;
+    s += `<div class="trackItem ${itemClasses}" data-index="${index}" data-hash="${hash}">`;
+    // timeline column before left / cover
+    if (hideDragIcon) {
+      // history item: render timeline marker and connector lines
+      s += `  <div class="timelineCol">`;
+      s += `    <div class="timelineInner">`;
+      s += `      <div class="line top visible"></div>`;
+      if (!sameDatePrev && leftText) {
+        s += `      <div class="marker visible"><span class="markerText">${leftText}</span></div>`;
+      }
+      s += `      <div class="line bottom visible"></div>`;
+      s += `    </div>`;
+      s += `  </div>`;
+      s += `  <div class="left historyItemTime">`;
+      s += `</div>`;
+    } else {
+      // playlist/search item: keep plain number (no circular marker)
+      s += `  <div class="timelineCol-placeholder">`;
+      s += `    <div class="timelineInner-placeholder">`;
+      s += `      <div class="line top "></div>`;
+      s += `      <div class="line bottom "></div>`;
+      s += `    </div>`;
+      s += `  </div>`;
+      s += `  <div class="left">`;
+      if (!hideDragIcon) {
+        s += `<div class="iconButton dragHandleButton"></div>`;
+      }
+      s += `<span class="trackItemNum">${leftText}</span>`;
+      s += `</div>`;
+    }
     const mainText = album 
         ? TrackListItemUtil.makeMainContents(item, album)
         : TrackListItemUtil.makeNonLibraryMainContents(item, album);
@@ -146,11 +179,20 @@ export default class TrackListItemUtil {
     return $(s);
   }
 
-  static makeNonLibraryHistoryItem(agoString) {
+  static makeNonLibraryHistoryItem(agoString, dateKey = '', sameDatePrev = false, sameDateNext = false) {
     let s = `<div class="trackItem groupSingle">`;
-    s +=    `  <div class="left historyItemTime">${agoString}</div>`;
-    s +=    `  <div class="main">Unknown track</div>`;
-    s +=    `</div>`;
+    s += `  <div class="timelineCol">`;
+    s += `    <div class="timelineInner">`;
+    s += `      <div class="line top ${sameDatePrev ? 'visible' : ''}"></div>`;
+    if (!sameDatePrev && agoString) {
+      s += `      <div class="marker visible"><span class="markerText">${agoString}</span></div>`;
+    }
+    s += `      <div class="line bottom ${sameDateNext ? 'visible' : ''}"></div>`;
+    s += `    </div>`;
+    s += `  </div>`;
+    s += `  <div class="left historyItemTime"></div>`;
+    s += `  <div class="main">Unknown track</div>`;
+    s += `</div>`;
     return $(s);
   }
 
@@ -236,7 +278,7 @@ export default class TrackListItemUtil {
   /**
    * Returns null if `item` is not from library or `item` is from same album as `itemPrevious`.
    */
-  static makeAlbumHeaderIfNecessary(index, array) {
+  static makeAlbumHeaderIfNecessary(index, array, leftText = '', dateKey = '', sameDatePrev = false, sameDateNext = false) {
 
     const item = array[index];
     const album = TrackListItemUtil.getAlbumForTrackDataItem(item);
@@ -256,12 +298,13 @@ export default class TrackListItemUtil {
       return null;
     }
 
+    // render artist and album in separate blocks for styling
     let text = '';
     if (artistText) {
-      text += artistText;
+      text += `<div class="albumArtist">${artistText}</div>`;
     }
     if (albumText) {
-      text += text ? ('<br>' + albumText) : albumText;
+      text += `<div class="albumTitle">${albumText}</div>`;
     }
     if (!text) {
       return null;
@@ -271,6 +314,13 @@ export default class TrackListItemUtil {
 
     let s = '';
     s +=  `<div class="trackItem groupFirst trackItemAlbumHeader">`;
+    // placeholder timeline column: show connector segments when adjacent items share same date
+    s += `  <div class="timelineCol-placeholder">`;
+    s += `    <div class="timelineInner-placeholder">`;
+    s += `      <div class="line top ${sameDatePrev ? 'visible' : ''}"></div>`;
+    s += `      <div class="line bottom ${sameDateNext ? 'visible' : ''}"></div>`;
+    s += `    </div>`;
+    s += `  </div>`;
     s +=    `<div class="albumLineButton" data-hash="${album['@_hash']}">`;
     s +=      `<div class="coverThumb">`;
     s +=        `<img src="${imgPath}" alt="">`;

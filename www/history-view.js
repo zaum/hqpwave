@@ -49,6 +49,7 @@ export default class HistoryView  extends Subview {
     // parallel arrays (not great)
     const tracks = [];
     const agoStrings = [];
+    const dateKeys = [];
 
     for (let i = MetaUtil.history.length - 1; i >= 0; i--) { // revchron
 
@@ -59,9 +60,13 @@ export default class HistoryView  extends Subview {
       const time = item['time'];
       if (!time) {
         agoStrings.push(''); // shdnthpn
+        dateKeys.push('');
       } else {
         const ms = new Date().getTime() - time;
-        agoStrings.push(Util.makeHowLongAgoString(ms));
+        const ago = Util.makeHowLongAgoString(ms);
+        agoStrings.push(ago);
+        // group by the shown ago-string so identical timestamps are collapsed
+        dateKeys.push(ago);
       }
 
       if (tracks.length >= 500) {
@@ -79,7 +84,7 @@ export default class HistoryView  extends Subview {
       return;
     }
 
-    TrackListItemUtil.populateHistoryList(this.$list, tracks, agoStrings);
+    TrackListItemUtil.populateHistoryList(this.$list, tracks, agoStrings, dateKeys);
     const $contextButtons = this.$list.find(".contextButton");
     $contextButtons.on("click tap", this.onContextButton);
 	}

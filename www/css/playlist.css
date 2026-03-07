@@ -13,10 +13,17 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0;
+  padding: 24px 48px 80px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+@media (max-width: 768px) {
+  #playlistMainView {
+    padding: 24px 0px 80px 0px;
+  }
 }
 
 #playlistMainView .viewHeader {
@@ -60,9 +67,9 @@
 .playlistButtons {
   display: flex;
   gap: 8px;
-  padding: 16px 24px;
+  padding: 0px 24px 16px 24px;
   border-bottom: 1px solid var(--border);
-  width: min(900px, 100%);
+  width: min(1800px, 100%);
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -101,7 +108,7 @@
   padding: 16px 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  width: min(900px, 100%);
+  width: min(1800px, 100%);
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -144,6 +151,10 @@
 
 #playlistList {
   padding: 0 0 60px 0;
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 800px;
 }
 
 /* Track Item (used in playlist, history, search) */
@@ -158,16 +169,29 @@
   cursor: pointer;
   transition: background 0.12s;
   gap: 8px;
+  position: relative;
+}
+
+#historyList .trackItem {
+  border-bottom: none;
+}
+
+#historyList .trackItem::after {
+  content: '';
+  position: absolute;
+  left: calc(48px + 36px + 12px);
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--border);
+  pointer-events: none;
 }
 
 .trackItem:hover {
   background: rgba(255,255,255,0.04);
 }
 
-.trackItem.selected {
-  background: var(--accent-bg);
-}
-
+.trackItem.selected,
 .trackItem.isPlaying {
   background: var(--accent-bg);
 }
@@ -385,13 +409,13 @@
   text-overflow: ellipsis;
 }
 
-.trackItemAlbumHeader .albumLineButton .text div:first-child {
+.trackItemAlbumHeader .albumLineButton .text .albumArtist {
   font-weight: 400;
 }
 
-.trackItemAlbumHeader .albumLineButton .text div:last-child {
+.trackItemAlbumHeader .albumLineButton .text .albumTitle {
   font-size: 11px;
-  color: var(--text-3);
+  color: var(--text-2);
   margin-top: 1px;
 }
 
@@ -400,6 +424,10 @@
   font-size: 10px;
   color: var(--text-3);
   flex-shrink: 0;
+}
+
+.trackItem.albumTrack .main {
+  padding-left: 20px;
 }
 
 .playlistItem {
@@ -503,12 +531,30 @@
   background: transparent;
   padding: 20px 24px;
   height: auto;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 #historyList {
   padding: 0;
-  width: min(900px, 100%);
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   box-sizing: border-box;
+  position: relative;
+}
+
+#historyList::before {
+  content: '';
+  position: absolute;
+  left: 48px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-md);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .historyItem {
@@ -545,7 +591,6 @@
   margin-top: 1px;
 }
 
-
 .historyItemTime {
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
@@ -555,6 +600,104 @@
   justify-content: center;
   display: flex;
   align-items: center;
+}
+
+.timelineCol {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+}
+
+.timelineCol-placeholder {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.timelineInner {
+  position: relative;
+  left: 17px;
+  top: 14px;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  height: 100%;
+  pointer-events: none;
+}
+
+.timelineInner .line {
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: transparent;
+}
+
+.timelineInner .line.top {
+  top: 0;
+  bottom: calc(50% + 13px);
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+.timelineInner .line.bottom {
+  top: calc(50% + 13px);
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+.timelineInner .line.visible {
+  background: var(--border-md);
+  z-index: 0;
+}
+
+.timelineInner .marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border-md);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--text-2);
+  box-sizing: border-box;
+  margin: 4px 0;
+  background: var(--bg);
+  position: relative;
+  z-index: 60;
+}
+
+.timelineInner .marker.visible {
+  display: flex;
+}
+
+.timelineInner .marker .markerText {
+  position: relative;
+  z-index: 70;
+  color: var(--text-2);
+  font-size: 9px;
+  line-height: 1;
+}
+
+#historyList .trackItemAlbumHeader {
+  background: transparent;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -585,7 +728,7 @@
   text-transform: uppercase;
   color: var(--text-3);
   padding: 16px 24px 8px;
-  width: min(900px, 100%);
+  width: min(1800px, 100%);
   box-sizing: border-box;
   margin: 0 auto;
 }
@@ -619,43 +762,21 @@
 #loadCustomList,
 #loadHqpList {
   padding: 0;
-  width: min(900px, 100%);
-  box-sizing: border-box;
-}
-
-/* Center the playlist content */
-#playlistMainView {
-  padding: 24px 48px 80px;
-  box-sizing: border-box;
-}
-
-#playlistList {
-  max-width: 900px;
   width: 100%;
+  max-width: 1800px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
-/* History View - Centered */
+/* History/List View Headers */
 #historyView .viewHeader {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
-  padding: 20px 48px;
+  padding: 20px 24px;
 }
 
-#historyList {
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-/* Load Playlist View - Centered */
 #loadPlaylistView .viewHeader {
-  max-width: 900px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 20px 48px;
-}
-
-#loadCustomList,
-#loadHqpList {
-  max-width: 900px;
-  margin: 0 auto;
 }

@@ -55,6 +55,11 @@ const splitAlbumArtists = (value) => {
       continue;
     }
     const key = artist.toLowerCase();
+    // Ignore stray HTML-entity artefacts like 'amp' which can be produced
+    // by earlier entity decoding and delimiter splitting.
+    if (key === 'amp') {
+      continue;
+    }
     if (seen.has(key)) {
       continue;
     }

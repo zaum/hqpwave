@@ -30,6 +30,10 @@ export default class PlaybarView {
   atTrack = -1;
   state = '';
 
+  optimisticTimerId = null;
+  optimisticSeconds = -1;
+  optimisticTotal = 0;
+
   playingText;
   systemMessageText;
   currentSecondsText;
@@ -97,6 +101,7 @@ export default class PlaybarView {
     Util.addAppListener(this, 'model-status-updated', this.onModelStatusUpdated);
     Util.addAppListener(this, 'model-state-updated', this.onModelStateUpdated);
     Util.addAppListener(this, 'progress-thumb-drag', this.onProgressThumbDrag);
+    Util.addAppListener(this, 'new-track', this.onNewTrackDetected);
 
     this.pointerUtil = new ModalPointerUtil(
         [this.$volumeInline, this.$volumeToggle, this.volumePanel.$el],
@@ -398,6 +403,13 @@ export default class PlaybarView {
   }
 
   onModelStatusUpdated(e) {
+    // stop any optimistic progress timer — real status has arrived
+    if (this.optimisticTimerId) {
+      clearInterval(this.optimisticTimerId);
+      this.optimisticTimerId = null;
+      this.optimisticSeconds = -1;
+      this.optimisticTotal = 0;
+    }
     this._updatePlayingText();
     if (!this.progressView.isDragging) {
       this._updateThumb();
@@ -420,6 +432,59 @@ export default class PlaybarView {
 
   onModelStateUpdated(e) {
     this._updatePreviousNextButtons();
+  }
+
+  onNewTrackDetected = (uri, lastUri) => {
+    // Clear any previous optimistic timer
+    if (this.optimisticTimerId) {
+      clearInterval(this.optimisticTimerId);
+      this.optimisticTimerId = null;
+    }
+
+    // Try to determine total seconds from status or playlist, fallback to 240s
+    let total = Model.status.totalSeconds;
+    if (!total || total <= 0) {
+      const idx = Model.playlist.currentIndex;
+      const item = (idx >= 0 && Model.playlist.array[idx]) ? Model.playlist.array[idx] : null;
+      if (item) {
+        const min = parseInt(item['@_total_min']);
+        const sec = parseInt(item['@_total_sec']);
+        if (!isNaN(min) && !isNaN(sec)) {
+          total = (min * 60) + sec;
+        }
+      }
+    }
+    if (!total || total <= 0) total = 240;
+
+    this.optimisticTotal = total;
+    this.optimisticSeconds = 0;
+    this.progressView.update(0, 0);
+
+    // Increment optimistic progress each second until real status arrives
+    this.optimisticTimerId = setInterval(() => {
+      this.optimisticSeconds++;
+      if (this.optimisticSeconds >= this.optimisticTotal) {
+        clearInterval(this.optimisticTimerId);
+        this.optimisticTimerId = null;
+        return;
+      }
+      const ratio = this.optimisticSeconds / this.optimisticTotal;
+      this.progressView.update(ratio, this.optimisticSeconds);
+      try {
+        // Update the current time text immediately (optimistic)
+        this.$trackCurrentTime.text(Util.durationText(this.optimisticSeconds));
+        // Update circular progress if present
+        if (this.circularProgress && typeof ratio === 'number') {
+          this.circularProgress.setProgress(ratio);
+        }
+        // Show total seconds if not yet populated
+        if (!this.totalSecondsText || this.totalSecondsText === '--:--') {
+          this.$trackLength.text(Util.durationText(this.optimisticTotal));
+        }
+      } catch (e) {
+        // swallow any UI errors
+      }
+    }, 1000);
   }
 
   onPlayButton = (e) => {

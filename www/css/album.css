@@ -435,6 +435,55 @@
   margin-left: 0.35em;
 }
 
+/* New layout for album stats: left (bitrate/type), vertical divider, right (duration/date) */
+.albumStatsRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+  padding: 0 calc(40px) 0 0;
+  font-size: 13.5px; /* match track title/number sizing */
+}
+
+.albumStatsLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.albumStatsDivider {
+  flex: 1 1 auto; /* grow to fill available space */
+  height: 1px;
+  background: var(--border-hi); /* lighter line */
+  align-self: center;
+  margin: 0 12px;
+  min-width: 0;
+}
+
+.albumStatsRight {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  justify-content: flex-end;
+  min-width: 0;
+  flex: 0 0 auto; /* don't grow; stay right-aligned */
+}
+
+.albumStatsRight .albumStatsItem {
+  white-space: nowrap;
+}
+
+/* small accent-colored dot separator between duration and date */
+.albumStatsDot {
+  color: var(--accent);
+  display: inline-block;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .hero-meta-item {
   padding: 0 14px;
   border-right: 1px solid var(--border-md);
