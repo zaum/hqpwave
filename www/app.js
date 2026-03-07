@@ -456,6 +456,20 @@ export default class App {
     } else {
       this.$navPills.filter(`[data-view="${view}"]`).addClass('active');
     }
+
+    // Show/hide back-to-library button: hide when library view is active
+    try {
+      const $backBtn = $('#backToLibraryButton');
+      if ($backBtn && $backBtn.length) {
+        if (view === 'library') {
+          $backBtn.hide();
+        } else {
+          $backBtn.show();
+        }
+      }
+    } catch (e) {
+      // ignore DOM issues
+    }
   }
 
   hideSettingsViews(isDirect = false) {

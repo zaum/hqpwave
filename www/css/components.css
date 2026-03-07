@@ -402,6 +402,49 @@
   transition: opacity 0.15s, transform 0.15s;
 }
 
+/* Back to library button in top bar */
+#backToLibraryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  margin-right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  transition: transform 0.14s cubic-bezier(.2,.9,.2,1), color 0.12s ease;
+  transform-origin: center center;
+}
+
+#backToLibraryButton svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.14s cubic-bezier(.2,.9,.2,1);
+  display: block;
+  transform-origin: center center;
+}
+
+/* On hover only scale from center; no translate or shadow */
+#backToLibraryButton:hover {
+  cursor: pointer;
+  color: var(--text);
+  transform: scale(1.2);
+}
+
+#backToLibraryButton:hover svg {
+  transform: scale(1.2);
+}
+
+#backToLibraryButton:active {
+  transform: scale(1.06);
+}
+
+#backToLibraryButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+}
 .tooltip.isVisible {
   opacity: 1;
   transform: translateY(0);

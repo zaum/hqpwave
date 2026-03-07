@@ -22,7 +22,57 @@
 
 @media (max-width: 768px) {
   #playlistMainView {
-    padding: 24px 0px 80px 0px;
+    padding: 24px 0 80px !important;
+    align-items: stretch !important;
+  }
+
+  /* Reduce side padding on small screens so playlist aligns to the left edge */
+  #playlistView .viewHeader,
+  #playlistView .playlist-header,
+  #playlistView .playlistButtons,
+  #playlistView #playlistSaver {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Make list use full width and remove centering constraints */
+  #playlistView #playlistList {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Collapse the timeline column and reduce left column on small screens
+     to remove the large empty gutter visible on mobile. */
+  #playlistView .timelineCol,
+  #playlistView .timelineCol-placeholder {
+    width: 0 !important;
+    min-width: 0 !important;
+    display: none !important;
+  }
+
+  #playlistView .timelineInner {
+    left: 0 !important;
+    width: 0 !important;
+    display: none !important;
+  }
+
+  #playlistView .trackItem .left {
+    width: 36px !important; /* keep small number/drag area */
+    flex-shrink: 0 !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Slightly tighten padding for the main content on small screens */
+  #playlistView .trackItem .main {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
   }
 }
 
