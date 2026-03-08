@@ -36,6 +36,9 @@ class SidebarView {
     this.$page = $('#page');
     this.$topBar = $('#topBar');
 
+    // Track which subview of the playlist compound is active ('playlist'|'history'|'load')
+    this.playlistCompoundSubview = null;
+
     // Observe #page class changes to update toggle visibility (for view switches)
     if (window.MutationObserver) {
       const observer = new MutationObserver(() => {
@@ -137,6 +140,8 @@ class SidebarView {
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
     Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
+    // Listen for playlist compound subview changes so we can hide sidebar in history
+    Util.addAppListener(this, 'playlist-compound-subview', this.onPlaylistCompoundSubviewChanged);
 
     // Initial population
     if (Model.library && Model.library.albums) {
@@ -164,6 +169,17 @@ class SidebarView {
       this.$page.toggleClass('isSidebarCollapsed', this.desktopCollapsedBeforeMobile);
     }
 
+    // Hide sidebar when the app is showing the playlist top-level view,
+    // or when the playlist compound has switched to the `history` subview.
+    const isPlaylistTopView = this.$page.hasClass('playlistView');
+    const isHistorySubview = this.playlistCompoundSubview === 'history';
+    if (isPlaylistTopView || isHistorySubview) {
+      this.disconnectTopBarObserver();
+      this.$toggle.hide();
+      this.$el.hide();
+      return;
+    }
+    this.$el.show();
     if (this.isMobileSidebarMode) {
       this.ensureTopBarObserver();
       const $topBar = $('#topBar');
@@ -234,6 +250,11 @@ class SidebarView {
       this.$toggle.attr('aria-label', isMobile ? 'Close filters' : 'Collapse sidebar');
       this.$toggle.attr('title', isMobile ? 'Hide filters' : 'Hide sidebar');
     }
+  }
+
+  onPlaylistCompoundSubviewChanged(e, type) {
+    this.playlistCompoundSubview = type;
+    this.updateTogglePlacementForViewport();
   }
 
   /**

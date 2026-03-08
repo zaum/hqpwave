@@ -55,6 +55,8 @@ export default class PlaylistCompoundView extends Subview {
     if (type === "playlist") this.mainView.onShow();
     if (type === "history") this.historyView.onShow();
     if (type === "load") this.loadView.onShow();
+    // Notify other parts of the app which subview inside the playlist compound is active
+    $(document).trigger('playlist-compound-subview', [type]);
     $(document).trigger('enable-user-input');
   }
 

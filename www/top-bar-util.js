@@ -19,6 +19,11 @@ class TopBarUtil {
   isHeaderTaken = false;
   // Animation lock to prevent double animations
   isAnimating = false;
+  // Track whether topbar is currently collapsed to avoid redundant class toggles
+  isTopbarCollapsed = false;
+  // rAF debounce state
+  _pendingRaf = false;
+  _lastScrollY = 0;
 
   COLLAPSE_THRESHOLD = 30; // px - scroll distance to collapse topbar first-row
 
@@ -134,19 +139,42 @@ class TopBarUtil {
    */
   onSubviewScroll($subview) {
     this.updateFor($subview);
-    this._updateTopbarScrollState($subview);
+    // debounce visual state updates via requestAnimationFrame to avoid layout thrashing
+    this._lastScrollY = $subview[0].scrollTop;
+    if (!this._pendingRaf) {
+      this._pendingRaf = true;
+      requestAnimationFrame(() => {
+        this._updateTopbarScrollStateFromY(this._lastScrollY);
+        this._pendingRaf = false;
+      });
+    }
   }
 
   /**
-   * Toggle topbar first-row collapse based on scroll position (≤1024px only).
+   * Backwards-compatible entry: accept a subview jQuery element.
    */
   _updateTopbarScrollState($subview) {
     if (!this._mq1024.matches) return;
     const y = $subview[0].scrollTop;
+    this._updateTopbarScrollStateFromY(y);
+  }
+
+  /**
+   * Update topbar collapsed state from a numeric scroll Y. Uses internal
+   * flag to avoid redundant DOM class toggles which can cause jank.
+   */
+  _updateTopbarScrollStateFromY(y) {
+    if (!this._mq1024.matches) return;
     if (y > this.COLLAPSE_THRESHOLD) {
-      TopBar.$el.addClass('topbar-scrolled');
+      if (!this.isTopbarCollapsed) {
+        TopBar.$el.addClass('topbar-scrolled');
+        this.isTopbarCollapsed = true;
+      }
     } else {
-      TopBar.$el.removeClass('topbar-scrolled');
+      if (this.isTopbarCollapsed) {
+        TopBar.$el.removeClass('topbar-scrolled');
+        this.isTopbarCollapsed = false;
+      }
     }
   }
 }

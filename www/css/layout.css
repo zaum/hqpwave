@@ -159,7 +159,8 @@
     min-height: 0;
     padding-bottom: 16px;
     border-bottom: none;
-    transition: row-gap 150ms ease, padding 150ms ease, min-height 150ms ease;
+    transition: transform 150ms ease;
+    will-change: transform;
   }
 
   .brand-logo {
@@ -230,7 +231,7 @@
   #topBar {
     height: auto;
     min-height: 0;
-    padding: 12px 16px 8px;
+    padding: 0px 16px 4px;
     border-bottom: none;
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -238,10 +239,10 @@
       "brand brand right"
       "searchToggle search search"
       "nav nav nav";
-    row-gap: 12px;
+    row-gap: 6px;
     column-gap: 6px;
-    transition: gap 150ms ease, padding 150ms ease;
-    will-change: gap, padding;
+    transition: transform 150ms ease;
+    will-change: transform;
     transform: translateZ(0);
   }
 
@@ -254,6 +255,11 @@
   #topBar>.brand {
     grid-area: brand;
     align-self: center;
+  }
+
+  /* Reduce extra spacing under the brand logo on small viewports */
+  #topBar>.brand {
+    margin-bottom: 0;
   }
 
   #topBar>.topbar-right {
@@ -276,7 +282,8 @@
   /* Collapsed state */
   #topBar.topbar-scrolled {
     gap: 0;
-    padding-top: 4px;
+    /* keep padding-top stable to avoid layout jumps during collapse */
+    padding-top: 0;
     padding-bottom: 6px;
   }
 
@@ -293,6 +300,12 @@
     grid-area: search;
     width: 100%;
     max-width: 100%;
+  }
+
+  /* Small padding above the search field when the topbar is collapsed on narrow viewports */
+  #topBar.topbar-scrolled .search-wrap,
+  #topBar.topbar-scrolled .search-row {
+    padding-top: 6px;
   }
 
   .topbar-nav {
@@ -1748,8 +1761,24 @@
   height: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.10);
-  overflow: hidden;
+  overflow: visible;
   cursor: pointer;
+}
+
+/* Increase the clickable area without changing layout: a transparent, absolute ::before
+   expands hit area vertically while keeping the track visual small. Events on the
+   pseudo-element target the element itself, so existing handlers still work. */
+.volume-inline-track::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 32px; /* larger hit area for easier dragging */
+  pointer-events: auto;
+  background: transparent;
+  z-index: 10;
 }
 
 .lightTheme .volume-inline-track {
@@ -1783,6 +1812,7 @@
   opacity: 0;
   transition: opacity 140ms ease, transform 140ms ease;
   pointer-events: none;
+  z-index: 20;
 }
 
 .volume-inline-track:hover .volume-inline-thumb::after,
@@ -1846,11 +1876,11 @@
     z-index: 220;
   }
 
-  /* hide the small circular handle for vertical/mobile volume control */
+  /* hide the small circular handle for vertical/mobile volume control 
   .volume-inline-track .volume-inline-thumb::after {
     display: none !important;
     opacity: 0 !important;
-  }
+  }*/
 
   #volumeInlineTrack {
     width: 4px;
