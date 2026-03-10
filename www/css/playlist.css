@@ -20,59 +20,102 @@
   align-items: center;
 }
 
-@media (max-width: 768px) {
+#playlistMainView {
+  padding: 24px 0 80px !important;
+  align-items: stretch !important;
+}
+
+/* Reduce side padding on small screens so playlist aligns to the left edge */
+#playlistView .viewHeader,
+#playlistView .playlist-header,
+#playlistView .playlistButtons,
+#playlistView #playlistSaver {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  box-sizing: border-box !important;
+}
+
+/* Make list use full width and remove centering constraints */
+#playlistView #playlistList {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-width: 100% !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Collapse the timeline column on small screens */
+#playlistView .timelineCol,
+#playlistView .timelineCol-placeholder {
+  width: 0 !important;
+  min-width: 0 !important;
+  display: none !important;
+}
+
+#playlistView .timelineInner {
+  left: 0 !important;
+  width: 0 !important;
+  display: none !important;
+}
+
+#playlistView .trackItem .left {
+  width: 36px !important;
+  flex-shrink: 0 !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  box-sizing: border-box !important;
+}
+
+#playlistView .trackItem .main {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+@media (min-width: 768px) {
   #playlistMainView {
-    padding: 24px 0 80px !important;
-    align-items: stretch !important;
+    padding: 24px 48px 80px !important;
+    align-items: center !important;
   }
 
-  /* Reduce side padding on small screens so playlist aligns to the left edge */
   #playlistView .viewHeader,
   #playlistView .playlist-header,
   #playlistView .playlistButtons,
   #playlistView #playlistSaver {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    box-sizing: border-box !important;
+    padding-left: unset !important;
+    padding-right: unset !important;
   }
 
-  /* Make list use full width and remove centering constraints */
   #playlistView #playlistList {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    max-width: 100% !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: 800px !important;
+    padding-left: unset !important;
+    padding-right: unset !important;
   }
 
-  /* Collapse the timeline column and reduce left column on small screens
-     to remove the large empty gutter visible on mobile. */
   #playlistView .timelineCol,
   #playlistView .timelineCol-placeholder {
-    width: 0 !important;
-    min-width: 0 !important;
-    display: none !important;
+    width: 48px !important;
+    min-width: unset !important;
+    display: flex !important;
   }
 
   #playlistView .timelineInner {
-    left: 0 !important;
-    width: 0 !important;
-    display: none !important;
+    left: 17px !important;
+    width: 18px !important;
+    display: flex !important;
   }
 
   #playlistView .trackItem .left {
-    width: 36px !important; /* keep small number/drag area */
-    flex-shrink: 0 !important;
-    padding-left: 4px !important;
-    padding-right: 4px !important;
-    box-sizing: border-box !important;
+    width: 36px !important;
+    padding-left: unset !important;
+    padding-right: unset !important;
   }
 
-  /* Slightly tighten padding for the main content on small screens */
   #playlistView .trackItem .main {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
   }
 }
 
@@ -238,7 +281,7 @@
 }
 
 .trackItem:hover {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .trackItem.selected,
@@ -491,7 +534,7 @@
 }
 
 .playlistItem:hover {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .playlistItem.isPlaying {
@@ -618,7 +661,7 @@
 }
 
 .historyItem:hover {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .historyItemInfo {
@@ -794,7 +837,7 @@
 }
 
 .loadItem:hover {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .loadItem .loadItemName {

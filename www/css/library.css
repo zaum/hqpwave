@@ -22,7 +22,7 @@
 
 /* Library Main Content */
 .library-main {
-  padding: 0 36px 80px 36px;
+  padding: 12px 20px 80px;
   overflow-y: auto;
   overflow-x: hidden;
   height: 100%;
@@ -46,9 +46,9 @@
   background: var(--border-hi);
 }
 
-@media (max-width: 768px) {
+@media (min-width: 768px) {
   .library-main {
-    padding: 12px 20px 80px;
+    padding: 0 36px 80px 36px;
   }
 }
 
@@ -199,11 +199,11 @@
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.search-help-tooltip > div {
+.search-help-tooltip>div {
   margin-top: 4px;
 }
 
-.search-help-tooltip > div:first-child {
+.search-help-tooltip>div:first-child {
   margin-top: 0;
 }
 
@@ -236,17 +236,23 @@
   font-size: inherit;
 }
 
-.search-wrap .search-help:hover + .search-help-tooltip,
-.search-wrap .search-help:focus + .search-help-tooltip {
+.search-wrap .search-help:hover+.search-help-tooltip,
+.search-wrap .search-help:focus+.search-help-tooltip {
   opacity: 1;
   transform: translateY(0);
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 1024px) {
+
   .search-help,
   .search-help-tooltip {
-    display: none;
+    display: inline-flex;
   }
+}
+
+.search-help,
+.search-help-tooltip {
+  display: none;
 }
 
 .search-icon {
@@ -272,7 +278,8 @@
 
 .search-input {
   width: 100%;
-  padding: 8px 36px 8px 40px; /* left padding for the magnifier icon */
+  padding: 8px 36px 8px 40px;
+  /* left padding for the magnifier icon */
   background: var(--surface);
   border: 1px solid var(--border-md);
   border-radius: 8px;
@@ -434,8 +441,8 @@
 
 .libraryAlbumGroup {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   margin-bottom: 24px;
   width: 100%;
   box-sizing: border-box;
@@ -445,17 +452,17 @@
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 480px) {
   .libraryAlbumGroup {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 16px;
   }
 }
 
-@media (max-width: 480px) {
+@media (min-width: 768px) {
   .libraryAlbumGroup {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 20px;
   }
 }
 
