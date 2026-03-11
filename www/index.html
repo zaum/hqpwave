@@ -16,11 +16,20 @@
     }
   </script>
   <script src="libs/jquery-3.6.0.min.js"></script>
+  <style>
+    /* Prevent brief unstyled SVG flash: hide logos until JS shows them */
+    #brandLogo { visibility: hidden; }
+    .footer-brand-logo { visibility: hidden; }
+  </style>
   <script type="module">
     import App from './app.js';
     const startApp = () => {
       if (!window.app) {
         window.app = new App();
+        const logo = document.getElementById('brandLogo');
+        if (logo) { logo.style.visibility = 'visible'; }
+        const footerLogo = document.querySelector('.footer-brand-logo');
+        if (footerLogo) { footerLogo.style.visibility = 'visible'; }
       }
     };
 
@@ -305,10 +314,6 @@
 
           <!-- Hidden header for compatibility -->
 
-
-
-          <div id="librarySpinner" class="spinner"></div>
-
           <div id="timelineView">
             <div id="libraryAlbumsList"></div>
           </div>
@@ -382,29 +387,30 @@
       <section id="playlistView" class="subview" tabindex="0">
         <div id="playlistMainView" class="subview">
 
-          <div class="playlistButtons">
-            <div id="playlistClearButton" class="textButton">Clear</div>
-            <div id="playlistLoadButton" class="textButton">Load</div>
-            <div id="playlistSaveButton" class="textButton">Save</div>
-            <div id="playlistRepeatButton" class="textButton">Repeat none</div>
-
-          </div>
-
-          <div id="playlistSaver">
-            <div class="spacer1"></div>
-            <div class="inner">
-              <div id="playlistSaveCloseButton" class="iconButton closeButton"></div>
-              <label for="playlistSaveInput">Save playlist:</label>
-              <div class="inputLine">
-                <input id="playlistSaveInput" name="playlistSaveInput" type="text" required minlength="1"
-                  maxlength="64">
-                <div id="playlistSaveOkayButton" class="textButton">OK</div>
-              </div>
+          <div class="playlistListContainer">
+            <div class="playlistButtons">
+              <div id="playlistClearButton" class="textButton">Clear</div>
+              <div id="playlistLoadButton" class="textButton">Load</div>
+              <div id="playlistSaveButton" class="textButton">Save</div>
+              <div id="playlistRepeatButton" class="textButton">Repeat none</div>
             </div>
-            <div class="spacer2"></div>
-          </div>
 
-          <div id="playlistList"></div>
+            <div id="playlistSaver">
+              <div class="spacer1"></div>
+              <div class="inner">
+                <div id="playlistSaveCloseButton" class="iconButton closeButton"></div>
+                <label for="playlistSaveInput">Save playlist:</label>
+                <div class="inputLine">
+                  <input id="playlistSaveInput" name="playlistSaveInput" type="text" required minlength="1"
+                    maxlength="64">
+                  <div id="playlistSaveOkayButton" class="textButton">OK</div>
+                </div>
+              </div>
+              <div class="spacer2"></div>
+            </div>
+
+            <div id="playlistList"></div>
+          </div>
         </div>
 
         <div id="historyView" class="subview">

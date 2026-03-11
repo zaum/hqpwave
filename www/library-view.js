@@ -27,7 +27,6 @@ export default class LibraryView extends Subview {
 
   $title;
   $itemCount;
-  $spinner;
   $scrollEl;
 
   albumOptionsView; // dropdowns + search button
@@ -54,7 +53,6 @@ export default class LibraryView extends Subview {
     this.$itemCount = this.$el.find('#libraryNumbers');
     this.$searchButton = this.$el.find('#librarySearchButton');
     this.$searchCloseButton = this.$el.find('#librarySearchCloseButton');
-    this.$spinner = this.$el.find('#librarySpinner');
     this.$timelineView = this.$el.find('#timelineView');
 
     // Global search input in topbar
@@ -159,11 +157,8 @@ export default class LibraryView extends Subview {
   setSpinnerState(b) {
     if (b) {
       this.$el.addClass('isDisabled');
-      ViewUtil.setDisplayed(this.$spinner, true);
-      this.$spinner.css('opacity', 1);
     } else {
       this.$el.removeClass('isDisabled');
-      ViewUtil.setDisplayed(this.$spinner, false);
     }
   }
 

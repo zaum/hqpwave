@@ -2190,6 +2190,13 @@
   transition: top 400ms cubic-bezier(0, 0.5, 0.3, 1);
 }
 
+/* Ensure accent spans inside the toast use the same Doto font and sizing */
+#toast #toastInner .colorAccent {
+  font-family: 'Doto', 'Geist', sans-serif;
+  font-size: inherit;
+  line-height: inherit;
+}
+
 #snack {
   visibility: hidden;
   position: absolute;

@@ -19,8 +19,21 @@ class ToastView {
    * @param duration 0 will make it 'indefinite'.
    */
   show(htmlText, duration=2500) {
+    // Avoid duplicate identical toasts stacking; if same content visible, reset timeout instead
+    const current = this.$inner.html();
+    if (current && current === htmlText && this.$el.is(':visible')) {
+      clearTimeout(this.timeoutId);
+      if (duration > 0) {
+        this.timeoutId = setTimeout(() => this.hide(), duration);
+        this.indefiniteShowStart = 0;
+      }
+      return;
+    }
+
     clearTimeout(this.timeoutId);
     this.$inner.html(htmlText);
+    // ensure accent spans inside toast inherit the toast font (covers HTML passed strings)
+    this.$inner.find('.colorAccent').css('font-family', "'Doto', 'Geist', sans-serif");
 
     ViewUtil.setVisible(this.$el, true);
 

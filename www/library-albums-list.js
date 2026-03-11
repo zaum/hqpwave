@@ -5,6 +5,7 @@ import Model from './model.js';
 import Settings from './settings.js';
 import Util from './util.js';
 import ViewUtil from './view-util.js';
+import { initTimelineMinimap } from './timeline-minimap.js';
 
 /**
  * Model 'pipeline':
@@ -30,6 +31,12 @@ export default class LibraryAlbumsList extends LibraryContentList {
     Settings.libraryGroupType = 'none';
     Util.addAppListener(this, 'library-albums-sort-changed', this.onSortChanged);
     Util.addAppListener(this, 'library-albums-filter-changed', this.onFilterChanged);
+    // Initialize timeline minimap controller (no-op if DOM missing)
+    try {
+      this._timelineMinimap = initTimelineMinimap();
+    } catch (e) {
+      this._timelineMinimap = { update: () => {}, dispose: () => {} };
+    }
   }
 
   // override
@@ -227,8 +234,8 @@ export default class LibraryAlbumsList extends LibraryContentList {
           const year = parseInt(label);
           return isNaN(year) ? null : year;
         }).filter(y => y !== null);
-        if (window.renderTimelineMinimap) {
-          window.renderTimelineMinimap(years);
+        if (this._timelineMinimap && this._timelineMinimap.update) {
+          this._timelineMinimap.update(years);
         }
       }
       

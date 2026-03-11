@@ -242,12 +242,36 @@
    PLAYLIST LIST
    ═══════════════════════════════════════════════════════════════ */
 
-#playlistList {
+#playlistList, .playlistListContainer {
   padding: 0 0 60px 0;
   margin: 0 auto;
   box-sizing: border-box;
   width: 100%;
   max-width: 800px;
+}
+
+/* Ensure there's always a small amount of scrollable space
+   so the top bar reveal-on-scroll behavior can trigger on small content */
+.playlistListContainer,
+#playlistList {
+  min-height: calc(100% + 8px);
+}
+
+#historyList {
+  min-height: calc(100% + 8px);
+}
+
+/* Empty playlist / informational row */
+.playHisNonItem {
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  min-height: 200px;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 /* Track Item (used in playlist, history, search) */
@@ -821,7 +845,7 @@
   text-transform: uppercase;
   color: var(--text-3);
   padding: 16px 24px 8px;
-  width: min(1800px, 100%);
+  width: min(800px, 100%);
   box-sizing: border-box;
   margin: 0 auto;
 }
@@ -856,7 +880,7 @@
 #loadHqpList {
   padding: 0;
   width: 100%;
-  max-width: 1800px;
+  max-width: 800px;
   margin: 0 auto;
   box-sizing: border-box;
 }

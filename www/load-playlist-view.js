@@ -67,33 +67,45 @@ export default class LoadPlaylistView  extends Subview {
   
   populateCustomList() {
     this.$customList.empty();
+    const $header = this.$el.find('.loadListCustomSubheader');
     if (Values.areOnDifferentMachines) {
       this.$customList.append(this.makeFyiCustomItem());
+      $header.hide();
       return;
     }
     if (this.customPlaylistPaths.length == 0) {
-      this.$customList.append(this.makeNonItem());
+      // no custom playlists: hide header and show nothing
+      $header.hide();
       return;
-    } 
+    }
+    $header.show();
     for (let i = 0; i < this.customPlaylistPaths.length; i++) {
       const playlist = this.customPlaylistPaths[i];
       const $item = this.makeCustomListItem(playlist, i);
       this.$customList.append($item);
       $item.on('click tap', this.onCustomItemClick);
-      $item.find(".moreButton").on("click tap", e => this.onItemContextButtonClick(e));
+      // wire delete button on the right to perform delete (stop propagation so row click doesn't fire)
+      $item.find('.deleteButton').on('click tap', (e) => {
+        e.stopPropagation();
+        const idx = parseInt($(e.currentTarget).attr('data-index'));
+        const playlistUri = this.customPlaylistPaths[idx];
+        this.contextMenu.playlistUri = playlistUri;
+        this.contextMenu.index = idx;
+        this.contextMenu.doDelete();
+      });
     }
   }
 
-	makeCustomListItem(customPlaylistPath, index) {
+  makeCustomListItem(customPlaylistPath, index) {
     let name = Util.getFilenameFromPath(customPlaylistPath);
     name = name.replace('.m3u8', '');
     let s = '';
     s += `<div class="trackItem loadItem" data-index="${index}">`;
-    s += `<span>${name}</span>`;
-    s += `<div class="iconButton moreButton" data-index="${index}"></div>`;
+    s += `<div class="loadItemName">${name}</div>`;
+    s += `  <div class="right"><div class="iconButton deleteButton" data-index="${index}"></div></div>`;
     s += `</div>`;
     return $(s);
-	}
+  }
 
   populateHqpList() {
 
@@ -208,7 +220,8 @@ export default class LoadPlaylistView  extends Subview {
     const sessionId = this.loadSessionId;
     this.isLoading = true;
 
-    ToastView.show(`Loading playlist`, 0);
+    // Defer showing the 'Loading' toast until we have confirmed transport
+    // so we avoid flashing 'Loading' when the load will immediately fail.
     $(document).trigger('disable-user-input');
 
     if (this.loadTimeoutId) {
@@ -227,6 +240,8 @@ export default class LoadPlaylistView  extends Subview {
         this.finishLoad(false, `Couldn't load playlist`);
       } else {
         let transport = data['GetTransport']['@_value'];
+        // Now that we have transport info, show the indefinite loading toast
+        ToastView.show(`Loading playlist`, 0);
         if (transport == 0) {
           // Can happen when playlist is empty;
           // 240 is what it otherwise returns based on personal testing
@@ -301,7 +316,7 @@ export default class LoadPlaylistView  extends Subview {
       // Show error directly (don't call hide() first — the indefinite
       // "Loading" toast's min-duration delayed-hide would clobber the error)
       if (message) {
-        ToastView.show(`<span class="colorAccent">${message}</span>`, 2500);
+        ToastView.show(`${message}`, 2500);
       } else {
         ToastView.hide();
       }

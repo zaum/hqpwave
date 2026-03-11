@@ -87,7 +87,7 @@ export default class PlaylistView extends Subview {
 
     if (this.playlist.array.length == 0) {
 
-      const $nonItem = $(`<div class="playHisNonItem">Playlist is empty</span>`);
+      const $nonItem = $(`<div class="playHisNonItem">Playlist is empty</div>`);
       this.$list.append($nonItem);
 
     } else {
