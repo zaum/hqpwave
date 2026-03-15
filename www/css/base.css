@@ -41,7 +41,10 @@ body {
   overflow: hidden;
   background-color: var(--bg);
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  /* App sets an explicit pixel height via JS (window.innerHeight) to avoid
+     mobile/embedded 100vh issues. Keep CSS from forcing a larger min-height,
+     otherwise the bottom playbar can get clipped. */
+  min-height: 0;
 }
 
 /* Noise Overlay */

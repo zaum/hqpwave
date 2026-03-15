@@ -985,7 +985,12 @@ export default class App {
   doWindowResize() {
     // Must set <body> height programmatically because
     // 100vh + `webkit-fill-available` fails on Mobile Firefox
-    $('body').height(window.innerHeight);
+    const h = window.innerHeight;
+    $('body').height(h);
+    // Keep the app's root grid from overflowing the visible viewport height.
+    // This prevents bottom clipping of the playbar when the topbar grows taller
+    // (e.g. 768-1024px two-row topbar in some emulated/mobile viewports).
+    $('#page').height(h);
 
     // Views should listen for this if they need to know about window-resize
     $(document).trigger('debounced-window-resize');

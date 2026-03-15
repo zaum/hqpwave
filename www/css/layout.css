@@ -40,7 +40,10 @@
 #page {
   position: relative;
   width: 100%;
-  height: 100vh;
+  /* Body height is set from JS to window.innerHeight for mobile Firefox.
+     Avoid 100vh here (can be larger than the visible viewport), otherwise the
+     bottom playbar gets clipped when overflow is hidden. */
+  height: 100%;
   display: grid;
   grid-template-rows: auto 1fr 70px;
   --sidebar-expanded: 275px;
@@ -246,10 +249,9 @@
   display: none;
 }
 
-#mainArea {
-  height: 100% !important;
-  min-height: 0;
-}
+/* Let the page grid allocate space (topbar auto, main 1fr, playbar fixed).
+   Avoid forcing #mainArea to 100% of the viewport, which can clip the playbar
+   when the topbar grows taller (768-1024px, 2-row topbar). */
 
 @media (min-width: 768px) {
   #topBar {
@@ -564,13 +566,17 @@
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 80px;
-  height: calc(100vh - 80px - 70px);
+  /* Important: don't size sidebar off 100vh; in the 768-1024 layout the
+     topbar is taller than 80px (2 rows), and a 100vh-based height forces the
+     grid's middle row to overflow, clipping the playbar. */
+  position: relative;
+  top: auto;
+  height: 100%;
   overflow: visible;
   /* allow toggle to hang outside */
   width: var(--sidebar-w);
   min-width: 0;
+  min-height: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -794,11 +800,11 @@
 @media (min-width: 768px) {
   #sidebar {
     border-right: 1px solid var(--border);
-    position: sticky;
-    top: 80px;
+    position: relative;
+    top: auto;
     left: auto;
     bottom: auto;
-    height: calc(100vh - 80px - 70px);
+    height: 100%;
     width: var(--sidebar-w);
     max-width: unset;
     transform: none;
@@ -809,6 +815,7 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    min-height: 0;
   }
 
   #page.libraryView #sidebar {
@@ -1240,10 +1247,11 @@
   background-color: var(--bg);
   width: 100%;
   min-width: 320px;
-  height: calc(100vh - 80px - 70px);
+  height: auto;
   padding-top: 0;
   overflow-y: hidden;
   overflow-x: hidden;
+  min-height: 0;
 }
 
 #page:not(.libraryView) #mainArea {
@@ -1252,7 +1260,6 @@
 
 @media (min-width: 768px) {
   #mainArea {
-    height: calc(100vh - 80px - 70px);
     padding-top: 20px;
   }
 }

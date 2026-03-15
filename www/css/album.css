@@ -223,7 +223,10 @@
   #albumViewPicture,
   .cover {
     width: auto;
-    height: calc(100vh - 80px - 70px - 80px);
+    /* Don't size from 100vh: topbar height varies (2-row at 768-1024px),
+       and a 100vh-based height can force the main grid row to overflow,
+       clipping the playbar. Size relative to the album view container. */
+    height: calc(100% - 80px);
     max-height: 560px;
     aspect-ratio: 1 / 1;
   }
