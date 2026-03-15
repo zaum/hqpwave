@@ -381,14 +381,16 @@ export default class PlaybarView {
     if (!this.$volumeInline || this.$volumeInline.length <= 0 || !this.$volumeToggle || this.$volumeToggle.length <= 0) {
       return;
     }
-    const parent = this.$volumeInline.parent();
-    if (!parent || parent.length <= 0) {
-      return;
-    }
-
-    const parentRect = parent[0].getBoundingClientRect();
+    // Position relative to the element's offsetParent (the actual containing block
+    // for absolutely-positioned elements). Using the DOM offsetParent ensures the
+    // computed left matches the CSS positioning context (fixes placement on small
+    // screens where the parent may be statically positioned).
+    const el = this.$volumeInline[0];
+    const container = el.offsetParent || document.documentElement;
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
     const toggleRect = this.$volumeToggle[0].getBoundingClientRect();
-    const centerX = (toggleRect.left + (toggleRect.width / 2)) - parentRect.left;
+    const centerX = (toggleRect.left + (toggleRect.width / 2)) - containerRect.left;
     this.$volumeInline.css('left', `${centerX}px`);
   }
 

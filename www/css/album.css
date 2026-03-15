@@ -118,6 +118,8 @@
   }
 }
 
+/* Make wrapper square and let image fill it (moved below to avoid being overridden) */
+
 
 /* Blurred cover as background */
 .hero-bg {
@@ -424,9 +426,15 @@
   align-items: center;
   gap: 0;
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 11px !important;
   font-weight: 300;
   color: var(--text-3);
+}
+
+/* Force all descendants to inherit the album stats font-size to avoid
+   media-query or global rules overriding it. */
+#albumViewStats * {
+  font-size: inherit !important;
 }
 
 #albumViewStats .albumStatsItem,
@@ -460,8 +468,7 @@
   min-width: 0;
   width: 100%;
   padding: 0 calc(40px) 0 0;
-  font-size: 13.5px;
-  /* match track title/number sizing */
+  font-size: inherit;
 }
 
 .albumStatsLeft {
@@ -763,7 +770,46 @@
   .track-list-header>*:nth-child(4) {
     display: block;
   }
+
 }
+
+  /* Square wrapper + responsive caps for wide screens */
+  @media (min-width: 1024px) {
+    .albumViewPictureOuter,
+    .cover-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      height: auto;
+      overflow: hidden;
+      position: sticky;
+      top: 32px;
+    }
+
+    #albumViewPicture,
+    .cover {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      max-height: none;
+    }
+  }
+
+  @media (min-width: 1600px) {
+    .albumViewPictureOuter,
+    .cover-wrap {
+      max-width: 720px;
+    }
+        #albumViewPicture,
+    .cover {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      max-height: none;
+      max-width: 520px;
+    }
+  }
 
 /* Track Item */
 .track-item,

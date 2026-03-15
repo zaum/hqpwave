@@ -286,7 +286,7 @@
       "search search search";
     row-gap: 16px;
     height: auto;
-    min-height: 0;
+    min-height: 100px;
     padding: 12px 28px 16px;
     border-bottom: none;
     transition: transform 150ms ease;
@@ -308,7 +308,7 @@
   #topBar>.brand,
   #topBar .topbar-nav,
   #topBar>.topbar-right {
-    max-height: 60px;
+    max-height: 80px;
     overflow: hidden;
     transition: transform 120ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 120ms ease;
     will-change: transform, opacity;
@@ -1233,16 +1233,13 @@
 
 /* Mobile: backButton in topbar grid */
 #backToLibraryButton {
-  position: static !important;
   grid-area: searchToggle;
   justify-self: start;
   align-self: center;
   width: 32px;
-  height: 32px;
+  height: 2px;
   margin-right: 4px;
   margin-left: -4px;
-  top: auto !important;
-  left: auto !important;
   z-index: 340;
 }
 
@@ -1306,6 +1303,7 @@
 @media (min-width: 769px) {
   #mainArea {
     height: calc(100vh - 80px - 70px);
+    padding-top: 20px;
   }
 }
 
@@ -1738,6 +1736,88 @@
 #seekForwardButton:hover:before {
   opacity: 1 !important;
   filter: brightness(1.2);
+}
+
+/* Hide 15s seek buttons on narrower views (below 1024px) */
+@media (max-width: 1024px) {
+  #seekBackwardButton,
+  #seekForwardButton {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Hide current/remaining time when progress bar is hidden on narrower views */
+  .playingTrackCurrentTime,
+  .playingTrackCurrentTime[style],
+  #playingTrackLength {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* On narrower views (<=1024px) place transport controls to the right,
+   directly before the volume controls, and let album info expand to fill
+   the available space. */
+@media (max-width: 1024px) {
+    /* Hide horizontal play progress so the playing text can expand */
+    #playProgressView {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      width: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      pointer-events: none !important;
+    }
+
+  .playbar-center {
+    order: 2;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  #playbarView .pb-right {
+    /* keep volume block after transport buttons */
+    margin-left: 0;
+    order: 3;
+  }
+
+  #playingTrackArea {
+    /* keep progress/time compact so the playingText can expand to the right */
+    order: 1;
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  #playingText {
+    order: 0;
+    /* main flexible region: fill remaining space up to transport buttons */
+    flex: 1 1 auto;
+    max-width: none !important;
+    width: auto !important;
+    min-width: 0;
+    margin-right: 12px;
+  }
+}
+
+/* Ensure artist/title fill available width up to transport buttons with a small gap */
+@media (max-width: 1024px) {
+  #playingText {
+    margin-right: 12px;
+    padding-right: 4px;
+  }
+
+  #playingText .playingArtist,
+  #playingText .playingTitle {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 #playingTrackArea {
@@ -2495,3 +2575,29 @@
 }
 
 /* The -moz-focus-inner pseudo-element is Firefox-specific; rules are omitted for cross-browser compatibility. */
+
+/* Override: ensure horizontal progress and small time blocks are fully hidden
+   at widths <= 1024px. Placed at EOF to override earlier media rules. */
+@media (max-width: 1024px) {
+  #playProgressView {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .playingTrackCurrentTime[style],
+  .mobile-time-display,
+  .playingTrackCurrentTime:not(.mobile-time-display) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
