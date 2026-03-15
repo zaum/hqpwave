@@ -255,11 +255,16 @@
 
 @media (min-width: 768px) {
   #topBar {
-    grid-template-columns: calc(var(--sidebar-expanded) - 28px) 1fr auto;
+    /* 768–1024px: keep the navbar row stable between views (no jump).
+       Reserve a dedicated "back" slot on the search row so the back button
+       never overlaps the search input. In library view the back button is
+       hidden, so the first column naturally collapses to 0. */
+    grid-template-columns: auto 1fr auto;
     grid-template-areas:
       "brand nav right"
       "search search search";
     row-gap: 16px;
+    column-gap: 24px;
     height: auto;
     min-height: 100px;
     padding: 12px 28px 16px;
@@ -1178,8 +1183,8 @@
 @media (max-width: 1024px) {
   #backToLibraryButton {
     position: static;
-    grid-row: 2;
-    grid-column: 1;
+    /* Mobile/tablet topbar grid has a dedicated left slot next to search. */
+    grid-area: searchToggle;
     justify-self: start;
     align-self: center;
     margin-left: -4px;
@@ -1191,23 +1196,32 @@
 /* 768-1024px: in non-library views don't reserve the "sidebar width" column.
    Give the back button an auto column and let search take the rest. */
 @media (min-width: 768px) and (max-width: 1024px) {
-  #page:not(.libraryView) #topBar {
-    /* Keep a dedicated narrow column for the back button so it doesn't inherit
-       the (wide) brand column width. */
-    grid-template-columns: auto 1fr 1fr auto;
-    grid-template-areas:
-      "brand brand nav right"
-      "back search search search";
-  }
-
-  #page:not(.libraryView) #backToLibraryButton {
-    grid-area: back;
-    margin-left: -4px;
-    margin-right: 8px;
-  }
-
   #page:not(.libraryView) #topBar > .search-wrap {
     grid-area: search;
+    /* Reserve real space so the search field background/border doesn't sit under
+       the back button (we only shifted icon/text before). */
+    padding-left: 36px;
+    box-sizing: border-box;
+  }
+
+  /* Put the back button in the search row (left side). */
+  #page:not(.libraryView) #backToLibraryButton {
+    grid-area: search;
+    justify-self: start;
+    align-self: center;
+    margin-left: -4px;
+    margin-right: 8px;
+    z-index: 340;
+  }
+
+  /* Shift the search icon + input text so they stay inside the field and
+     don't sit under the back button. */
+  #page:not(.libraryView) #topBar .search-icon {
+    left: 50px; /* 14px base + ~36px for back button slot */
+  }
+
+  #page:not(.libraryView) #topBar .search-input {
+    padding-left: 76px; /* 40px base + ~36px for back button slot */
   }
 }
 
@@ -2020,6 +2034,23 @@
 .volume-inline-thumb.isDragging::after {
   opacity: 1;
   transform: translateY(-50%) scale(1);
+}
+
+/* <=1024px: when the *popup* (vertical) volume control is open, place the dot at the
+   top edge of the filled area, centered on the track. Scoped to popup-open so it
+   won't affect the >=1024px horizontal inline slider. */
+@media (max-width: 1024px) {
+  #playbarView.isVolumePopupOpen #volumeInlineThumb::after {
+    right: auto;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+
+  #playbarView.isVolumePopupOpen #volumeInlineTrack:hover #volumeInlineThumb::after,
+  #playbarView.isVolumePopupOpen #volumeInlineThumb.isDragging::after {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .volume-inline-text {

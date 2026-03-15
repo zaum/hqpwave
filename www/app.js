@@ -321,7 +321,7 @@ export default class App {
    * Show history view.
    */
   showHistoryView() {
-    this.playlistView.showSubview("history");
+    this.showPlaylistCompoundView("history");
   }
 
   /**
@@ -441,13 +441,43 @@ export default class App {
     }
   }
 
-  showPlaylistCompoundView() {
+  /**
+   * Show playlist compound view and choose which internal subview is active.
+   * @param {"playlist"|"history"|"load"} type
+   */
+  showPlaylistCompoundView(type = "playlist") {
     if (ViewUtil.isVisible(this.playlistView.$el) && !this.isPlaylistViewUsable()) {
       this.resetStalePlaylistViewState();
     }
-    this.showSubview(this.playlistView);
-    this.playlistView.showSubview("playlist");
-    Service.queueCommandFront(Commands.playlistGet());
+
+    // If already on top, just switch the internal subview (no overlay needed).
+    if (this.getTopSubview() === this.playlistView) {
+      this.playlistView.showSubview(type);
+      this.updatePageHolderSubviewClass(this.playlistView);
+      return;
+    }
+
+    this.transition(() => {
+      // Hide ALL other subviews behind the overlay.
+      for (let other of this.subviews) {
+        if (other !== this.playlistView && ViewUtil.isVisible(other.$el)) {
+          other.hide();
+        }
+      }
+
+      TopBarUtil.returnSubviewHeader(true);
+      this.subviewZ++;
+      this.playlistView.$el.css('z-index', this.subviewZ);
+      this.playlistView.showSubview(type);
+      this.updatePageHolderSubviewClass(this.playlistView);
+      TopBarUtil.updateFor(this.playlistView.$el, true);
+      ViewUtil.setFocus(this.playlistView.$el);
+
+      // Only fetch playlist data when showing the main playlist view.
+      if (type === "playlist") {
+        Service.queueCommandFront(Commands.playlistGet());
+      }
+    });
   }
 
   isPlaylistViewUsable() {

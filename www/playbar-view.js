@@ -524,7 +524,8 @@ export default class PlaybarView {
       : null;
     const clientX = (e.clientX !== undefined) ? e.clientX : (touchPoint ? touchPoint.clientX : null);
     const clientY = (e.clientY !== undefined) ? e.clientY : (touchPoint ? touchPoint.clientY : null);
-    const isVertical = window.innerWidth <= 1024;
+    // Breakpoints: 480 / 768 / 1024 / 1600. CSS switches to horizontal at >=1024.
+    const isVertical = window.innerWidth < 1024;
 
     let ratio;
     if (isVertical) {
@@ -654,7 +655,8 @@ export default class PlaybarView {
     // Map roughly -40..+40 dB into 0..1
     let ratio = (vol + 40) / 80;
     ratio = Math.max(0, Math.min(1, ratio));
-    const isVertical = window.innerWidth <= 1024;
+    // Breakpoints: 480 / 768 / 1024 / 1600. CSS switches to horizontal at >=1024.
+    const isVertical = window.innerWidth < 1024;
     if (isVertical) {
       this.$volumeInlineThumb.css('height', (ratio * 100) + '%');
       this.$volumeInlineThumb.css('width', '100%');
@@ -719,7 +721,8 @@ export default class PlaybarView {
       : null;
     const clientX = (e.clientX !== undefined) ? e.clientX : (touchPoint ? touchPoint.clientX : null);
     const clientY = (e.clientY !== undefined) ? e.clientY : (touchPoint ? touchPoint.clientY : null);
-    const isVertical = window.innerWidth <= 1024;
+    // Breakpoints: 480 / 768 / 1024 / 1600. CSS switches to horizontal at >=1024.
+    const isVertical = window.innerWidth < 1024;
 
     let ratio;
     if (isVertical) {
@@ -734,7 +737,8 @@ export default class PlaybarView {
   }
 
   _setVolumeThumbRatio(ratio) {
-    const isVertical = window.innerWidth <= 1024;
+    // Breakpoints: 480 / 768 / 1024 / 1600. CSS switches to horizontal at >=1024.
+    const isVertical = window.innerWidth < 1024;
     if (isVertical) {
       this.$volumeInlineThumb.css('height', (ratio * 100) + '%');
       this.$volumeInlineThumb.css('width', '100%');
