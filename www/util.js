@@ -140,7 +140,7 @@ Util.makeHowLongAgoString = (ms) => {
   }
   let mo  = (ms / (1000 * 60 * 60 * 24 * 30));
   if (mo < 12.5) {
-    return Math.round(m) + 'mo'
+    return Math.round(mo) + 'mo';
   }
   return '1y+';
 };

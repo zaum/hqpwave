@@ -113,8 +113,10 @@ export default class PlaybarView {
 
   _initCircularProgress() {
     // Breakpoints: 480 / 768 / 1024 / 1600
-    // Keep 768 as tablet start (CSS uses min-width: 768px).
-    const isMobile = window.innerWidth < 768;
+    // Keep the circular progress visible up to 1024px. The horizontal progress
+    // bar is hidden at <=1024px in CSS, so without this we'd have no progress UI
+    // between 768–1024.
+    const isMobile = window.innerWidth < 1024;
     const createCircular = () => {
       if (!this.circularProgress) {
         this.circularProgress = new CircularProgress(this.$playButtonContainer, {
@@ -135,7 +137,7 @@ export default class PlaybarView {
       destroyCircular();
     }
     window.addEventListener('resize', () => {
-      const nowMobile = window.innerWidth < 768;
+      const nowMobile = window.innerWidth < 1024;
       if (nowMobile) {
         createCircular();
       } else {

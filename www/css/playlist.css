@@ -291,6 +291,44 @@
 
 #historyList .trackItem {
   border-bottom: none;
+  z-index: 1;
+}
+
+/* Make album-header rows match regular trackItem padding so the timeline column
+   and markers align perfectly with the spine. */
+#historyList .trackItemAlbumHeader {
+  padding-left: var(--history-item-pad-x) !important;
+  padding-right: var(--history-item-pad-x) !important;
+}
+
+/* Keep timeline/markers above the list-level spine. */
+#historyList .timelineCol,
+#historyList .timelineCol-placeholder {
+  z-index: 2;
+}
+
+/* History spine: draw per-row using the same absolute X for every row.
+   Using .timelineCol::before can shift on album-header rows because they had different padding. */
+#historyList {
+  --history-item-pad-x: 12px;
+  --history-item-pad-y: 8px;
+  --history-timeline-col-w: 48px;
+  --history-spine-x: calc(var(--history-item-pad-x) + (var(--history-timeline-col-w) / 2));
+  --history-spine-overhang: 12px; /* cover the largest row padding (album header uses 12px) */
+}
+
+#historyList .trackItem::before {
+  content: '';
+  position: absolute;
+  /* Don't overhang: adjacent rows touch, so 0..100% is continuous and avoids
+     double-painted overlaps that change opacity at row boundaries. */
+  top: 0;
+  bottom: 0;
+  left: var(--history-spine-x);
+  width: 2px;
+  background: var(--border-md);
+  pointer-events: none;
+  z-index: 0;
 }
 
 #historyList .trackItem::after {
@@ -659,19 +697,27 @@
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
+  z-index: 0; /* create stacking context for spine + markers */
+  /* Shared constants so the spine and markers can stay aligned. */
+  --history-item-pad-x: 12px;
+  --history-timeline-col-w: 48px;
 }
 
 #historyList::before {
   content: '';
   position: absolute;
-  left: 48px;
+  /* Align with marker center: trackItem padding-left + half timeline column width. */
+  left: calc(var(--history-item-pad-x) + (var(--history-timeline-col-w) * 0.5));
   right: 0;
-  top: 0;
-  bottom: 0;
+  /* Extend slightly beyond the first/last row padding so it never looks "cut off". */
+  top: -8px;
+  bottom: -8px;
   width: 2px;
   background: var(--border-md);
   z-index: 0;
   pointer-events: none;
+  /* Use per-row spine instead; this can otherwise get covered by row backgrounds. */
+  display: none;
 }
 
 .historyItem {
@@ -725,7 +771,9 @@
   display: flex;
   align-items: stretch;
   justify-content: center;
-  height: 100%;
+  align-self: stretch;
+  position: relative;
+  height: auto;
   background: transparent;
   pointer-events: none;
 }
@@ -734,21 +782,30 @@
   width: 48px;
   flex-shrink: 0;
   display: flex;
+  align-self: stretch;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  position: relative;
+  height: auto;
 }
 
 .timelineInner {
-  position: relative;
-  left: 17px;
-  top: 14px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
   width: 18px;
   display: flex;
   align-items: center;
   flex-direction: column;
-  height: 100%;
   pointer-events: none;
+}
+
+/* Center the marker container within the 48px timeline column (avoid magic left offsets). */
+#historyList .timelineInner,
+#historyList .timelineInner-placeholder {
+  left: 0;
+  right: 0;
+  margin: auto;
 }
 
 .timelineInner .line {
@@ -761,14 +818,14 @@
 
 .timelineInner .line.top {
   top: 0;
-  bottom: calc(50% + 13px);
+  bottom: calc(50% + 16px);
   left: 50%;
   width: 2px;
   transform: translateX(-50%);
 }
 
 .timelineInner .line.bottom {
-  top: calc(50% + 13px);
+  top: calc(50% + 16px);
   bottom: 0;
   left: 50%;
   width: 2px;
@@ -785,17 +842,17 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 26px;
-  height: 26px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: 2px solid var(--border-md);
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 8px;
   color: var(--text-2);
   box-sizing: border-box;
-  margin: 4px 0;
+  margin: 0;
   background: var(--bg);
   position: relative;
   z-index: 60;
@@ -809,12 +866,51 @@
   position: relative;
   z-index: 70;
   color: var(--text-2);
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1;
 }
 
+/* Album header rows in history use the "-placeholder" variant. Style it so the spine
+   is still visible and aligned with normal timeline items. */
+#historyList .timelineInner-placeholder {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+#historyList .timelineInner .line,
+#historyList .timelineInner-placeholder .line {
+  display: none;
+}
+
+/* Below tablet width the history timeline (spine + date markers) should not appear. */
+@media (max-width: 768px) {
+  #historyList .timelineCol,
+  #historyList .timelineCol-placeholder {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+  }
+
+  #historyList .timelineInner,
+  #historyList .timelineInner-placeholder,
+  #historyList::before {
+    display: none !important;
+  }
+
+  /* Hide the per-row spine as well. */
+  #historyList .trackItem::before {
+    content: none !important;
+  }
+}
+
 #historyList .trackItemAlbumHeader {
-  background: transparent;
+  background: transparent !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════

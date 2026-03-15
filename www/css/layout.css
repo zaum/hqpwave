@@ -1,24 +1,17 @@
 @keyframes pulse-glow {
-  0% {
-    box-shadow: none;
-  }
-
-  50% {
-    box-shadow: 0 0 18px 1px var(--accent);
-  }
-
-  100% {
-    box-shadow: none;
-  }
+  0% { opacity: 0; transform: translateZ(0) scale(0.985); }
+  50% { opacity: 1; transform: translateZ(0) scale(1); }
+  100% { opacity: 0; transform: translateZ(0) scale(0.985); }
 }
 
-.music-playing.isPlaying~.pb-cover {
-  animation: pulse-glow 2.8s linear infinite;
-  box-shadow: none;
+/* Animate glow on a pseudo-element (opacity) instead of animating box-shadow directly.
+   This avoids a visible "vibration" at peak brightness on some GPUs/browsers. */
+.music-playing.isPlaying~.pb-cover::before {
+  animation: pulse-glow 2.8s ease-in-out infinite;
 }
 
 @media (min-width: 768px) {
-  .music-playing.isPlaying~.pb-cover {
+  .music-playing.isPlaying~.pb-cover::before {
     animation: none;
   }
 }
@@ -1314,9 +1307,24 @@
   border-radius: 5px;
   border: 1px solid var(--border-md);
   flex-shrink: 0;
-  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  overflow: visible; /* allow glow to render outside */
   cursor: pointer;
   transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.pb-cover::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  /* Keep the shadow constant; animate only opacity via keyframes for stability. */
+  box-shadow: 0 0 18px 1px var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  will-change: opacity, transform;
 }
 
 .pb-cover:hover {
@@ -1328,6 +1336,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 4px; /* clip image without relying on parent overflow */
+  position: relative;
+  z-index: 1;
 }
 
 .pb-cover img[src=""],
@@ -1913,6 +1924,29 @@
   transition: none;
 }
 
+#playProgressThumb::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%) scale(0.9);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 140ms ease, transform 140ms ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#playProgressView:hover #playProgressThumb::after,
+#playProgressInner:hover #playProgressThumb::after,
+#playProgressThumb.isDragging::after {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
 #playProgressThumb.isAnimating {
   transition: none;
 }
@@ -2221,7 +2255,7 @@
   animation-duration: 0.7s;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   #musicPlaying {
     display: flex;
   }

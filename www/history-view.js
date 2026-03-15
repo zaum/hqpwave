@@ -18,6 +18,7 @@ export default class HistoryView  extends Subview {
   $count;
   trackMetaChangeHandler;
   tracks;
+  _historyRefreshTimerId = 0;
 
   constructor($el) {
   	super($el);
@@ -31,12 +32,24 @@ export default class HistoryView  extends Subview {
     this.populate();
     $(document).on('model-library-updated', this.onModelLibraryUpdated);
     $(document).on('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
+    // When history changes (MetaUtil.addToHistory happens on meta-track-incremented),
+    // re-render so new entries appear while the view is open.
+    $(document).on('meta-track-incremented', this.onHistoryChanged);
+    // If the meta layer initializes/retries while History is open, refresh once it's ready
+    // so the view doesn't look stale/empty.
+    $(document).on('meta-load-result', this.onMetaLoadResult);
   }
 
   onHide() {
     TrackListItemContextMenu.hide();
     $(document).off('model-library-updated', this.onModelLibraryUpdated);
     $(document).off('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
+    $(document).off('meta-track-incremented', this.onHistoryChanged);
+    $(document).off('meta-load-result', this.onMetaLoadResult);
+    if (this._historyRefreshTimerId) {
+      clearTimeout(this._historyRefreshTimerId);
+      this._historyRefreshTimerId = 0;
+    }
   }
 
   clear() {
@@ -104,5 +117,22 @@ export default class HistoryView  extends Subview {
 
   onModelLibraryUpdated = () => {
     this.populate();
+  };
+
+  onHistoryChanged = () => {
+    // Debounce bursts (track changes can trigger multiple updates quickly).
+    if (this._historyRefreshTimerId) {
+      return;
+    }
+    this._historyRefreshTimerId = setTimeout(() => {
+      this._historyRefreshTimerId = 0;
+      this.populate();
+    }, 50);
+  };
+
+  onMetaLoadResult = (e, isSuccess) => {
+    if (isSuccess === true) {
+      this.populate();
+    }
   };
 }

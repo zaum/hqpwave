@@ -132,8 +132,9 @@ export default class TrackListItemUtil {
     // timeline column before left / cover
     if (hideDragIcon) {
       // history item: render timeline marker and connector lines
+      const hasMarker = (!sameDatePrev && !!leftText);
       s += `  <div class="timelineCol">`;
-      s += `    <div class="timelineInner">`;
+      s += `    <div class="timelineInner ${hasMarker ? 'hasMarker' : 'noMarker'}">`;
       s += `      <div class="line top visible"></div>`;
       if (!sameDatePrev && leftText) {
         s += `      <div class="marker visible"><span class="markerText">${leftText}</span></div>`;
@@ -180,14 +181,17 @@ export default class TrackListItemUtil {
   }
 
   static makeNonLibraryHistoryItem(agoString, dateKey = '', sameDatePrev = false, sameDateNext = false) {
+    const hasMarker = (!sameDatePrev && !!agoString);
     let s = `<div class="trackItem groupSingle">`;
     s += `  <div class="timelineCol">`;
-    s += `    <div class="timelineInner">`;
-    s += `      <div class="line top ${sameDatePrev ? 'visible' : ''}"></div>`;
+    s += `    <div class="timelineInner ${hasMarker ? 'hasMarker' : 'noMarker'}">`;
+    // Keep the timeline line continuous even for unknown/non-library items.
+    // Otherwise the history "spine" appears to stop when older items can't be resolved.
+    s += `      <div class="line top visible"></div>`;
     if (!sameDatePrev && agoString) {
       s += `      <div class="marker visible"><span class="markerText">${agoString}</span></div>`;
     }
-    s += `      <div class="line bottom ${sameDateNext ? 'visible' : ''}"></div>`;
+    s += `      <div class="line bottom visible"></div>`;
     s += `    </div>`;
     s += `  </div>`;
     s += `  <div class="left historyItemTime"></div>`;

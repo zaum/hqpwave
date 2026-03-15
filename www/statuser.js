@@ -114,9 +114,16 @@ class Statuser {
           if (!hash) {
             return;
           }
+
+          // History (and related UI) should still update even if the metadata layer
+          // is not ready/available. When enabled we do the full increment + server sync;
+          // otherwise we at least update local history so the History view doesn't look "stuck".
           if (MetaUtil.isEnabled) {
             // cl('statuser - incrementing numviews');
             MetaUtil.incrementTrackViewsFor(hash);
+          } else {
+            MetaUtil.addToHistory(hash);
+            $(document).trigger('meta-track-incremented', hash);
           }
         }
       }
