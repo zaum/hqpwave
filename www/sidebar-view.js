@@ -150,6 +150,11 @@ class SidebarView {
 
     // Set initial active state for "All Albums"
     this.$browseItems.filter('[data-filter="all-albums"]').addClass('active');
+
+    // Ensure toggle highlight matches initial filter state.
+    const hasAny = this.hasActiveFilters();
+    this.$toggle.toggleClass('hasActiveFilters', hasAny);
+    this.$page.toggleClass('hasSidebarFilters', hasAny);
   }
 
   toggleCollapsed() {
@@ -528,6 +533,12 @@ class SidebarView {
   onFiltersChanged() {
     // Update visibility of reset icons based on active filters
     this.updateResetIcons();
+
+    // Highlight the sidebar toggle icon when any filter is active.
+    // (Works in all layouts since the same #sidebarToggle element is moved around.)
+    const hasAny = this.hasActiveFilters();
+    this.$toggle.toggleClass('hasActiveFilters', hasAny);
+    this.$page.toggleClass('hasSidebarFilters', hasAny);
 
     // Trigger custom event that library-view can listen to
     $(document).trigger('sidebar-filters-changed', [this.getFilterState()]);
