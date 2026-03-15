@@ -6,7 +6,10 @@
   overflow-x: hidden;
   overflow-y: hidden;
   z-index: 100;
-  position: relative;
+  /* Keep main views layered on top of each other inside #mainArea. */
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
 }
 

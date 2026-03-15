@@ -23,41 +23,14 @@
   }
 }
 
-/* Back arrow and search row for mobile */
+/* (Search row styles were used by an older layout; keep the selector around
+   because other CSS references it, but avoid breakpoint-based hiding of the
+   back button here. Back button placement lives in the dedicated section
+   further down.) */
 .search-row {
   display: flex;
   align-items: center;
   gap: 0;
-}
-
-
-
-.search-row {
-  gap: 0;
-}
-
-#backToLibraryButton {
-  display: flex;
-}
-
-.search-wrap {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-@media (min-width: 768px) {
-  .search-row {
-    gap: 0;
-  }
-
-  #backToLibraryButton {
-    display: none;
-  }
-
-  .search-wrap {
-    flex: unset;
-    min-width: unset;
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -320,6 +293,10 @@
     padding-top: 4px;
     padding-bottom: 8px;
     gap: unset;
+    /* Allow the topbar to actually shrink on scroll in the 768-1024px layout,
+       otherwise the second-row search field can't move up because min-height
+       keeps the container tall. */
+    min-height: 0;
   }
 
   #topBar.topbar-scrolled>.brand,
@@ -353,7 +330,7 @@
   }
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 1024px) {
   #topBar {
     grid-template-columns: calc(var(--sidebar-expanded) - 28px) auto 1fr auto;
     grid-template-areas: "brand nav search right";
@@ -1178,31 +1155,9 @@
    ═══════════════════════════════════════════════════════════════ */
 
 
-/* default sizing so the button isn't huge or offscreen on pages without specific placement */
+/* Placement rules only (visual styling is in components.css). */
 #backToLibraryButton {
-  position: absolute;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 350;
-}
-
-#backToLibraryButton svg {
-  width: 20px;
-  height: 20px;
-}
-
-/* Remove unwanted background/outline on the back button */
-#backToLibraryButton {
-  background: transparent;
-  border: none;
-  color: var(--text-2);
-}
-
-#backToLibraryButton:hover {
-  background: transparent;
 }
 
 
@@ -1212,68 +1167,63 @@
   display: none;
 }
 
-/* Album view - to the left of the album image, aligned with image top */
-#page.albumView #backToLibraryButton {
-  top: 114px;
-  left: 20px;
+/* <= 1024px: keep the back button in the topbar next to the search field. */
+@media (max-width: 1024px) {
+  #backToLibraryButton {
+    position: static;
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: start;
+    align-self: center;
+    margin-left: -4px;
+    margin-right: 4px;
+    z-index: 340;
+  }
 }
 
-/* Settings views - to the left of the centered 640px content block */
-#page.settingsView #backToLibraryButton,
-#page.hqpSettingsView #backToLibraryButton {
-  top: 118px;
-  left: max(14px, calc(50% - 320px - 36px));
+/* 768-1024px: in non-library views don't reserve the "sidebar width" column.
+   Give the back button an auto column and let search take the rest. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #page:not(.libraryView) #topBar {
+    /* Keep a dedicated narrow column for the back button so it doesn't inherit
+       the (wide) brand column width. */
+    grid-template-columns: auto 1fr 1fr auto;
+    grid-template-areas:
+      "brand brand nav right"
+      "back search search search";
+  }
+
+  #page:not(.libraryView) #backToLibraryButton {
+    grid-area: back;
+    margin-left: -4px;
+    margin-right: 8px;
+  }
+
+  #page:not(.libraryView) #topBar > .search-wrap {
+    grid-area: search;
+  }
 }
 
-/* Playlist view - to the left of the centered 900px content block */
-#page.playlistView #backToLibraryButton {
-  top: 100px;
-  left: max(14px, calc(50% - 450px - 36px));
-}
-
-/* Mobile: backButton in topbar grid */
-#backToLibraryButton {
-  grid-area: searchToggle;
-  justify-self: start;
-  align-self: center;
-  width: 32px;
-  height: 2px;
-  margin-right: 4px;
-  margin-left: -4px;
-  z-index: 340;
-}
-
-#backToLibraryButton svg {
-  width: 24px;
-  height: 24px;
-}
-
-@media (min-width: 769px) {
+/* >= 1025px: use the original absolute placement next to view-specific content blocks. */
+@media (min-width: 1024px) {
   #backToLibraryButton {
     position: absolute;
-    width: 36px;
-    height: 36px;
-    margin-right: 0;
-    margin-left: 0;
-    z-index: 350;
   }
 
-  #backToLibraryButton svg {
-    width: 20px;
-    height: 20px;
-  }
-
+  /* Album view - to the left of the album image, aligned with image top */
   #page.albumView #backToLibraryButton {
     top: 114px;
     left: 20px;
   }
 
+  /* Settings views - to the left of the centered 640px content block */
   #page.settingsView #backToLibraryButton,
   #page.hqpSettingsView #backToLibraryButton {
     top: 118px;
     left: max(14px, calc(50% - 320px - 36px));
   }
 
+  /* Playlist view - to the left of the centered 900px content block */
   #page.playlistView #backToLibraryButton {
     top: 100px;
     left: max(14px, calc(50% - 450px - 36px));
@@ -1300,7 +1250,7 @@
   grid-column: 1 / -1;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   #mainArea {
     height: calc(100vh - 80px - 70px);
     padding-top: 20px;
@@ -1593,7 +1543,7 @@
   gap: 12px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   #playButton {
     margin-right: 4px;
     width: 36px;
@@ -1879,7 +1829,7 @@
   color: var(--text-2);
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 
   .playingTrackCurrentTime:not(.mobile-time-display),
   #playingTrackLength {
@@ -1908,7 +1858,7 @@
   z-index: 1;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   #playProgressView {
     display: flex !important;
   }
@@ -1946,7 +1896,7 @@
   transition: none;
 }
 
-@media (min-width: 481px) {
+@media (min-width: 480px) {
   #playProgressThumb {
     transition: width 0s linear;
   }

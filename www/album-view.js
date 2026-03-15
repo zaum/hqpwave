@@ -133,11 +133,12 @@ export default class AlbumView extends Subview {
     // Reset any stale visibility state (e.g. left over from full-overlay animation)
     this.$picture.css({ visibility: '', transform: '' });
 
+    super.show();
+
     // nb, list items get generated on every show
+    // Populate after show so layout/rects are valid (display:none breaks measurements).
     this.populate(album);
     this.$el[0].scrollTop = 0;
-
-    super.show();
 
     $(document).on('model-status-updated', this.updateHighlightedTrack);
     $(document).on('new-track', this.onNewTrack);

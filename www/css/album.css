@@ -11,7 +11,10 @@
   overflow-y: auto;
   overflow-x: hidden;
   align-items: start;
-  position: relative;
+  /* Keep main views layered on top of each other inside #mainArea. */
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 #albumViewWrapper {

@@ -29,6 +29,10 @@ export default class Subview {
   show(...extra) {
     this.$el.css('opacity', 1);
     this.$el.css('filter', 'brightness(1)');
+    // Use display:none for hiding subviews so no descendant can "poke through"
+    // behind translucent UI (topbar). On show, clear inline display so CSS
+    // controls the correct layout mode (grid/flex/etc).
+    this.$el.css('display', '');
     ViewUtil.setVisible(this.$el, true);
     ViewUtil.setFocus(this.$el);
   }
@@ -39,6 +43,7 @@ export default class Subview {
    */
   hide(callback = null) {
     ViewUtil.setVisible(this.$el, false);
+    this.$el.css('display', 'none');
     this.$el.css('opacity', 1);
     this.$el.css('filter', 'brightness(1)');
     if (callback) {

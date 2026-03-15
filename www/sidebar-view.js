@@ -158,7 +158,9 @@ class SidebarView {
   }
 
   updateTogglePlacementForViewport() {
-    const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
+    // Breakpoints: 480 / 768 / 1024 / 1600
+    // Treat 768 as the start of the tablet layout (CSS uses min-width: 768px).
+    const isMobileViewport = window.innerWidth < 768;
 
     if (isMobileViewport && !this.isMobileSidebarMode) {
       this.isMobileSidebarMode = true;

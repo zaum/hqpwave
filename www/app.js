@@ -159,9 +159,12 @@ export default class App {
 
     this.updateMostStateClasses();
 
-    // Make the correct things visible
+    // Make the correct things visible.
+    // Important: don't call subview.hide() here because subclasses may have
+    // side effects (event unbinding, enabling input, etc.).
     for (let subview of this.subviews) {
       ViewUtil.setVisible(subview.$el, false);
+      subview.$el.css('display', 'none');
     }
     this.libraryView.show();
     this.updatePageHolderSubviewClass(this.libraryView);
@@ -302,8 +305,7 @@ export default class App {
         }
       }
 
-      ViewUtil.setVisible(this.libraryView.$el, true);
-      this.libraryView.$el.css('opacity', 1);
+      this.libraryView.show();
       this.updatePageHolderSubviewClass(this.libraryView);
       TopBarUtil.returnSubviewHeader(true);
       TopBarUtil.updateFor(this.libraryView.$el, true);
@@ -470,11 +472,11 @@ export default class App {
     ViewUtil.setVisible(this.playlistView.mainView.$el, false);
     ViewUtil.setVisible(this.playlistView.historyView.$el, false);
     ViewUtil.setVisible(this.playlistView.loadView.$el, false);
-    ViewUtil.setVisible(this.playlistView.$el, false);
+    this.playlistView.hide();
   }
 
   trackListItemToAlbum(album) {
-    ViewUtil.setVisible(this.albumView.$el, false);
+    this.albumView.hide();
     this.playlistView.hide();
     setTimeout(() => this.showAlbumView(album), 200);
   }
@@ -611,8 +613,7 @@ export default class App {
       const exposed = this.getTopSubview();
       if (!exposed) {
         // Nothing visible — show library as fallback
-        ViewUtil.setVisible(this.libraryView.$el, true);
-        this.libraryView.$el.css('opacity', 1);
+        this.libraryView.show();
         this.updatePageHolderSubviewClass(this.libraryView);
       } else {
         this.updatePageHolderSubviewClass(exposed);

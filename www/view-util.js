@@ -21,7 +21,9 @@ ViewUtil.setVisible = ($el, b) => {
 };
 
 ViewUtil.isVisible = ($el) => {
-  return ($el.css("visibility") == 'visible');
+  // Treat empty-string as visible (default CSS behavior). The app sometimes
+  // clears visibility back to normal instead of explicitly setting 'visible'.
+  return ($el.css("visibility") != 'hidden');
 };
 
 ViewUtil.isDisplayed = ($el) => {

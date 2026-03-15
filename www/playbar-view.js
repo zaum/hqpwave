@@ -112,7 +112,9 @@ export default class PlaybarView {
   }
 
   _initCircularProgress() {
-    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    // Breakpoints: 480 / 768 / 1024 / 1600
+    // Keep 768 as tablet start (CSS uses min-width: 768px).
+    const isMobile = window.innerWidth < 768;
     const createCircular = () => {
       if (!this.circularProgress) {
         this.circularProgress = new CircularProgress(this.$playButtonContainer, {
@@ -133,7 +135,7 @@ export default class PlaybarView {
       destroyCircular();
     }
     window.addEventListener('resize', () => {
-      const nowMobile = window.matchMedia('(max-width: 768px)').matches;
+      const nowMobile = window.innerWidth < 768;
       if (nowMobile) {
         createCircular();
       } else {
@@ -522,7 +524,7 @@ export default class PlaybarView {
       : null;
     const clientX = (e.clientX !== undefined) ? e.clientX : (touchPoint ? touchPoint.clientX : null);
     const clientY = (e.clientY !== undefined) ? e.clientY : (touchPoint ? touchPoint.clientY : null);
-    const isVertical = window.matchMedia('(max-width: 1024px)').matches;
+    const isVertical = window.innerWidth <= 1024;
 
     let ratio;
     if (isVertical) {
@@ -652,7 +654,7 @@ export default class PlaybarView {
     // Map roughly -40..+40 dB into 0..1
     let ratio = (vol + 40) / 80;
     ratio = Math.max(0, Math.min(1, ratio));
-    const isVertical = window.matchMedia('(max-width: 1024px)').matches;
+    const isVertical = window.innerWidth <= 1024;
     if (isVertical) {
       this.$volumeInlineThumb.css('height', (ratio * 100) + '%');
       this.$volumeInlineThumb.css('width', '100%');
@@ -717,7 +719,7 @@ export default class PlaybarView {
       : null;
     const clientX = (e.clientX !== undefined) ? e.clientX : (touchPoint ? touchPoint.clientX : null);
     const clientY = (e.clientY !== undefined) ? e.clientY : (touchPoint ? touchPoint.clientY : null);
-    const isVertical = window.matchMedia('(max-width: 1024px)').matches;
+    const isVertical = window.innerWidth <= 1024;
 
     let ratio;
     if (isVertical) {
@@ -732,7 +734,7 @@ export default class PlaybarView {
   }
 
   _setVolumeThumbRatio(ratio) {
-    const isVertical = window.matchMedia('(max-width: 1024px)').matches;
+    const isVertical = window.innerWidth <= 1024;
     if (isVertical) {
       this.$volumeInlineThumb.css('height', (ratio * 100) + '%');
       this.$volumeInlineThumb.css('width', '100%');
