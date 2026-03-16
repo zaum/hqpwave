@@ -26,7 +26,17 @@ class ToastView {
       if (duration > 0) {
         this.timeoutId = setTimeout(() => this.hide(), duration);
         this.indefiniteShowStart = 0;
+      } else {
+        // Refresh start time so indefinite toasts respect minimum display time
+        this.indefiniteShowStart = new Date().getTime();
       }
+      // Re-run the toast slide-in animation so repeated actions still show feedback
+      ViewUtil.setVisible(this.$el, true);
+      ViewUtil.setCssSync(this.$inner, () => this.$inner.css("top", this.$inner.height() + "px"));
+      ViewUtil.animateCss(this.$inner,
+          null,
+          () => this.$inner.css('top', '0px'),
+          null);
       return;
     }
 

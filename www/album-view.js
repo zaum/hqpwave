@@ -312,7 +312,9 @@ hide() {
     const displayPath = decodeAlbumPath(rawPath);
     $("#albumViewPath").text(displayPath);
     const isDesktopLike = !Util.isTouch;
-    ViewUtil.setDisplayed(this.$openFolderButton, isDesktopLike && !!displayPath);
+    // Always show the open-folder button when a path is available —
+    // click handler will still ignore touch devices (see onOpenFolderButtonClick).
+    ViewUtil.setDisplayed(this.$openFolderButton, !!displayPath);
 
     const albumHash = this.getAlbumHash();
     MetaUtil.isAlbumFavoriteFor(albumHash)

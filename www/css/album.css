@@ -95,7 +95,7 @@
 
   .albumViewPictureOuter,
   .cover-wrap {
-    position: static;
+    position: relative;
     margin: 0 auto;
   }
 
@@ -234,23 +234,22 @@
 
 #albumViewPictureBlur {
   position: absolute;
-  top: -300px;
-  bottom: -560px;
-  left: -500px;
-  right: -820px;
-  filter: blur(170px);
-  opacity: 0.36;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  filter: blur(80px);
+  opacity: 0.15;
   z-index: 1;
   object-fit: cover;
   pointer-events: none;
   border-radius: 40px;
-  transform: scale(1.9);
+  transform: scale(1.4);
 }
 
 @media (min-width: 768px) {
   #albumViewPictureBlur {
-    transform: scale(2.3);
-    opacity: 0.25;
+    transform: scale(1.8);
   }
 }
 
@@ -779,43 +778,46 @@
 
 }
 
-  /* Square wrapper + responsive caps for wide screens */
-  @media (min-width: 1024px) {
-    .albumViewPictureOuter,
-    .cover-wrap {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      height: auto;
-      overflow: hidden;
-      position: sticky;
-      top: 32px;
-    }
+/* Square wrapper + responsive caps for wide screens */
+@media (min-width: 1024px) {
 
-    #albumViewPicture,
-    .cover {
-      width: 100%;
-      height: 100%;
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
-      max-height: none;
-    }
+  .albumViewPictureOuter,
+  .cover-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    overflow: visible;
+    position: sticky;
+    top: 32px;
   }
 
-  @media (min-width: 1600px) {
-    .albumViewPictureOuter,
-    .cover-wrap {
-      max-width: 720px;
-    }
-        #albumViewPicture,
-    .cover {
-      width: 100%;
-      height: 100%;
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
-      max-height: none;
-      max-width: 520px;
-    }
+  #albumViewPicture,
+  .cover {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    max-height: none;
   }
+}
+
+@media (min-width: 1600px) {
+
+  .albumViewPictureOuter,
+  .cover-wrap {
+    max-width: 720px;
+  }
+
+  #albumViewPicture,
+  .cover {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    max-height: none;
+    max-width: 520px;
+  }
+}
 
 /* Track Item */
 .track-item,

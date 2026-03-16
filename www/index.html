@@ -9,7 +9,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="preload" href="css/main.css?v=20260315_10" as="style" onload="this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="css/main.css?v=20260315_10"></noscript>
+  <noscript>
+    <link rel="stylesheet" href="css/main.css?v=20260315_10">
+  </noscript>
   <script src="libs/platform.js"></script>
   <script src="libs/window-app.js"></script>
   <script>
@@ -21,8 +23,13 @@
   <script src="libs/jquery-3.6.0.min.js"></script>
   <style>
     /* Prevent brief unstyled SVG flash: hide logos until JS shows them */
-    #brandLogo { visibility: hidden; }
-    .footer-brand-logo { visibility: hidden; }
+    #brandLogo {
+      visibility: hidden;
+    }
+
+    .footer-brand-logo {
+      visibility: hidden;
+    }
   </style>
   <script type="module">
     import App from './app.js';
@@ -801,11 +808,10 @@
     <footer id="playbarView">
       <div id="musicPlaying" class="music-playing">
         <svg width="24" height="24" viewBox="0 0 24 24">
-          <!-- All bars same height and y -->
-          <rect class="bar" x="2" y="10" width="3" height="10" rx="1" />
-          <rect class="bar" x="7" y="10" width="3" height="10" rx="1" />
-          <rect class="bar" x="12" y="10" width="3" height="10" rx="1" />
-          <rect class="bar" x="17" y="10" width="3" height="10" rx="1" />
+          <rect class="bar" x="2" y="8" width="3" height="12" rx="1" />
+          <rect class="bar" x="7" y="4" width="3" height="16" rx="1" />
+          <rect class="bar" x="12" y="12" width="3" height="8" rx="1" />
+          <rect class="bar" x="17" y="6" width="3" height="14" rx="1" />
         </svg>
       </div>
       <div class="pb-cover" id="playbarCover">
@@ -849,7 +855,7 @@
         <div class="format-badge" id="formatBadge">-</div>
       </div>
 
-      
+
 
       <div id="toast">
         <div id="toastInner">Toast here</div>
