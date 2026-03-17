@@ -533,6 +533,12 @@ export default class App {
       targetSubview.$el.css('z-index', this.subviewZ);
       targetSubview.show();
       this.updatePageHolderSubviewClass(targetSubview);
+      // Ensure the correct topbar icon is highlighted when swapping
+      if (targetSubview === this.settingsView) {
+        this.setActiveNavPill('settings');
+      } else if (targetSubview === this.hqpSettingsView) {
+        this.setActiveNavPill('hqpSettings');
+      }
     });
   }
 

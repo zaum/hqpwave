@@ -479,17 +479,12 @@
   align-items: center;
 }
 
-#topBarButtons .iconButton {
-  width: 28px;
-  height: 28px;
-}
 
 #topBarButtons .iconButton:before {
   position: static !important;
   left: auto !important;
   top: auto !important;
-  width: 20px !important;
-  height: 20px !important;
+ 
   margin: 0 auto !important;
 }
 
@@ -501,17 +496,16 @@
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  width: 32px !important;
-  height: 32px !important;
   background-color: transparent !important;
   cursor: pointer;
 }
 
+/* Upscaler icon: slightly larger than the settings gear and gets hover bg like settings */
 #hqpSettingsButton:before {
   content: "";
   display: block;
-  width: 26px !important;
-  height: 26px !important;
+  width: 24px;
+  height: 24px;
   background-color: var(--text-2);
   -webkit-mask-image: url("./../img/icons/sound-wave-1.svg");
   mask-image: url("./../img/icons/sound-wave-1.svg");
@@ -522,6 +516,11 @@
   -webkit-mask-position: center;
   mask-position: center;
   opacity: 0.7 !important;
+}
+
+/* Match hover background used by settings button */
+#hqpSettingsButton:hover {
+  background-color: var(--raised) !important;
 }
 
 #hqpSettingsButton.active:before {
@@ -546,9 +545,9 @@
 /* Upscaler ikon nagyobb, settings vékonyabb, aktív szín kiemelés */
 #settingsButton:before {
   content: "";
+  width: 20px;
+  height: 20px;
   display: block;
-  width: 18px !important;
-  height: 18px !important;
   background-color: var(--text-2);
   -webkit-mask-image: url("./../img/icons/settings_thin_white_24dp.svg");
   mask-image: url("./../img/icons/settings_thin_white_24dp.svg");
@@ -1276,7 +1275,7 @@
 
   /* Album view - to the left of the album image, aligned with image top */
   #page.albumView #backToLibraryButton {
-    top: 114px;
+    top: 94px; /* moved up 20px */
     left: 20px;
   }
 
@@ -2255,7 +2254,7 @@
   }
 
   .volume-inline-text {
-    min-width: 40px;
+    min-width: 36px;
     text-align: right;
     font-size: 10px;
   }

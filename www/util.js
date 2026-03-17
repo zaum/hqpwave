@@ -109,7 +109,7 @@ Util.makeCasualDelimitedString = (array, delimiter) => {
 Util.makeCasualSecondsString = (ms) => {
   let sec = (ms / 1000);
   sec = (Math.round(sec * 100) / 100).toFixed(2);
-  return sec + 's';
+  return sec + '\u202Fs';
 };
 
 Util.hasMatch = (arrayOfObjects, objectKey, value) => {
@@ -132,15 +132,15 @@ Util.makeHowLongAgoString = (ms) => {
   }
   let day = (ms / (1000 * 60 * 60 * 24));
   if (day < 6.5) {
-    return Math.round(day) + 'd';
+    return Math.round(day) + '\u202Fd';
   }
   let wk  = (ms / (1000 * 60 * 60 * 24 * 7));
   if (wk < 3.5) {
-    return Math.round(wk) + 'w';
+    return Math.round(wk) + '\u202Fw';
   }
   let mo  = (ms / (1000 * 60 * 60 * 24 * 30));
   if (mo < 12.5) {
-    return Math.round(mo) + 'mo';
+    return Math.round(mo) + '\u202Fmo';
   }
   return '1y+';
 };
