@@ -867,11 +867,27 @@ export default class App {
         this.minKeyDuration = long;
         break;
       case 'f':
+        e.preventDefault();
+        // If we're already on the library and the albums list is visible,
+        // trigger the existing search button behavior.
         if (this.getTopSubview() == this.libraryView
           && ViewUtil.isDisplayed(this.libraryView.albumsList.$el) && Model.hasLibrary) {
-          e.preventDefault();
           this.libraryView.$searchButton.click();
+        } else {
+          // Otherwise, navigate to the library view and focus the global search input
+          // after the transition completes so the input receives the caret.
+          this.goToLibraryView();
+          setTimeout(() => {
+            try {
+              if (this.libraryView.$globalSearchInput && this.libraryView.$globalSearchInput.length > 0) {
+                ViewUtil.setFocus(this.libraryView.$globalSearchInput);
+              }
+            } catch (err) {
+              // ignore focus errors
+            }
+          }, this.transitionDurationMs + 40);
         }
+        this.minKeyDuration = long;
         break;
       case 's':
         this.playbarView.$stopButton.click();

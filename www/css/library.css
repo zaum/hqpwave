@@ -247,9 +247,11 @@
   }
 }
 
-.search-help,
-.search-help-tooltip {
-  display: none;
+@media (max-width: 1024px) {
+  .search-help,
+  .search-help-tooltip {
+    display: none;
+  }
 }
 
 .search-icon {

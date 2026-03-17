@@ -443,6 +443,7 @@
 .key-badge {
   font-family: 'Geist Mono', monospace;
   font-size: 10.5px;
+  font-weight: 900;
   padding: 3px 8px;
   background: var(--surface2);
   border: 1px solid var(--border-md);
@@ -715,11 +716,17 @@
 .settingsSelectOuter:hover .filter-clear-icon {
   opacity: 1;
   pointer-events: auto;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
 }
 
 .settingsSelectOuter select:focus + .filter-clear-icon {
   opacity: 1;
   pointer-events: auto;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
 }
 
 .filter-clear-icon:hover {
