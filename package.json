@@ -1,6 +1,6 @@
 {
   "name": "hqpwv",
-  "version": "0.9.10",
+  "version": "0.9.11",
   "description": "Remote control application for HQPlayer",
   "bin": "server/server.js",
   "homepage": "https://github.com/zaum/hqpwave",
