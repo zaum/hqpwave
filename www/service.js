@@ -183,7 +183,11 @@ class Service {
       if (errorText != DataUtil.NO_ERROR_TEXT_TEXT) {
         // hqp will report error w/o error text if doing next-track from last-track (ie, more like a warning)
         // which make me suspect it may do likewise in similarly non-error-like situations
-        ToastView.show(`<span class="colorAccent">HQPlayer-reported error: ${errorText}</span>`, 3000);
+        // Allow callers to suppress the global HQPlayer-reported toast (they may show their own SnackView).
+        const shouldSuppress = this.currentItem && this.currentItem.suppressHqpErrorToast === true;
+        if (!shouldSuppress) {
+          ToastView.show(`<span class="colorAccent">HQPlayer-reported error: ${errorText}</span>`, 3000);
+        }
       }
     }
 

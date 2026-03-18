@@ -23,6 +23,7 @@
 
 #albumViewInfo {
   padding-bottom: 32px;
+  padding-right: 12px;
   flex: 0 0 auto;
 }
 
@@ -181,7 +182,6 @@
   height: auto;
   aspect-ratio: 1 / 1;
   border-radius: 10px;
-  background: var(--surface2);
   border: none;
   overflow: hidden;
   object-fit: contain;
@@ -472,7 +472,7 @@
   gap: 12px;
   min-width: 0;
   width: 100%;
-  padding: 0 calc(40px) 0 0;
+  padding: 0 12px 0 0;
   font-size: inherit;
 }
 
@@ -509,12 +509,55 @@
   white-space: nowrap;
 }
 
-/* small accent-colored dot separator between duration and date */
+/* small accent-colored dot separator between metadata items */
 .albumStatsDot {
   color: var(--accent);
   display: inline-block;
   line-height: 1;
   vertical-align: middle;
+  font-size: 1.4em;
+  margin: 0 0.32em;
+}
+
+.albumStatsFolder {
+  display: none;
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 0 10px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  transition: color 0.1s;
+  vertical-align: middle;
+}
+
+@media (min-width: 1024px) {
+  .albumStatsFolder {
+    display: inline-flex;
+  }
+}
+
+.albumStatsFolder:hover {
+  color: var(--accent);
+}
+
+.iconFolder {
+  width: 14px;
+  height: 14px;
+  color: inherit;
+  background-color: currentColor;
+  transition: background-color 0.1s;
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .hero-meta-item {

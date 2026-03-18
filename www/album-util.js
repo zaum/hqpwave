@@ -5,10 +5,26 @@ import Model from './model.js';
 import ViewUtil from './view-util.js'
 import MetaUtil from './meta-util.js'
 
-/**
- *
- */
+const ENTITY_MAP = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'"
+};
+
 export default class AlbumUtil {
+
+    static decodeAlbumPath(value) {
+        let result = (typeof value === 'string') ? value : '';
+        try {
+            result = decodeURIComponent(result);
+        } catch (e) {
+            // keep raw if not URI-encoded
+        }
+        result = result.replace(/&(amp|lt|gt|quot|apos);/g, (m, name) => ENTITY_MAP[name] || m);
+        return result;
+    }
 
   /**
    * Returns array of track objects from album object.
@@ -37,7 +53,18 @@ export default class AlbumUtil {
       formatItems.push(`<span class="albumStatsItem albumFormatText">${filetypeText}</span>`);
     }
 
-    const left = formatItems.length ? `<div class="albumStatsLeft">${formatItems.join(' ')}</div>` : '';
+    const dot = '<span class="albumStatsDot" aria-hidden="true">•</span>';
+    let leftHtml = formatItems.join(dot);
+
+    const rawPath = album['@_path'] || '';
+    if (rawPath) {
+      const displayPath = AlbumUtil.decodeAlbumPath(rawPath);
+      // user wants it after format, with a space before it
+      const folderBtn = ` <button id="albumViewOpenFolderButton" class="albumStatsFolder" title="${displayPath}" aria-label="Open folder"><div class="iconFolder" aria-hidden="true"></div></button>`;
+      leftHtml = leftHtml ? (leftHtml + folderBtn) : folderBtn;
+    }
+
+    const left = leftHtml ? `<div class="albumStatsLeft">${leftHtml}</div>` : '';
 
     const rightParts = [];
     if (duration) {
@@ -46,7 +73,7 @@ export default class AlbumUtil {
     if (date) {
       rightParts.push(`<span class="albumStatsItem albumDate">${date}</span>`);
     }
-    const right = rightParts.length ? `<div class="albumStatsRight">${rightParts.join('<span class="albumStatsDot" aria-hidden="true">•</span>')}</div>` : '';
+    const right = rightParts.length ? `<div class="albumStatsRight">${rightParts.join(dot)}</div>` : '';
 
     const divider = left && right ? `<span class="albumStatsDivider" aria-hidden="true"></span>` : '';
 

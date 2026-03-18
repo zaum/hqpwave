@@ -16,23 +16,6 @@ import Values from './values.js';
 import ViewUtil from './view-util.js'
 import Native from './native.js';
 
-const decodeAlbumPath = (value) => {
-  let result = (typeof value === 'string') ? value : '';
-  try {
-    result = decodeURIComponent(result);
-  } catch (e) {
-    // keep raw if not URI-encoded
-  }
-  const entityMap = {
-    amp: '&',
-    lt: '<',
-    gt: '>',
-    quot: '"',
-    apos: "'"
-  };
-  result = result.replace(/&(amp|lt|gt|quot|apos);/g, (m, name) => entityMap[name] || m);
-  return result;
-};
 
 const splitAlbumArtists = (value) => {
   if (value === null || value === undefined) {
@@ -106,7 +89,6 @@ export default class AlbumView extends Subview {
     this.$list = this.$el.find('#albumList');
     this.$artistButton = this.$el.find('#albumViewArtist');
     this.$texts = this.$el.find('#albumViewTexts');
-    this.$openFolderButton = this.$el.find('#albumViewOpenFolderButton');
     this.$prevImageButton = this.$el.find('#albumViewPrevImageButton');
     this.$nextImageButton = this.$el.find('#albumViewNextImageButton');
 
@@ -122,7 +104,7 @@ export default class AlbumView extends Subview {
       album: this.album,
       coverCount: this.albumCoverCount
     }));
-    this.$openFolderButton.on('click tap', this.onOpenFolderButtonClick);
+    this.$el.on('click tap', '#albumViewOpenFolderButton', this.onOpenFolderButtonClick);
     this.$prevImageButton.on('click tap', this.onPrevAlbumImageClick);
     this.$nextImageButton.on('click tap', this.onNextAlbumImageClick);
   }
@@ -224,7 +206,7 @@ hide() {
     this.albumCoverCount = defaultImageUrl ? 1 : 0;
     this.setAlbumImageByIndex(0, [defaultImageUrl]);
 
-    const albumPath = decodeAlbumPath(this.album?.['@_path'] || '');
+    const albumPath = AlbumUtil.decodeAlbumPath(this.album?.['@_path'] || '');
     this.albumImageLoadSessionId += 1;
     const sessionId = this.albumImageLoadSessionId;
     if (albumPath) {
@@ -307,14 +289,6 @@ hide() {
     $("#albumViewStats").html(AlbumUtil.makeAlbumStatsText(this.album));
 
     AlbumUtil.updateGenreButtons($('#albumViewGenreButtons'), this.album);
-
-    const rawPath = this.album['@_path'] || '';
-    const displayPath = decodeAlbumPath(rawPath);
-    $("#albumViewPath").text(displayPath);
-    const isDesktopLike = !Util.isTouch;
-    // Always show the open-folder button when a path is available —
-    // click handler will still ignore touch devices (see onOpenFolderButtonClick).
-    ViewUtil.setDisplayed(this.$openFolderButton, !!displayPath);
 
     const albumHash = this.getAlbumHash();
     MetaUtil.isAlbumFavoriteFor(albumHash)
@@ -561,7 +535,7 @@ hide() {
     if (Util.isTouch) {
       return;
     }
-    const path = decodeAlbumPath(this.album?.['@_path'] || '');
+    const path = AlbumUtil.decodeAlbumPath(this.album?.['@_path'] || '');
     if (!path) {
       return;
     }

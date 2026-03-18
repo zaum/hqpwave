@@ -241,10 +241,10 @@
 
 @media (min-width: 1024px) {
 
-  .search-help,
+/*  .search-help,
   .search-help-tooltip {
     display: inline-flex;
-  }
+  } */
 }
 
 @media (max-width: 1024px) {

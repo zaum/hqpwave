@@ -207,13 +207,13 @@ export default class HqpFiltersView {
       return;
     }
 
-    Service.queueCommandFront(command, (data) => {
+    Service.queueCommandsFront([{ xml: command, callback: (data) => {
       const b = DataUtil.isResultOk(data); // todo unverified
       if (!b) {
         SnackView.show('set-error', 'HQPlayer response', `Couldn't set ${label}`, '');
       }
       HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()) );
-    });
+    }, suppressHqpErrorToast: true }]);
   };
 
   onSavePresetButton(index) {
@@ -269,12 +269,12 @@ export default class HqpFiltersView {
       return;
     }
 
-    Service.queueCommandFront(Commands.setMode(modeIndex), (data) => {
+    Service.queueCommandsFront([{ xml: Commands.setMode(modeIndex), callback: (data) => {
       const b = DataUtil.isResultOk(data);
       if (!b) {
         SnackView.show('set-error', 'HQPlayer response', `Couldn't set mode to ${mode}`, '');
       }
       HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()));
-    });
+    }, suppressHqpErrorToast: true }]);
   }
 }
