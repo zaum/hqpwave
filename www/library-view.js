@@ -338,13 +338,13 @@ export default class LibraryView extends Subview {
 
     let extra = '';
     if (track['@_performer']) {
-      extra += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${track['@_performer']}</span></div>`;
+      extra += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${Util.formatMetaHtml(track['@_performer'])}</span></div>`;
     }
     if (track['@_artist']) {
       extra += `<div class='extraLine'><span class='caption'>Artist</span> <span class='extraValue'>${track['@_artist']}</span></div>`;
     }
     if (track['@_composer']) {
-      extra += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${track['@_composer']}</span></div>`;
+      extra += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${Util.formatMetaHtml(track['@_composer'])}</span></div>`;
     }
 
     let s = '';

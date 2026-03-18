@@ -594,6 +594,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-right: 3px;
   opacity: 0;
   transition: opacity 0.2s, transform 0.2s;
   cursor: pointer;
@@ -630,11 +631,11 @@
 /* Favorite Dot */
 .fav-dot,
 .libraryItemFavorite {
-  display: none;
+  display: block;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  --favorite-color: var(--accent);
+  --favorite-color: var(--text-3);
   background-color: var(--favorite-color);
   -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>');
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>');
@@ -644,16 +645,26 @@
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
   mask-position: center;
+  opacity: 0.14;
+  transition: opacity 0.15s ease, transform 0.12s ease;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .album-card.faved .fav-dot,
 .libraryItem.isFavorite .libraryItemFavorite {
-  display: block;
+  background-color: var(--accent);
   opacity: 1;
+  transform: scale(1.02);
+}
+
+.album-card:hover .fav-dot,
+.libraryItem:hover .libraryItemFavorite {
+  opacity: 0.7;
 }
 
 .isMetaEnabled .libraryItem.isFavorite .libraryItemFavorite {
-  display: block;
+  opacity: 1;
 }
 
 /* Format Pill */

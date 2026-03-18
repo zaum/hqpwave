@@ -274,7 +274,7 @@ hide() {
     if (performer) {
       $performer.empty();
       $performer.append($('<span class="metaCaption">Performed by </span>'));
-      $performer.append($('<span class="metaValue"></span>').text(this.album['@_performer']));
+      $performer.append($('<span class="metaValue"></span>').html(Util.formatMetaHtml(this.album['@_performer'])));
       ViewUtil.setDisplayed($performer, true);
       if ($performer[0].scrollHeight > $performer[0].clientHeight) {
         $performer.addClass('pseudoEllipse');
@@ -291,7 +291,7 @@ hide() {
     if (composer) {
       $composer.empty();
       $composer.append($('<span class="metaCaption">Composed by </span>'));
-      $composer.append($('<span class="metaValue"></span>').text(this.album['@_composer']));
+      $composer.append($('<span class="metaValue"></span>').html(Util.formatMetaHtml(this.album['@_composer'])));
       ViewUtil.setDisplayed($composer, true);
       if ($composer[0].scrollHeight > $composer[0].clientHeight) {
         $composer.addClass('pseudoEllipse');
@@ -355,13 +355,13 @@ hide() {
 
     let extra = '';
     if (item['@_performer']) {
-      extra += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${item['@_performer']}</span></div>`;
+      extra += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${Util.formatMetaHtml(item['@_performer'])}</span></div>`;
     }
     if (item['@_artist']) { // song's artist (not album's artist)
       extra += `<div class='extraLine'><span class='caption'>Artist</span> <span class='extraValue'>${item['@_artist']}</span></div>`;
     }
     if (item['@_composer']) {
-      extra += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${item['@_composer']}</span></div>`;
+      extra += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${Util.formatMetaHtml(item['@_composer'])}</span></div>`;
     }
 
     let s = '';

@@ -238,3 +238,30 @@ Util.areUriAndPathEquivalent = (uri, path) => {
 
 // Pretty good test for touch devices
 Util.isTouch =  !!("ontouchstart" in window) || window.navigator.msMaxTouchPoints > 0;
+
+/** Escape plain text for safe HTML insertion. */
+Util.escapeHtml = (str) => {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+/**
+ * Formats a metadata value for insertion as HTML.
+ * Parenthetical parts are removed from parentheses and wrapped in <em>..</em>.
+ * Example: "John Doe (piano)" -> "John Doe <em>piano</em>"
+ */
+Util.formatMetaHtml = (str) => {
+  if (str === null || str === undefined) return '';
+  const escaped = Util.escapeHtml(str);
+  // Replace commas with two spaces, then convert parenthetical groups
+  // into italicized text (remove parentheses). Example:
+  // "John Doe, (piano)" -> "John Doe  <em>piano</em>"
+  let s = escaped.replace(/,\s*/g, '  ');
+  s = s.replace(/\s*\(([^)]+)\)/g, ' <em>$1</em>');
+  return s;
+};

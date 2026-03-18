@@ -1893,6 +1893,7 @@
   min-width: 0;
   flex: 1 1 0;
   z-index: 1;
+  margin-right: 8px;
 }
 
 .playingTrackCurrentTime {

@@ -327,7 +327,7 @@ export default class LibraryContentList {
                  <div class="libraryItemBits">${bits}</div>
                </div>`;
     s += `<div class="libraryItemTexts">
-                  <div class="libraryItemFavorite"></div>
+                  <div class="libraryItemFavorite" title="Toggle Favorite" role="button" aria-label="Toggle Favorite"></div>
                   <div class="libraryItemText1">${artist}</div>
                   <div class="libraryItemText2">${albumText}</div>
                 </div>`;
@@ -352,6 +352,13 @@ export default class LibraryContentList {
     } else {
       $item.removeClass('show-format-overlay');
     }
+
+    // Make the favorite icon actionable.
+    $item.find('.libraryItemFavorite').on('click tap', (e) => {
+      e.stopPropagation();
+      const isFav = MetaUtil.isAlbumFavoriteFor(hash);
+      MetaUtil.setAlbumFavoriteFor(hash, !isFav);
+    });
 
     return $item;
   }
