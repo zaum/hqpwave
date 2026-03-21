@@ -26,9 +26,6 @@ export default class SettingsView extends Subview {
   $spotifyConnectionLed;
   $spotifyConnectionText;
   $testSpotifyBtn;
-  $lastfmConnectionLed;
-  $lastfmConnectionText;
-  $testLastFmBtn;
   infoView;
 
   constructor() {
@@ -62,17 +59,17 @@ export default class SettingsView extends Subview {
     this.$saveSpotifyBtn.on('click', () => this.saveSpotifyCredentials());
     this.$testSpotifyBtn.on('click', () => this.testSpotifyConnection(true));
 
-    this.$lastfmApiKey = this.$el.find('#lastfmApiKey');
-    this.$saveLastFmBtn = this.$el.find('#saveLastFmBtn');
-    this.$lastfmConnectionLed = this.$el.find('#lastfmConnectionLed');
-    this.$lastfmConnectionText = this.$el.find('#lastfmConnectionText');
-    this.$testLastFmBtn = this.$el.find('#testLastFmBtn');
-    this.$saveLastFmBtn.on('click', () => this.saveLastFmCredentials());
-    this.$testLastFmBtn.on('click', () => this.testLastFmConnection(true));
-
     this.$artistDbSize = this.$el.find('#artistDbSize');
     this.$clearArtistDbBtn = this.$el.find('#clearArtistDbBtn');
     this.$clearArtistDbBtn.on('click', () => this.clearArtistDb());
+
+    this.$imageScrapingEnabled = this.$el.find('#imageScrapingEnabled');
+    this.$imageSourcesList = this.$el.find('#imageSourcesList');
+    this.$newImageSourceUrl = this.$el.find('#newImageSourceUrl');
+    this.$addImageSourceBtn = this.$el.find('#addImageSourceBtn');
+    this.$addImageSourceBtn.on('click', () => this.addImageSource());
+    this.$imageScrapingEnabled.on('change', () => this.saveImageSources());
+    this.imageSources = [];
 
     // Setup scroll detection for Settings label
     this.$el.on('scroll', this.onSettingsScroll);
@@ -131,6 +128,109 @@ export default class SettingsView extends Subview {
       });
   }
 
+  loadImageSources() {
+    fetch('/endpoints/imageSources')
+      .then(res => {
+        if (!res.ok) throw new Error('server_error');
+        return res.json();
+      })
+      .then(data => {
+        this.$imageScrapingEnabled.prop('checked', data.enabled !== false);
+        this.imageSources = data.sources || [];
+        this.renderImageSourcesList();
+      })
+      .catch(e => {
+        this.imageSources = ['https://www.last.fm/music/{ARTIST}/+images/*'];
+        this.renderImageSourcesList();
+      });
+  }
+
+  renderImageSourcesList() {
+    this.$imageSourcesList.empty();
+    const self = this;
+    
+    for (let i = 0; i < this.imageSources.length; i++) {
+      const source = this.imageSources[i];
+      const isEnabled = source.endsWith('*');
+      const displayUrl = isEnabled ? source.slice(0, -1) : source;
+      
+      const $item = $('<div class="image-source-item"></div>');
+      const $indicator = $('<span class="source-enabled-indicator' + (isEnabled ? ' enabled' : '') + '"></span>');
+      const $urlInput = $('<input type="text" class="source-url-input" value="' + displayUrl + '" title="' + source + '">');
+      
+      $urlInput.on('change', () => {
+        let newUrl = $urlInput.val().trim();
+        if (!newUrl) return;
+        
+        if (!newUrl.endsWith('*') && !newUrl.endsWith('/')) {
+          newUrl = newUrl + '*';
+        } else if (newUrl.endsWith('/')) {
+          newUrl = newUrl + '*';
+        }
+        
+        self.imageSources[i] = newUrl;
+        const newIsEnabled = newUrl.endsWith('*');
+        $urlInput.val(newIsEnabled ? newUrl.slice(0, -1) : newUrl);
+        $indicator.toggleClass('enabled', newIsEnabled);
+        self.saveImageSources();
+      });
+      
+      $urlInput.on('focus', () => {
+        $urlInput.select();
+      });
+      
+      const $deleteBtn = $('<button class="delete-source-btn" title="Remove source"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"></path></svg></button>');
+      
+      $deleteBtn.on('click', () => {
+        this.imageSources.splice(i, 1);
+        this.renderImageSourcesList();
+        this.saveImageSources();
+      });
+      
+      $item.append($indicator, $urlInput, $deleteBtn);
+      this.$imageSourcesList.append($item);
+    }
+  }
+
+  addImageSource() {
+    const url = this.$newImageSourceUrl.val().trim();
+    if (!url) return;
+    
+    let finalUrl = url;
+    if (!url.endsWith('*') && !url.endsWith('/')) {
+      finalUrl = url + '/*';
+    } else if (url.endsWith('/')) {
+      finalUrl = url + '*';
+    }
+    
+    if (!this.imageSources.includes(finalUrl)) {
+      this.imageSources.push(finalUrl);
+      this.renderImageSourcesList();
+      this.saveImageSources();
+    }
+    this.$newImageSourceUrl.val('');
+  }
+
+  saveImageSources() {
+    const enabled = this.$imageScrapingEnabled.prop('checked');
+    
+    fetch('/endpoints/imageSources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled, sources: this.imageSources })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error('server_error');
+      return res.json();
+    })
+    .then(data => {
+      console.log('Image sources saved');
+    })
+    .catch(e => {
+      console.error('Error saving image sources', e);
+    });
+  }
+
   saveSpotifyCredentials() {
     const clientId = this.$spotifyClientId.val();
     const clientSecret = this.$spotifyClientSecret.val();
@@ -162,99 +262,7 @@ export default class SettingsView extends Subview {
         setTimeout(() => {
             this.$saveSpotifyBtn.text('Save Spotify Credentials').prop('disabled', false);
         }, 2000);
-     });
-  }
-
-  loadLastFmCredentials() {
-    fetch('/endpoints/lastfmCredentials')
-      .then(res => {
-         if (!res.ok) throw new Error('server_error');
-         return res.json();
-      })
-      .then(data => {
-        if (data && data.apiKey) {
-          this.$lastfmApiKey.val(data.apiKey);
-        }
-      })
-      .catch(e => console.error('Error loading Last.fm credentials', e));
-  }
-
-  saveLastFmCredentials() {
-    const apiKey = this.$lastfmApiKey.val();
-    this.$saveLastFmBtn.text('Saving...').prop('disabled', true);
-    fetch('/endpoints/lastfmCredentials', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey })
-    })
-    .then(res => {
-       if (!res.ok) throw new Error('server_error');
-       return res.json();
-    })
-    .then(data => {
-        if (data.success) {
-          this.$saveLastFmBtn.text('Saved!');
-          this.testLastFmConnection(false);
-          setTimeout(() => {
-            this.$saveLastFmBtn.text('Save Last.fm Credentials').prop('disabled', false);
-          }, 2000);
-        } else {
-          throw new Error(data.error);
-        }
-     })
-     .catch(e => {
-        console.error('Error saving Last.fm credentials', e);
-        this.$saveLastFmBtn.text('Error!');
-        setTimeout(() => {
-            this.$saveLastFmBtn.text('Save Last.fm Credentials').prop('disabled', false);
-        }, 2000);
-     });
-  }
-
-  testLastFmConnection(manualTriggered = false) {
-    if (manualTriggered && this.$testLastFmBtn && this.$testLastFmBtn.length) {
-      this.$testLastFmBtn.text('Testing...').prop('disabled', true);
-    }
-    if (this.$lastfmConnectionText && this.$lastfmConnectionText.length) {
-      this.$lastfmConnectionText.text('Testing...');
-    }
-    this.$lastfmConnectionLed.removeClass('led-connected led-disconnected led-error').addClass('led-disconnected');
-    fetch('/endpoints/lastfmCredentials')
-      .then(res => {
-         if (!res.ok) throw new Error('server_error');
-         return res.json();
-      })
-      .then(data => {
-         if (!data.apiKey || data.apiKey.trim() === '') {
-           this.$lastfmConnectionText.text('Not configured');
-           this.$lastfmConnectionLed.removeClass('led-connected led-error').addClass('led-disconnected');
-           this.finishLastFmTest();
-           return null;
-         }
-         // Test with a simple API call
-         return fetch(`https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=test&api_key=${encodeURIComponent(data.apiKey)}&format=json`)
-           .then(r => r.json())
-           .then(json => {
-              if (json && json.error) {
-                throw new Error(json.message || 'Invalid API key');
-              }
-              this.$lastfmConnectionText.text('Connected');
-              this.$lastfmConnectionLed.removeClass('led-disconnected led-error').addClass('led-connected');
-           });
-      })
-      .then(() => this.finishLastFmTest())
-      .catch(e => {
-         console.error('Error testing Last.fm connection', e);
-         this.$lastfmConnectionText.text('Error');
-         this.$lastfmConnectionLed.removeClass('led-connected led-disconnected').addClass('led-error');
-         this.finishLastFmTest();
       });
-  }
-
-  finishLastFmTest() {
-     if (this.$testLastFmBtn && this.$testLastFmBtn.length) {
-       this.$testLastFmBtn.text('Test Last.fm Connection').prop('disabled', false);
-     }
   }
 
   setupColorPresets() {
@@ -301,11 +309,10 @@ export default class SettingsView extends Subview {
     Service.queueCommandFront(Commands.getInfo());
 
     this.loadSpotifyCredentials();
-    this.loadLastFmCredentials();
     this.loadArtistDbStats();
+    this.loadImageSources();
     // Auto-test Spotify connectivity when Settings opens.
     this.testSpotifyConnection(false);
-    this.testLastFmConnection(false);
 
     $(document).trigger('enable-user-input');
   }

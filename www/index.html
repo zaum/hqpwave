@@ -783,48 +783,8 @@
             <div class="settings-card">
               <div class="settings-card-row">
                 <div>
-                  <div class="row-label">Artist Images</div>
-                  <div class="row-desc">Last.fm provides free artist portrait images. Get a free API key from
-                    <a href="https://www.last.fm/api/account/create" target="_blank" rel="noopener"
-                      class="hqp-link">Last.fm API ↗</a>
-                    to enable artist image fetching.</div>
-                </div>
-              </div>
-              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
-                <div class="inputGroup" style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                  <label for="lastfmApiKey" class="metaCaption" style="width: 100px; flex-shrink: 0;">API Key</label>
-                  <input type="password" id="lastfmApiKey" class="settingsInput"
-                    placeholder="Enter Last.fm API Key"
-                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
-                </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                  <button id="saveLastFmBtn" class="textButton">Save Last.fm Credentials</button>
-                </div>
-
-                <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-top: 12px;">
-                  <div class="connection-led led-disconnected" id="lastfmConnectionLed" aria-label="Last.fm connection status"></div>
-                  <div id="lastfmConnectionText" class="metaCaption" style="font-size: 12px; color: var(--text-2);">
-                    Not tested
-                  </div>
-                  <button id="testLastFmBtn" class="textButton" style="padding-left: 16px; padding-right: 16px; margin-left: auto;">
-                    Test Last.fm Connection
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-label">Spotify API (Optional)</div>
-            <div class="settings-card">
-              <div class="settings-card-row">
-                <div>
-                  <div class="row-label">Artist Image Integration</div>
-                  <div class="row-desc">To fetch additional artist images (up to 5 total including Wikipedia), you need
-                    to provide your Spotify API credentials. Create a new app on the <a
-                      href="https://developer.spotify.com/dashboard/applications" target="_blank" rel="noopener"
-                      class="hqp-link">Spotify Developer Dashboard ↗</a> and follow the instructions to get your Client
-                    ID and Client Secret.</div>
+                  <div class="row-label">Spotify Integration</div>
+                  <div class="row-desc">Connect to Spotify for playback control and additional metadata.</div>
                 </div>
               </div>
               <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
@@ -853,6 +813,32 @@
                   <button id="testSpotifyBtn" class="textButton" style="padding-left: 16px; padding-right: 16px; margin-left: auto;">
                     Test Spotify Connection
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-label">Artist Image Sources</div>
+            <div class="settings-card">
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Web Image Scraping</div>
+                  <div class="row-desc">Scrape artist images from web sources. Add URLs with {ARTIST} placeholder for artist name. Use * suffix to enable.</div>
+                </div>
+                <div class="row-right">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="imageScrapingEnabled" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                <div id="imageSourcesList" class="image-sources-list"></div>
+                <div class="inputGroup" style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                  <input type="text" id="newImageSourceUrl" class="settingsInput" placeholder="https://example.com/{ARTIST}/images"
+                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
+                  <button id="addImageSourceBtn" class="iconButton" title="Add source">+</button>
                 </div>
               </div>
             </div>

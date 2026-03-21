@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const querystring = require('querystring');
 const db = require('./db');
+const puppeteer = require('puppeteer');
 
 // Ensure DB initialized
 db.init();
@@ -252,62 +253,188 @@ const searchSpotifyArtistImages = (name, cb) => {
   });
 };
 
-const searchLastFmImages = (name, cb) => {
-  const configPath = path.join(__dirname, 'data', 'lastfm.json');
-  if (!fs.existsSync(configPath)) return cb(null, []);
+const getImageSourcesConfig = () => {
+  const configPath = path.join(__dirname, 'data', 'imageSources.json');
+  const defaultConfig = {
+    enabled: true,
+    sources: ['https://www.last.fm/music/{ARTIST}/+images/*']
+  };
   
-  let config;
+  if (!fs.existsSync(configPath)) {
+    return defaultConfig;
+  }
+  
   try {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
   } catch (e) {
+    return defaultConfig;
+  }
+};
+
+const scrapeArtistImages = (name, cb) => {
+  const config = getImageSourcesConfig();
+  
+  if (!config.enabled) {
+    console.log('[sources] Image scraping disabled');
     return cb(null, []);
   }
   
-  const apiKey = config.apiKey;
-  if (!apiKey) return cb(null, []);
+  const enabledSources = config.sources.filter(s => s.endsWith('*')).map(s => s.slice(0, -1));
   
-  // Use artist.search to find artist and get images from artist.getinfo
-  const searchUrl = `https://ws.audioscrobbler.com/2.0/?method=artist.search&artist=${encodeURIComponent(name)}&api_key=${apiKey}&format=json&limit=5`;
-  httpGetJson(searchUrl, (err, json) => {
-    if (err) return cb(err, []);
-    try {
-      const matches = json.results && json.results.artistmatches && json.results.artistmatches.artist ? json.results.artistmatches.artist : [];
-      if (matches.length === 0) return cb(null, []);
-      
-      // Get images from first match using artist.getinfo
-      const mbid = matches[0].mbid;
-      const getInfoUrl = mbid 
-        ? `https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&mbid=${mbid}&api_key=${apiKey}&format=json`
-        : `https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(matches[0].name)}&api_key=${apiKey}&format=json`;
-      
-      httpGetJson(getInfoUrl, (err2, infoJson) => {
-        if (err2) return cb(err2, []);
+  if (enabledSources.length === 0) {
+    console.log('[sources] No enabled image sources');
+    return cb(null, []);
+  }
+  
+  console.log('[sources] Scraping images for:', name, 'from', enabledSources.length, 'sources');
+  
+  const allImages = [];
+  let sourcesProcessed = 0;
+  
+  for (let s = 0; s < enabledSources.length; s++) {
+    const sourceUrl = enabledSources[s].replace('{ARTIST}', encodeURIComponent(name));
+    const sourceBase = enabledSources[s].includes('last.fm') ? 'lastfm' : 'web';
+    console.log('[sources] Scraping from:', sourceUrl);
+    
+    (async () => {
+      let browser;
+      try {
+        browser = await puppeteer.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        });
+        
+        const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        await page.setExtraHTTPHeaders({
+          'Accept-Language': 'en-US,en;q=0.9'
+        });
+        
+        await page.goto(sourceUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
         const images = [];
-        try {
-          const artist = infoJson.artist || infoJson;
-          // Last.fm provides image URLs in various sizes
-          const imageSizes = ['extralarge', 'large', 'medium', 'small'];
-          for (const size of imageSizes) {
-            const img = artist.image ? (Array.isArray(artist.image) ? artist.image.find(i => i.size === size) : artist.image) : null;
-            if (img && img['#text'] && img['#text'].length > 0) {
-              images.push({ url: img['#text'], source: 'lastfm' });
+        
+        if (sourceBase === 'lastfm') {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const galleryInfo = await page.evaluate(() => {
+            const result = {
+              pageTitle: document.title,
+              allLinks: [],
+              images: []
+            };
+            
+            Array.from(document.querySelectorAll('a')).forEach(a => {
+              if (a.href.includes('images') || a.href.includes('photo')) {
+                result.allLinks.push({
+                  href: a.href,
+                  text: a.textContent.trim().substring(0, 50),
+                  className: a.className
+                });
+              }
+            });
+            
+            document.querySelectorAll('img').forEach((img) => {
+              const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
+              if (src && src.includes('fastly.net') && !src.includes('2a96cbd8')) {
+                result.images.push(src.split('#')[0]);
+              }
+              if (img.srcset) {
+                const parts = img.srcset.split(',').map(s => s.trim().split(' ')[0]);
+                parts.forEach(p => {
+                  if (p && p.includes('fastly.net') && !p.includes('2a96cbd8')) {
+                    result.images.push(p.split('#')[0]);
+                  }
+                });
+              }
+            });
+            
+            return result;
+          });
+          
+          const uniqueImages = [...new Set(galleryInfo.images)];
+          console.log('[sources] Gallery found', uniqueImages.length, 'direct images');
+          
+          if (uniqueImages.length > 0) {
+            for (let i = 0; i < Math.min(uniqueImages.length, 5); i++) {
+              images.push({ url: uniqueImages[i], source: sourceBase, id: `${name}-${sourceBase}-${i}` });
+            }
+          } else {
+            console.log('[sources] No direct images, trying image pages...');
+            let imagePageUrls = galleryInfo.allLinks
+              .filter(l => l.href.match(/\/\+images\/[a-f0-9]+$/) || l.href.match(/\/photo\/[a-f0-9]+$/))
+              .map(l => l.href)
+              .slice(0, 3);
+            
+            for (let i = 0; i < imagePageUrls.length; i++) {
+              const imagePageUrl = imagePageUrls[i];
+              console.log('[sources] Scraping image page:', imagePageUrl);
+              try {
+                await page.goto(imagePageUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const pageImages = await page.evaluate(() => {
+                  const imgs = [];
+                  document.querySelectorAll('img').forEach((img) => {
+                    const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
+                    if (src && src.includes('fastly.net') && !src.includes('2a96cbd8')) {
+                      imgs.push(src.split('#')[0]);
+                    }
+                  });
+                  return [...new Set(imgs)];
+                });
+                
+                if (pageImages.length > 0) {
+                  images.push({ url: pageImages[0], source: sourceBase, id: `${name}-${sourceBase}-${i}` });
+                }
+              } catch (imgErr) {
+                console.log('[sources] Image page error:', imgErr.message);
+              }
             }
           }
-        } catch (e) {
-          return cb(null, []);
+        } else {
+          const imgElements = await page.$$('img');
+          for (let i = 0; i < imgElements.length; i++) {
+            const src = await imgElements[i].evaluate(el => {
+              return el.src || el.getAttribute('data-src') || ((el.getAttribute('srcset') || '').split(' ')[0]);
+            });
+            if (src && src.startsWith('http') && !src.includes('placeholder') && !src.includes('2a96cbd8')) {
+              images.push({ url: src, source: sourceBase, id: `${name}-${sourceBase}-${i}` });
+            }
+          }
         }
-        cb(null, images.slice(0, 5));
-      });
-    } catch (e) {
-      return cb(null, []);
-    }
-  });
+        
+        console.log('[sources] Source', sourceBase, 'found', images.length, 'images');
+        allImages.push(...images);
+        
+      } catch (err) {
+        console.log('[sources] Scrape error:', err.message);
+      } finally {
+        if (browser) await browser.close();
+        sourcesProcessed++;
+        if (sourcesProcessed === enabledSources.length) {
+          console.log('[sources] Final images:', allImages.length);
+          cb(null, allImages.slice(0, 5));
+        }
+      }
+    })();
+  }
+  
+  if (enabledSources.length === 0) {
+    cb(null, []);
+  }
 };
+
+const searchLastFmImages = scrapeArtistImages;
 
 const searchCommonsImages = (name, cb) => {
   const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=10&prop=imageinfo&iiprop=url|mime|extmetadata`;
   httpGetJson(url, (err, json) => {
-    if (err) return cb(err, []);
+    if (err) {
+      console.warn('[sources] Commons fetch error:', err.message);
+      return cb(null, []);
+    }
     const images = [];
     try {
       const pages = json.query && json.query.pages ? Object.values(json.query.pages) : [];
@@ -437,6 +564,31 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
           addImg(wikiData.thumbnail, 'wikipedia', `${mbid}-wiki`);
         }
 
+        let imageFetchComplete = false;
+        const safeCallback = (err, result) => {
+          if (imageFetchComplete) return;
+          imageFetchComplete = true;
+          cb(err, result);
+        };
+
+        const onImagesReady = (imgs) => {
+          console.log('[sources] Adding images bulk, count:', imgs.length);
+          db.addImagesBulk(mbid, imgs, (errB) => {
+            if (errB) {
+              console.error('[sources] addImagesBulk failed:', errB);
+            }
+            const first = imgs[0];
+            if (first) {
+              db.setDefaultImage(mbid, first.id, (errD) => {
+                if (errD) console.warn('[sources] setDefaultImage failed:', errD);
+                safeCallback(null, mbid);
+              });
+            } else {
+              safeCallback(null, mbid);
+            }
+          });
+        };
+
         // Fetch Spotify images (may fail without premium)
         searchSpotifyArtistImages(name, (errS, spotifyImgs) => {
           if (errS) console.warn('[sources] Spotify image fetch warning:', errS);
@@ -472,25 +624,6 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
             onImagesReady(images);
           }
         });
-
-        const onImagesReady = (imgs) => {
-          console.log('[sources] Adding images bulk, count:', imgs.length);
-          db.addImagesBulk(mbid, imgs, (errB) => {
-            if (errB) {
-              console.error('[sources] addImagesBulk failed:', errB);
-              return cb(errB);
-            }
-            const first = imgs[0];
-            if (first) {
-              db.setDefaultImage(mbid, first.id, (errD) => {
-                if (errD) console.warn('[sources] setDefaultImage failed:', errD);
-                cb(null, mbid);
-              });
-            } else {
-              cb(null, mbid);
-            }
-          });
-        };
       });
     };
   });

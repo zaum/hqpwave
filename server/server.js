@@ -12,6 +12,7 @@ const app = express();
 const os = require('os');
 
 const log = require('./log');
+const db = require('./db');
 const packageJson = require('./../package.json');
 const proxy = require('./proxy');
 const meta = require('./meta');
@@ -479,35 +480,6 @@ app.get('/endpoints/testSpotifyConnection', (req, res) => {
   request.end();
 });
 
-app.get('/endpoints/lastfmCredentials', (req, res) => {
-  const configPath = path.join(__dirname, 'data', 'lastfm.json');
-  if (!fs.existsSync(configPath)) {
-    return res.json({ apiKey: '' });
-  }
-  try {
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    res.json({ apiKey: config.apiKey || '' });
-  } catch (e) {
-    res.status(500).json({ error: 'read_error' });
-  }
-});
-
-app.post('/endpoints/lastfmCredentials', (req, res) => {
-  const { apiKey } = req.body;
-  if (apiKey === undefined) {
-    return res.status(400).json({ error: 'missing_params' });
-  }
-  const configPath = path.join(__dirname, 'data', 'lastfm.json');
-  const dataDir = path.join(__dirname, 'data');
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-  try {
-    fs.writeFileSync(configPath, JSON.stringify({ apiKey }, null, 2), 'utf8');
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: 'write_error' });
-  }
-});
 
 /**
  * 'playlist'
@@ -518,6 +490,40 @@ app.get('/endpoints/playlist', (request, response) => {
 
 app.post('/endpoints/playlist', (request, response) => {
   playlistHandler.doPost(request, response);
+});
+
+app.get('/endpoints/imageSources', (req, res) => {
+  const configPath = path.join(__dirname, 'data', 'imageSources.json');
+  if (!fs.existsSync(configPath)) {
+    const defaultConfig = {
+      enabled: true,
+      sources: ['https://www.last.fm/music/{ARTIST}/+images/*']
+    };
+    return res.json(defaultConfig);
+  }
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    res.json(config);
+  } catch (e) {
+    res.status(500).json({ error: 'read_error' });
+  }
+});
+
+app.post('/endpoints/imageSources', (req, res) => {
+  const { enabled, sources } = req.body;
+  if (enabled === undefined || !Array.isArray(sources)) {
+    return res.status(400).json({ error: 'missing_params' });
+  }
+  const configPath = path.join(__dirname, 'data', 'imageSources.json');
+  const dataDir = path.join(__dirname, 'data');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({ enabled, sources }, null, 2), 'utf8');
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'write_error' });
+  }
 });
 
 // ---
