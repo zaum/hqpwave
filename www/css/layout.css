@@ -1310,6 +1310,12 @@
     left: 20px;
   }
 
+  /* Artist view - same position as album view */
+  #page.artistView #backToLibraryButton {
+    top: 94px;
+    left: 20px;
+  }
+
   /* Settings views - to the left of the centered 640px content block */
   #page.settingsView #backToLibraryButton,
   #page.hqpSettingsView #backToLibraryButton {
@@ -1343,12 +1349,6 @@
 
 #page:not(.libraryView) #mainArea {
   grid-column: 1 / -1;
-}
-
-@media (min-width: 768px) {
-  #mainArea {
-    padding-top: 20px;
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════════

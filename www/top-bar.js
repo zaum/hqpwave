@@ -14,10 +14,6 @@ class TopBar {
     // appTitle visible from start
   }
 
-  get $el() {
-  	return this.$el;
-  }
-
   showButtons() {
     ViewUtil.setVisible(this.$appTitle, true);
     ViewUtil.setVisible(this.$topBarButtons, true);

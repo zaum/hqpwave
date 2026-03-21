@@ -8,10 +8,10 @@
   <!-- Favicons -->
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.png" type="image/png">
-  <link rel="preload" href="css/main.css?v=20260315_10" as="style" onload="this.rel='stylesheet'">
-  <noscript>
-    <link rel="stylesheet" href="css/main.css?v=20260315_10">
-  </noscript>
+  <link rel="stylesheet" href="css/main.css?v=20260315_10">
+  <!-- Google Material Symbols for icons used in UI -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=sync">
   <script src="libs/platform.js"></script>
   <script src="libs/window-app.js"></script>
   <script>
@@ -59,7 +59,9 @@
     <header id="topBar">
       <!-- Back to Library Button -->
       <button id="backToLibraryButton" title="Back to Library" aria-label="Back to Library">
-        <svg width="18" height="18" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" fill="none"
+          stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+          focusable="false">
           <path d="M19 12H5" />
           <path d="M12 19l-7-7 7-7" />
         </svg>
@@ -100,6 +102,7 @@
       <nav class="topbar-nav">
         <div class="nav-pill active" data-view="library">Library</div>
         <div class="nav-pill" data-view="album">Album</div>
+        <div class="nav-pill" data-view="artist">Artist</div>
         <div class="nav-pill" data-view="playlist">Playlist</div>
         <div class="nav-pill" data-view="history">History</div>
       </nav>
@@ -384,6 +387,68 @@
           </div>
 
           <div id="albumList"></div>
+        </div>
+        <div id="relatedAlbums" class="relatedAlbums">
+          <div class="relatedAlbumsInner">
+            <h3 class="relatedAlbumsTitle">Related Albums</h3>
+            <div id="relatedAlbumsList" class="libraryAlbumGroup"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Artist View -->
+      <section id="artistView" class="subview" tabindex="0">
+        <div id="artistViewLoading" class="view-loading" style="display: none;">
+          <div class="spinner"></div>
+        </div>
+
+        <div id="artistViewBg">
+          <img id="artistViewBgImage" alt="">
+          <div id="artistViewBgOverlayRight"></div>
+          <div id="artistViewBgOverlayBottom"></div>
+        </div>
+
+        <div class="artistViewPictureColumn">
+
+          <div class="artistViewPictureOuter">
+            <div class="artistPictureFrame">
+              <img id="artistViewPicture" alt="Artist photo">
+            </div>
+            <div id="artistViewImageNav">
+              <button id="artistViewPrevImageButton" class="artistViewImageNavButton"
+                aria-label="Previous artist image">
+                <svg class="artistViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+                  <path
+                    d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
+                </svg>
+              </button>
+              <div id="artistViewSetDefaultImage" class="artistViewSetDefaultBtn">Set as default</div>
+              <button id="artistViewNextImageButton" class="artistViewImageNavButton" aria-label="Next artist image">
+                <svg class="artistViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+                  <path
+                    d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
+                </svg>
+              </button>
+            </div>
+            <div id="artistViewImageGallery"></div>
+          </div>
+        </div>
+
+        <div id="artistViewRightColumn">
+          <div id="artistViewInfo">
+            <div id="artistViewTexts">
+              <div id="artistViewTextsInner">
+                <div id="artistViewName"></div>
+                <div class="artistViewMetaLine">
+                  <div id="artistViewDisambiguation"></div>
+                  <div id="artistViewYears" class="metaCaption"></div>
+                </div>
+                <div id="artistViewBio" class="artistBio"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="artistDiscography"></div>
         </div>
       </section>
 
@@ -696,6 +761,98 @@
                 </div>
                 <div class="row-right">
                   <a href="#" id="metaDownload" class="textButton">Download backup</a>
+                </div>
+              </div>
+              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <div>
+                    <div class="row-label">Artist Metadata Cache</div>
+                    <div class="row-desc">Album covers (CoverArtArchive), artist images (Wikipedia, Spotify, Commons), artist bios</div>
+                  </div>
+                  <div class="row-right" style="gap: 16px;">
+                    <span id="artistDbSize" class="metaCaption" style="font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--text-2);"></span>
+                    <button id="clearArtistDbBtn" class="textButton">Clear</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-label">Last.fm API (Optional)</div>
+            <div class="settings-card">
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Artist Images</div>
+                  <div class="row-desc">Last.fm provides free artist portrait images. Get a free API key from
+                    <a href="https://www.last.fm/api/account/create" target="_blank" rel="noopener"
+                      class="hqp-link">Last.fm API ↗</a>
+                    to enable artist image fetching.</div>
+                </div>
+              </div>
+              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                <div class="inputGroup" style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                  <label for="lastfmApiKey" class="metaCaption" style="width: 100px; flex-shrink: 0;">API Key</label>
+                  <input type="password" id="lastfmApiKey" class="settingsInput"
+                    placeholder="Enter Last.fm API Key"
+                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                  <button id="saveLastFmBtn" class="textButton">Save Last.fm Credentials</button>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-top: 12px;">
+                  <div class="connection-led led-disconnected" id="lastfmConnectionLed" aria-label="Last.fm connection status"></div>
+                  <div id="lastfmConnectionText" class="metaCaption" style="font-size: 12px; color: var(--text-2);">
+                    Not tested
+                  </div>
+                  <button id="testLastFmBtn" class="textButton" style="padding-left: 16px; padding-right: 16px; margin-left: auto;">
+                    Test Last.fm Connection
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-label">Spotify API (Optional)</div>
+            <div class="settings-card">
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Artist Image Integration</div>
+                  <div class="row-desc">To fetch additional artist images (up to 5 total including Wikipedia), you need
+                    to provide your Spotify API credentials. Create a new app on the <a
+                      href="https://developer.spotify.com/dashboard/applications" target="_blank" rel="noopener"
+                      class="hqp-link">Spotify Developer Dashboard ↗</a> and follow the instructions to get your Client
+                    ID and Client Secret.</div>
+                </div>
+              </div>
+              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                <div class="inputGroup" style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                  <label for="spotifyClientId" class="metaCaption" style="width: 100px; flex-shrink: 0;">Client
+                    ID</label>
+                  <input type="text" id="spotifyClientId" class="settingsInput" placeholder="Enter Client ID"
+                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
+                </div>
+                <div class="inputGroup" style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                  <label for="spotifyClientSecret" class="metaCaption" style="width: 100px; flex-shrink: 0;">Client
+                    Secret</label>
+                  <input type="password" id="spotifyClientSecret" class="settingsInput"
+                    placeholder="Enter Client Secret"
+                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                  <button id="saveSpotifyBtn" class="textButton">Save Spotify Credentials</button>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-top: 12px;">
+                  <div class="connection-led led-disconnected" id="spotifyConnectionLed" aria-label="Spotify connection status"></div>
+                  <div id="spotifyConnectionText" class="metaCaption" style="font-size: 12px; color: var(--text-2);">
+                    Not tested
+                  </div>
+                  <button id="testSpotifyBtn" class="textButton" style="padding-left: 16px; padding-right: 16px; margin-left: auto;">
+                    Test Spotify Connection
+                  </button>
                 </div>
               </div>
             </div>

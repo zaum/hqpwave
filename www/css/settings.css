@@ -185,6 +185,11 @@
   flex-shrink: 0;
 }
 
+.settings-card-row .textButton:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    TOGGLE SWITCH
    ═══════════════════════════════════════════════════════════════ */
@@ -258,12 +263,12 @@
   transition: color 0.25s;
 }
 
-.mode-toggle-input:checked ~ .mode-labels .mode-label-pcm {
+.mode-toggle-input:checked~.mode-labels .mode-label-pcm {
   color: var(--text-3);
   opacity: 0.6;
 }
 
-.mode-toggle-input:not(:checked) ~ .mode-labels .mode-label-dsd {
+.mode-toggle-input:not(:checked)~.mode-labels .mode-label-dsd {
   color: var(--text-3);
   opacity: 0.6;
 }
@@ -491,20 +496,6 @@
   margin-bottom: 12px;
 }
 
-.info-block .hqp-link {
-  font-size: 12px;
-  color: var(--accent);
-  text-decoration: none;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid rgba(200, 169, 110, 0.3);
-  padding-bottom: 1px;
-  transition: border-color 0.2s;
-}
-
-.info-block .hqp-link:hover {
-  border-color: var(--accent);
-}
-
 /* Connection LED */
 .connection-led {
   width: 12px;
@@ -512,8 +503,51 @@
   border-radius: 50%;
   background: var(--green);
   box-shadow: 0 0 8px var(--green);
-  margin-bottom: 12px;
+  margin-bottom: 0;
   flex-shrink: 0;
+}
+
+/* Align Spotify test LED with its label in the Settings card row. */
+#spotifyConnectionLed {
+  /* Move up by ~2px compared to the previous tweak. */
+  transform: translateY(-1px);
+}
+
+/* Settings > HQPlayer Connection layout:
+   Make the LED align with the "Connected/Disconnected" line (LED left, text right). */
+#settingsInfoView .info-block {
+  display: grid;
+  /* LED | version text | right-side link */
+  grid-template-columns: 12px 1fr auto;
+  column-gap: 12px;
+  /* Space above the LED/Connected row ("one-line" spacing). */
+  row-gap: 14px;
+  align-items: center;
+}
+
+#settingsInfoView .info-block .hqp-name {
+  grid-column: 2 / span 2;
+  grid-row: 1;
+  margin-bottom: 0; /* spacing handled by grid */
+}
+
+#settingsInfoView .info-block .connection-led {
+  grid-column: 1;
+  grid-row: 2;
+  margin-bottom: 0;
+}
+
+#settingsInfoView .info-block .hqp-version {
+  grid-column: 2;
+  grid-row: 2;
+  margin-bottom: 0; /* spacing handled by grid */
+}
+
+#settingsInfoView .info-block .hqp-link {
+  grid-column: 3;
+  grid-row: 2; /* Put link into the same "lamp" row (right side). */
+  margin-top: 0;
+  justify-self: end;
 }
 
 .connection-led.led-connected {
@@ -522,6 +556,11 @@
 }
 
 .connection-led.led-disconnected {
+  background: var(--text-3);
+  box-shadow: 0 0 4px var(--text-3);
+}
+
+.connection-led.led-error {
   background: var(--red);
   box-shadow: 0 0 8px var(--red);
 }
@@ -721,7 +760,7 @@
   background: var(--accent-bg);
 }
 
-.settingsSelectOuter select:focus + .filter-clear-icon {
+.settingsSelectOuter select:focus+.filter-clear-icon {
   opacity: 1;
   pointer-events: auto;
   color: var(--accent);

@@ -321,3 +321,12 @@ label {
     transform: translateY(0);
   }
 }
+
+.hqp-link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.hqp-link:hover {
+  color: var(--accent);
+}

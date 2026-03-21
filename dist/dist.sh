@@ -14,9 +14,9 @@ mv hqpwv-node16-macos hqpwv-server-$1-macos-x64
 mv hqpwv-node14-win.exe hqpwv-server-$1-win-x64.exe
 mv hqpwv-node16-linux hqpwv-server-$1-linux-x64
 
-zip hqpwv-server-$1-macos-x64.zip hqpwv-server-$1-macos-x64
-zip hqpwv-server-$1-win-x64.zip hqpwv-server-$1-win-x64.exe
-zip hqpwv-server-$1-linux-x64.zip hqpwv-server-$1-linux-x64
+powershell Compress-Archive -Path "hqpwv-server-$1-macos-x64" -DestinationPath "hqpwv-server-$1-macos-x64.zip"
+powershell Compress-Archive -Path "hqpwv-server-$1-win-x64.exe" -DestinationPath "hqpwv-server-$1-win-x64.zip"
+powershell Compress-Archive -Path "hqpwv-server-$1-linux-x64" -DestinationPath "hqpwv-server-$1-linux-x64.zip"
 
 ls -l
 

@@ -28,6 +28,7 @@ import Values from './values.js';
 import ViewTransition from './view-transition.js';
 import ViewUtil from './view-util.js';
 import SidebarView from './sidebar-view.js';
+import ArtistView from './artist-view.js';
 
 /**
  * Main class.
@@ -41,10 +42,12 @@ export default class App {
   playbarView = new PlaybarView();
   libraryView = new LibraryView();
   albumView = new AlbumView();
+  artistView = new ArtistView();
   playlistView = new PlaylistCompoundView();
   settingsView = new SettingsView();
   hqpSettingsView = new HqpSettingsView();
-  subviews = [this.libraryView, this.albumView, this.playlistView, this.settingsView, this.hqpSettingsView];
+  subviews = [this.libraryView, this.albumView, this.artistView, this.playlistView, this.settingsView, this.hqpSettingsView];
+
 
   sidebarView = SidebarView;
 
@@ -97,6 +100,7 @@ export default class App {
     Util.addAppListener(this, 'settings-show-logo-animation-changed', this.onShowLogoAnimationChanged);
 
     Util.addAppListener(this, 'library-item-click', this.showAlbumView);
+    Util.addAppListener(this, 'show-artist', this.showArtistView);
     Util.addAppListener(this, 'album-view-close-button', this.hideAlbumView);
     Util.addAppListener(this, 'album-genre-button', this.onAlbumGenreButton);
     Util.addAppListener(this, 'album-artist-button', this.onAlbumArtistButton);
@@ -228,10 +232,15 @@ export default class App {
           this.hideSettingsViews(true);
           this.showHistoryView();
           break;
-        case 'timeline':
-        case 'artist':
+      case 'timeline':
           this.setActiveNavPill('library');
           this.goToLibraryView();
+          break;
+      case 'artist':
+          this.hideSettingsViews(true);
+          // Show artist view for the currently playing artist
+          const currentArtist = this.getCurrentArtistName();
+          this.showArtistView(currentArtist);
           break;
       }
     });
@@ -298,7 +307,7 @@ export default class App {
 
   goToLibraryView() {
     this.transition(() => {
-      const closables = [this.hqpSettingsView, this.settingsView, this.playlistView, this.albumView];
+      const closables = [this.hqpSettingsView, this.settingsView, this.playlistView, this.albumView, this.artistView];
       for (let subview of closables) {
         if (ViewUtil.isVisible(subview.$el)) {
           subview.hide();
@@ -393,6 +402,15 @@ export default class App {
     }
 
     return null;
+  }
+
+  getCurrentArtistName() {
+    const album = this.getCurrentAlbum();
+    if (album) {
+      return album['@_artist'] || album['@_performer'] || null;
+    }
+    const meta = Model.status?.metadata || {};
+    return meta['@_artist'] || meta['@_performer'] || null;
   }
 
   /** Performs a series of required asynchronous calls. */
@@ -513,7 +531,40 @@ export default class App {
 
   showAlbumView(album, $libraryItem) {
     this.setActiveNavPill('album');
+    // If album view is already the top subview, update it in-place instead
+    if (this.getTopSubview() === this.albumView) {
+      try {
+        // populate with new album and reset scroll
+        this.albumView.populate(album);
+        this.albumView.updateRelatedAlbums && this.albumView.updateRelatedAlbums();
+        if (this.albumView.$el && this.albumView.$el[0]) {
+          this.albumView.$el[0].scrollTop = 0;
+        }
+        $(document).trigger('enable-user-input');
+      } catch (e) {
+        // fallback to full show path
+        this.showSubview(this.albumView, album, $libraryItem);
+      }
+      return;
+    }
+
     this.showSubview(this.albumView, album, $libraryItem);
+  }
+
+  showArtistView(artistId) {
+    this.setActiveNavPill('artist');
+    if (this.getTopSubview() === this.artistView) {
+      try {
+        this.artistView.loadArtist(artistId);
+        if (this.artistView.$el && this.artistView.$el[0]) this.artistView.$el[0].scrollTop = 0;
+        $(document).trigger('enable-user-input');
+      } catch (e) {
+        this.showSubview(this.artistView, artistId);
+      }
+      return;
+    }
+
+    this.showSubview(this.artistView, artistId);
   }
 
   showSettingsView() {
@@ -560,6 +611,10 @@ export default class App {
     }
   }
 
+  hideArtistView() {
+    this.hideSubview(this.artistView);
+  }
+
   hideSettingsView() {
     this.hideSubview(this.settingsView);
   }
@@ -586,6 +641,9 @@ export default class App {
     switch (subview) {
       case this.albumView:
         this.hideAlbumView();
+        break;
+      case this.artistView:
+        this.hideArtistView();
         break;
       case this.playlistView:
         const result = this.playlistView.onEscape();
@@ -969,7 +1027,7 @@ export default class App {
   };
 
   onAlbumArtistButton(artist) {
-    this.applyLibrarySearchFromAlbum(artist);
+    $(document).trigger('show-artist', artist);
   }
 
   onMetaLoadResult(isSuccess) {

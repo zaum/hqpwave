@@ -138,7 +138,7 @@
   position: absolute;
   inset: -20px;
   background: var(--cover-color, #2a2010);
-  filter: blur(60px) saturate(0.5);
+  filter: blur(60px);
   opacity: 0.45;
   transform: scale(1.1);
   mix-blend-mode: screen;
@@ -201,6 +201,40 @@
   align-self: center;
 }
 
+/* When unpinned, allow the picture column to scroll out with content */
+
+/* Ensure transforms applied to the picture holder are GPU-accelerated and smooth */
+.albumViewPictureOuter {
+  will-change: transform;
+}
+
+/* When unpinned (we insert a placeholder) allow the holder to be positioned
+   relative so it can be transformed without affecting layout. */
+.albumViewPictureOuter.is-unpinned {
+  position: relative !important;
+  top: auto !important;
+  z-index: 200;
+}
+
+.albumViewPicturePlaceholder {
+  width: 100%;
+  display: block;
+}
+
+/* Let Related Albums background reach left edge by offsetting the block
+   to counter the album view left padding. Adjust on different breakpoints. */
+.relatedAlbums {
+  margin-left: -52px;
+  padding-left: 52px;
+}
+
+@media (max-width: 1023px) {
+  .relatedAlbums {
+    margin-left: -24px;
+    padding-left: 24px;
+  }
+}
+
 @media (min-width: 480px) {
 
   .albumViewPictureOuter,
@@ -238,7 +272,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  filter: blur(80px);
+  filter: blur(80px) saturate(1.7);
   opacity: 0.15;
   z-index: 1;
   object-fit: cover;
@@ -249,7 +283,7 @@
 
 @media (min-width: 768px) {
   #albumViewPictureBlur {
-    transform: scale(1.8);
+    transform: scale(1.6);
   }
 }
 
@@ -1398,4 +1432,34 @@
   flex: 1;
   height: 1px;
   background: var(--border);
+}
+
+/* Related Albums: full-width block spanning both columns */
+.relatedAlbums {
+  grid-column: 1 / -1;
+  background: var(--surface2);
+  padding: 40px 24px 36px 24px; /* increased top padding */
+  margin-top: 28px;
+}
+
+.relatedAlbumsInner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.relatedAlbumsTitle {
+  /* Match the album artist name style from the album info area */
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 16px 8px; /* slightly larger gap below title */
+}
+
+/* Reuse library album grid styles via libraryAlbumGroup class; tweak spacing here */
+.relatedAlbums .libraryAlbumGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
 }

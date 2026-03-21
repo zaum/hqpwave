@@ -195,6 +195,8 @@ class Settings {
     this.storage.setItem('playerBackgroundColor', s);
   }
 
+  
+
   get showPlayButton() {
     return (this._showPlayButton === 'true');
   }

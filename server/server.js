@@ -9,7 +9,7 @@ const { spawn } = require('child_process');
 const express = require('express');
 const bodyParser = require("body-parser");
 const app = express();
-const ip = require('ip');
+const os = require('os');
 
 const log = require('./log');
 const packageJson = require('./../package.json');
@@ -19,6 +19,8 @@ const commandHandler = require('./server-command-handler');
 const metaHandler = require('./server-meta-handler');
 const playlistHandler = require('./server-playlist-handler');
 const playlists = require('./playlists');
+const artistHandler = require('./artist-handler');
+const sources = require('./sources');
 
 const APP_FILENAME = `hqpwv`;
 const WEBPAGE_DIR = path.join( __dirname, './../www' );
@@ -28,6 +30,22 @@ const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bm
 let port;
 let server;
 let hqpIp;
+
+const getServerIp = () => {
+  try {
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]) {
+        if (net && net.family === 'IPv4' && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+  return '127.0.0.1';
+};
 
 const normalizeRequestedPath = (inputPath) => {
   if (!inputPath || typeof inputPath !== 'string') {
@@ -112,6 +130,32 @@ app.get('/endpoints/command', (request, response) => {
   commandHandler.go(request, response);
 });
 
+// Simple proxy endpoint to fetch arbitrary HTML for same-origin usage (used for AllMusic lookups)
+// Note: only allow whitelisted hosts to avoid open proxy abuse.
+app.get('/endpoints/proxyFetch', async (req, res) => {
+  const url = req.query.url;
+  if (!url || typeof url !== 'string') {
+    res.status(400).send('bad_param');
+    return;
+  }
+  try {
+    const allowedHosts = new Set(['www.allmusic.com', 'allmusic.com']);
+    const u = new URL(url);
+    if (!allowedHosts.has(u.hostname)) {
+      res.status(403).send('forbidden_host');
+      return;
+    }
+    // perform server-side fetch
+    const fetch = require('node-fetch');
+    const r = await fetch(url, { redirect: 'follow' });
+    const text = await r.text();
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(text);
+  } catch (e) {
+    res.status(500).send('error');
+  }
+});
+
 /**
  * 'native'
  */
@@ -120,7 +164,7 @@ app.get('/endpoints/native', (request, response) => {
   if (request.query.info !== undefined) {
     response.send({
       hqplayer_ip_address: hqpIp,
-      server_ip_address: ip.address(),
+      server_ip_address: getServerIp(),
       hqpwv_version: packageJson.version
     });
     return;
@@ -255,6 +299,217 @@ app.get('/endpoints/meta', (request, response) => {
 });
 
 /**
+ * 'artist' endpoints (artist metadata + image serving)
+ */
+app.get('/endpoints/artist', (request, response) => {
+  artistHandler.doGet(request, response);
+});
+
+app.post('/endpoints/artist', (request, response) => {
+  artistHandler.doPost(request, response);
+});
+
+/** Import artist metadata from external sources (MusicBrainz/Wikipedia/CoverArt) */
+app.post('/endpoints/artistImport', (request, response) => {
+  const name = request.query['name'] || (request.body && request.body.name);
+  if (!name) {
+    response.status(400).json({ error: 'missing_required_param' });
+    return;
+  }
+  sources.fetchAndStoreArtistByName(name, (err, mbid) => {
+    if (err) {
+      console.error('[server] artistImport error:', err);
+      response.status(500).json({ error: 'source_fetch_error', message: err.message || err.toString() });
+      return;
+    }
+    if (!mbid) {
+      response.status(404).json({ error: 'not_found' });
+      return;
+    }
+    response.json({ result: true, id: mbid });
+  });
+});
+
+app.get('/endpoints/artistImage', (request, response) => {
+  artistHandler.doImage(request, response);
+});
+
+app.get('/endpoints/artistDbStats', (req, res) => {
+  const dbPath = path.join(__dirname, 'data', 'artists.db');
+  const imagesPath = path.join(__dirname, 'data', 'images');
+  let size = 0;
+  let imageCount = 0;
+  
+  if (fs.existsSync(dbPath)) {
+    try {
+      const stats = fs.statSync(dbPath);
+      size += stats.size;
+    } catch (e) {}
+  }
+  
+  if (fs.existsSync(imagesPath)) {
+    try {
+      const files = fs.readdirSync(imagesPath);
+      imageCount = files.length;
+    } catch (e) {}
+  }
+  
+  res.json({
+    dbSize: size,
+    dbSizeFormatted: formatBytes(size),
+    imageCount: imageCount
+  });
+});
+
+app.post('/endpoints/artistDbClear', (req, res) => {
+  const dbPath = path.join(__dirname, 'data', 'artists.db');
+  try {
+    if (fs.existsSync(dbPath)) {
+      db.close();
+      fs.unlinkSync(dbPath);
+      db.init();
+      res.json({ success: true });
+    } else {
+      res.json({ success: true, message: 'Database already empty' });
+    }
+  } catch (e) {
+    console.error('[server] artistDbClear error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+app.get('/endpoints/spotifyCredentials', (req, res) => {
+  const configPath = path.join(__dirname, 'data', 'spotify.json');
+  if (!fs.existsSync(configPath)) {
+    return res.json({ clientId: '', clientSecret: '' });
+  }
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    res.json({ clientId: config.clientId || '', clientSecret: config.clientSecret || '' });
+  } catch (e) {
+    res.status(500).json({ error: 'read_error' });
+  }
+});
+
+app.post('/endpoints/spotifyCredentials', (req, res) => {
+  const { clientId, clientSecret } = req.body;
+  if (clientId === undefined || clientSecret === undefined) {
+    return res.status(400).json({ error: 'missing_params' });
+  }
+  const configPath = path.join(__dirname, 'data', 'spotify.json');
+  const dataDir = path.join(__dirname, 'data');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({ clientId, clientSecret }, null, 2), 'utf8');
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'write_error' });
+  }
+});
+
+// Test Spotify connectivity by validating we can obtain an access token.
+app.get('/endpoints/testSpotifyConnection', (req, res) => {
+  const configPath = path.join(__dirname, 'data', 'spotify.json');
+  if (!fs.existsSync(configPath)) {
+    return res.json({ success: false, error: 'missing_credentials' });
+  }
+  let config;
+  try {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  } catch (e) {
+    return res.json({ success: false, error: 'read_error' });
+  }
+
+  const clientId = config.clientId || '';
+  const clientSecret = config.clientSecret || '';
+  if (!clientId || !clientSecret) {
+    return res.json({ success: false, error: 'missing_credentials' });
+  }
+
+  const https = require('https');
+  const UA = 'HQPWV/0.1';
+  const auth = Buffer.from(clientId + ':' + clientSecret).toString('base64');
+
+  const payload = 'grant_type=client_credentials';
+  const options = {
+    method: 'POST',
+    hostname: 'accounts.spotify.com',
+    path: '/api/token',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': UA,
+    },
+  };
+
+  const request = https.request(options, (response) => {
+    let body = '';
+    response.on('data', (chunk) => { body += chunk; });
+    response.on('end', () => {
+      try {
+        const json = body ? JSON.parse(body) : {};
+        if (response.statusCode >= 200 && response.statusCode < 300 && json.access_token) {
+          return res.json({ success: true, message: 'Connected' });
+        }
+        const error = json && json.error ? json.error : 'spotify_auth_failed';
+        return res.json({ success: false, error, status: response.statusCode });
+      } catch (e) {
+        return res.json({ success: false, error: 'invalid_response', status: response.statusCode });
+      }
+    });
+  });
+
+  request.on('error', () => {
+    return res.json({ success: false, error: 'request_error' });
+  });
+  request.setTimeout(5000, () => {
+    request.destroy(new Error('timeout'));
+  });
+
+  request.write(payload);
+  request.end();
+});
+
+app.get('/endpoints/lastfmCredentials', (req, res) => {
+  const configPath = path.join(__dirname, 'data', 'lastfm.json');
+  if (!fs.existsSync(configPath)) {
+    return res.json({ apiKey: '' });
+  }
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    res.json({ apiKey: config.apiKey || '' });
+  } catch (e) {
+    res.status(500).json({ error: 'read_error' });
+  }
+});
+
+app.post('/endpoints/lastfmCredentials', (req, res) => {
+  const { apiKey } = req.body;
+  if (apiKey === undefined) {
+    return res.status(400).json({ error: 'missing_params' });
+  }
+  const configPath = path.join(__dirname, 'data', 'lastfm.json');
+  const dataDir = path.join(__dirname, 'data');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({ apiKey }, null, 2), 'utf8');
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: 'write_error' });
+  }
+});
+
+/**
  * 'playlist'
  */
 app.get('/endpoints/playlist', (request, response) => {
@@ -304,7 +559,7 @@ const onError = (e) => {
 
 const onSuccess = () => {
   log.x(`webserver is ready on port ${port}`);
-  const ipAddress = ip.address();
+  const ipAddress = getServerIp();
   const urlText = ipAddress
       ? `http://${ipAddress}:${port}`
       : `the IP address of this machine on port ${port}`; // yek
@@ -347,6 +602,8 @@ isArgHelp = () => {
   }
   return (arg1.startsWith('help') || arg1.startsWith('-help') || arg1.startsWith('--help'));
 };
+
+
 
 printHelp = () => {
   log.x('Optional arguments:');

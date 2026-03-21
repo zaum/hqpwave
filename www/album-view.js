@@ -15,6 +15,7 @@ import Util from './util.js';
 import Values from './values.js';
 import ViewUtil from './view-util.js'
 import Native from './native.js';
+import LibraryContentList from './library-content-list.js';
 
 
 const splitAlbumArtists = (value) => {
@@ -27,7 +28,7 @@ const splitAlbumArtists = (value) => {
     return [];
   }
 
-  const normalized = raw.replace(/\s+(feat\.?|featuring|ft\.?|with|vs\.?)\s+/gi, ';');
+  const normalized = raw.replace(/\s+(feat\.?|featuring|ft\.?|with|vs\.? )\s+/gi, ';');
   const parts = normalized.split(/[,;/|&+]+/g);
   const result = [];
   const seen = new Set();
@@ -55,6 +56,22 @@ const splitAlbumArtists = (value) => {
 
   return result.length ? result : [raw];
 };
+
+// Escape string for regexp
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Normalize string: lower-case, remove diacritics, collapse spaces
+const normalizeStr = (s) => {
+  if (!s) return '';
+  try {
+    // remove diacritics
+    const noDiacritics = s.normalize ? s.normalize('NFD').replace(/\p{Diacritic}/gu, '') : s;
+    return String(noDiacritics).toLowerCase().replace(/\s+/g, ' ').trim();
+  } catch (e) {
+    return String(s).toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+};
+
 
 /**
  * Album view containing a header and a list of track list items.
@@ -89,6 +106,8 @@ export default class AlbumView extends Subview {
     this.$list = this.$el.find('#albumList');
     this.$artistButton = this.$el.find('#albumViewArtist');
     this.$texts = this.$el.find('#albumViewTexts');
+    this.$relatedList = this.$el.find('#relatedAlbumsList');
+    this.$relatedTitle = this.$el.find('.relatedAlbumsTitle');
     this.$prevImageButton = this.$el.find('#albumViewPrevImageButton');
     this.$nextImageButton = this.$el.find('#albumViewNextImageButton');
 
@@ -99,6 +118,8 @@ export default class AlbumView extends Subview {
     $("#albumQueueButton").on("click tap", this.onQueueButton);
     this.$albumFavoriteButton.on('click tap', this.onAlbumFavoriteButton);
     $("#albumCloseButton").on("click tap", () => $(document).trigger('album-view-close-button', this.album, true));
+    this.$el.on("click", "#artistBackToLibraryButton", () => $(document).trigger('album-view-close-button', null, true));
+
     this.$picture.on('click tap', () => $(document).trigger('album-picture-click', {
       $sourceImage: this.$picture,
       album: this.album,
@@ -107,6 +128,65 @@ export default class AlbumView extends Subview {
     this.$el.on('click tap', '#albumViewOpenFolderButton', this.onOpenFolderButtonClick);
     this.$prevImageButton.on('click tap', this.onPrevAlbumImageClick);
     this.$nextImageButton.on('click tap', this.onNextAlbumImageClick);
+
+    this.$picturePlaceholder = null;
+    this._isUnpinned = false;
+    this.onRelatedAlbumFavoriteChanged = (e, hash, isFav) => {
+      try {
+        const selector = `[data-hash="${hash}"]`;
+        const $item = this.$relatedList.find(selector);
+        if ($item.length > 0) {
+          if (isFav) {
+            $item.addClass('isFavorite');
+          } else {
+            $item.removeClass('isFavorite');
+          }
+        }
+      } catch (err) { /* ignore */ }
+    };
+    this.onAlbumViewScroll = () => {
+      try {
+        const st = this.$el[0].scrollTop || 0;
+        const pictureTop = this.$pictureHolder.position() ? this.$pictureHolder.position().top : 0;
+        const pictureHeight = this.$pictureHolder.outerHeight() || 0;
+        // delay unpin a bit so it doesn't disappear prematurely
+        const threshold = Math.max(0, pictureTop + pictureHeight + 40);
+
+        // compute whether the tracklist bottom is visible within container
+        const containerRect = this.$el[0].getBoundingClientRect();
+        const listRect = this.$list[0].getBoundingClientRect();
+        const listBottomVisible = (listRect.bottom <= containerRect.bottom - 8);
+
+        if (!this._isUnpinned && st > threshold) {
+          // create placeholder once to avoid layout jump
+          const h = this.$pictureHolder.outerHeight();
+          this.$picturePlaceholder = $('<div class="albumViewPicturePlaceholder" />').css({ height: h + 'px' });
+          this.$pictureHolder.after(this.$picturePlaceholder);
+          this.$pictureHolder.addClass('is-unpinned');
+          this._isUnpinned = true;
+        }
+
+        if (this._isUnpinned) {
+          // If user scrolled back up enough that the tracklist bottom is visible, restore
+          if (listBottomVisible) {
+            if (this.$picturePlaceholder) {
+              this.$picturePlaceholder.remove();
+              this.$picturePlaceholder = null;
+            }
+            this.$pictureHolder.removeClass('is-unpinned');
+            this.$pictureHolder.css('transform', '');
+            this._isUnpinned = false;
+            return;
+          }
+
+          // Move picture up progressively; cap movement to picture height + small extra
+          const dy = Math.min(pictureHeight + 24, st - threshold);
+          this.$pictureHolder.css('transform', `translateY(${-Math.max(0, dy)}px)`);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
   }
 
   show(album, $libraryItem = null) {
@@ -121,6 +201,12 @@ export default class AlbumView extends Subview {
     // Populate after show so layout/rects are valid (display:none breaks measurements).
     this.populate(album);
     this.$el[0].scrollTop = 0;
+
+    // Populate related albums and attach scroll handler + favorite sync
+    this.updateRelatedAlbums();
+    $(document).on('album-favorite-changed.related', this.onRelatedAlbumFavoriteChanged);
+    this.$el.off('scroll.albumView').on('scroll.albumView', this.onAlbumViewScroll);
+    this._lastScrollTop = this.$el[0].scrollTop || 0;
 
     $(document).on('model-status-updated', this.updateHighlightedTrack);
     $(document).on('new-track', this.onNewTrack);
@@ -168,6 +254,16 @@ hide() {
     });
 
     $(document).trigger('enable-user-input');
+    this.$el.off('scroll.albumView');
+    $(document).off('album-favorite-changed.related', this.onRelatedAlbumFavoriteChanged);
+    // remove placeholder if present
+    if (this.$picturePlaceholder) {
+      this.$picturePlaceholder.remove();
+      this.$picturePlaceholder = null;
+    }
+    this._isUnpinned = false;
+    // reset any transform
+    this.$pictureHolder.css('transform', '');
   };
 
   populate(album) {
@@ -296,6 +392,101 @@ hide() {
       : this.$albumFavoriteButton.removeClass('isSelected')
   }
 
+  updateRelatedAlbums() {
+    try {
+      if (!this.$relatedList || !this.album) {
+        return;
+      }
+      this.$relatedList.empty();
+
+      const artists = splitAlbumArtists(this.album['@_artist'] || this.album['@_performer'] || '');
+      if (!artists.length) return;
+
+      const allAlbums = (Model && Model.library && Array.isArray(Model.library.albums)) ? Model.library.albums : [];
+      const currentHash = this.getAlbumHash();
+      const matches = [];
+
+      for (const a of allAlbums) {
+        const h = a['@_hash'];
+        if (!h || h === currentHash) continue;
+        const aArtist = (a['@_artist'] || a['@_performer'] || '');
+        const aArtistNorm = normalizeStr(aArtist);
+        for (const art of artists) {
+          if (!art) continue;
+          const artNorm = normalizeStr(art);
+          // whole-word match (avoid matching substrings like 'ada' -> 'adams')
+          const pattern = new RegExp('\\b' + escapeRegExp(artNorm) + '\\b', 'i');
+          if (pattern.test(aArtistNorm)) {
+            matches.push(a);
+            break;
+          }
+        }
+      }
+
+      if (!matches.length) {
+        // hide related albums block when empty
+        this.$relatedTitle && this.$relatedTitle.text('');
+        ViewUtil.setDisplayed(this.$el.find('#relatedAlbums'), false);
+        return;
+      }
+
+      // Show related albums block and set title to '<Artist> Other Albums'
+      ViewUtil.setDisplayed(this.$el.find('#relatedAlbums'), true);
+      const artistName = (artists && artists[0]) ? artists[0] : '';
+      const titleText = artistName ? `Other albums by ${artistName}` : 'Other albums';
+      if (this.$relatedTitle && this.$relatedTitle.length) {
+        this.$relatedTitle.text(titleText);
+      }
+
+      // Render all matches
+      const max = matches.length;
+      for (let i = 0; i < max; i++) {
+        const alb = matches[i];
+        const $item = LibraryContentList.makeAlbumListItem(alb);
+        // Ensure images are loaded immediately for this small list
+        const $img = $item.find('img');
+        if ($img.length) {
+          const src = $img.attr('data-src') || $img.attr('src');
+          if (src) {
+            $img.attr('src', src);
+          }
+        }
+        // Wire clicks/keyboard to open album view (use App to ensure scrolling)
+        $item.on('click tap', (e) => {
+          e.stopPropagation();
+          if (App && App.instance && typeof App.instance.showAlbumView === 'function') {
+            App.instance.showAlbumView(alb, $item);
+            // ensure album view scrolls to top once shown
+            setTimeout(() => {
+              try {
+                const av = App.instance.albumView;
+                if (av && av.$el && av.$el[0]) {
+                  av.$el[0].scrollTop = 0;
+                }
+              } catch (err) { /* ignore */ }
+            }, 40);
+          } else {
+            $(document).trigger('library-item-click', [alb, $item]);
+          }
+        });
+        $item.on('keydown', (e) => {
+          if (e.keyCode == 13) {
+            if (App && App.instance && typeof App.instance.showAlbumView === 'function') {
+              App.instance.showAlbumView(alb, $item);
+            } else {
+              $(document).trigger('library-item-click', [alb, $item]);
+            }
+          }
+        });
+
+
+        this.$relatedList.append($item);
+      }
+    } catch (e) {
+      cl('error updating related albums', e);
+    }
+  }
+
   getAlbumHash() {
     return this.album?.['@_hash'] || this.album?.['hash'] || '';
   }
@@ -314,6 +505,18 @@ hide() {
       $artistPart.text(artist);
       $artistPart.attr('data-artist', artist);
       this.$artistButton.append($artistPart);
+    }
+  }
+
+  onArtistButton = (e) => {
+    try {
+      const $btn = $(e.currentTarget);
+      const artist = $btn.attr('data-artist') || $btn.text();
+      if (!artist) return;
+      // Trigger app-level event to show artist view with artist name
+      $(document).trigger('show-artist', artist);
+    } catch (err) {
+      // ignore
     }
   }
 

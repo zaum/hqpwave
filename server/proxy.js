@@ -7,7 +7,7 @@
 const dgram = require('dgram');
 const net = require("net");
 const readline = require('readline');
-const fastXmlParser = require('fast-xml-parser');
+const { XMLParser } = require('fast-xml-parser');
 
 const log = require('./log');
 
@@ -20,6 +20,9 @@ const XML_HEADER = `<?xml version="1.0" encoding="UTF-8"?>`;
 const POSSIBLY_MULTICHUNK_STARTS = ['<LibraryGet', '<PlaylistGet', '<GetFilters'];
 const POSSIBLY_MULTICHUNK_ENDS = ['</LibraryGet>', '</PlaylistGet>', '</GetFilters>'];
 const XML_PARSER_OPTIONS = { ignoreAttributes : false };
+const xmlParser = new XMLParser(XML_PARSER_OPTIONS);
+// Fallback parser that doesn't process entities (avoids entity expansion limits)
+const xmlParserNoEntities = new XMLParser(Object.assign({}, XML_PARSER_OPTIONS, { processEntities: false }));
 
 let initCallback;
 let timeoutId;
@@ -113,7 +116,7 @@ const onDiscoSocketMessage = (msg, rinfo) => {
   }
   let json;
   try {
-    json = fastXmlParser.parse(msg.toString(), XML_PARSER_OPTIONS);
+    json = xmlParser.parse(msg.toString().trim());
   } catch (error) {
     log.x(`ERROR: Couldn't parse udp data as xml`);
     log.x(msg.toString());
@@ -310,7 +313,7 @@ const sendCommandToHqp = (xml, callback) => {
   clientRequestXml = xml;
   responseCallback = callback;
   try {
-    clientRequestAsJson = fastXmlParser.parse(clientRequestXml, XML_PARSER_OPTIONS);
+    clientRequestAsJson = xmlParser.parse(clientRequestXml);
   } catch (error) {
     doCallback({ error: "request_xml_invalid" });
     // Note too that if hqp receives an unrecognized xml command, it will close the socket.
@@ -340,8 +343,9 @@ const onData = (data) => {
     isFirstChunk = false;
 
     if (!dataAsString.startsWith("<?xml")) {
-      doCallback({ error: "hqp_bad_response" });
-      return;
+      // some HQPlayer responses omit the XML header; try parsing anyway
+      log.w('response missing XML header; attempting parse anyway');
+      // continue without returning
     }
     if (dataAsString.includes(`result="Error"`)) {
       // Hpq sends this if the command is unrecognized.
@@ -386,7 +390,7 @@ const finishNormalIfPossible = (dataAsString, isFirstChunk) => {
   let firstChunkJson;
   if (isFirstChunk) {
     try {
-      firstChunkJson = fastXmlParser.parse(dataAsString, XML_PARSER_OPTIONS);
+      firstChunkJson = xmlParser.parse(dataAsString.trim());
     } catch (e) { }
   }
 
@@ -413,12 +417,46 @@ const finishNormalIfPossible = (dataAsString, isFirstChunk) => {
   let resultJson;
   if (firstChunkJson) {
     resultJson = firstChunkJson;
-  } else {
+    } else {
     const bufferAsString = normalBuffer.toString();
+    const trimmed = bufferAsString.trim();
     try {
-      resultJson = fastXmlParser.parse(bufferAsString, XML_PARSER_OPTIONS);
+      resultJson = xmlParser.parse(trimmed);
     } catch (error) {
-      resultJson = { error: "hqp_xml_invalid"};
+      // If entity expansion limit triggered, retry with entity processing disabled
+      const msg = error && error.message ? error.message : String(error);
+      if (msg.includes('Entity expansion limit')) {
+        try {
+          resultJson = xmlParserNoEntities.parse(trimmed);
+        } catch (errNe) {
+          log.w('XML parse failed even after disabling entity processing:', msg);
+          log.w('raw response:', trimmed);
+          resultJson = { error: "hqp_xml_invalid" };
+        }
+      } else {
+        // Try a couple of other fallbacks: prepend XML header, or wrap in a root element
+        try {
+          resultJson = xmlParser.parse(XML_HEADER + trimmed);
+        } catch (err2) {
+          try {
+            const wrapped = xmlParser.parse(`<root>${trimmed}</root>`);
+            if (wrapped && wrapped.root) {
+              const keys = Object.keys(wrapped.root);
+              if (keys.length === 1) {
+                resultJson = { [keys[0]]: wrapped.root[keys[0]] };
+              } else {
+                resultJson = wrapped;
+              }
+            } else {
+              resultJson = { error: "hqp_xml_invalid" };
+            }
+          } catch (err3) {
+            log.w('XML parse failed for response:', trimmed);
+            log.w('parse error:', msg);
+            resultJson = { error: "hqp_xml_invalid" };
+          }
+        }
+      }
     }
   }
 

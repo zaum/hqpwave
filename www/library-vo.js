@@ -72,6 +72,20 @@ export default class LibraryVo {
     }
     return this._albumHashToAlbum[hash];
   }
+  
+  getAlbumByTitleAndArtist(title, artist) {
+    if (!this._albums || !title) return null;
+    const t = title.toLowerCase();
+    const ar = (artist || '').toLowerCase();
+    return this._albums.find(a => {
+      const at = (a['@_album'] || '').toLowerCase();
+      if (at !== t) return false;
+      if (!ar) return true;
+      const aa = (a['@_artist'] || '').toLowerCase();
+      const ap = (a['@_performer'] || '').toLowerCase();
+      return aa === ar || ap === ar || aa.includes(ar) || ap.includes(ar);
+    });
+  }
 
   // @Nullable
   getTrackHashForTrackUri(uri) {

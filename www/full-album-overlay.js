@@ -64,7 +64,14 @@ class FullAlbumOverlay {
     const albumPath = decodeAlbumPath(payload?.album?.['@_path'] || '');
     const sourceUrl = this.$sourceImage.attr('src');
     this.overlaySessionId += 1;
-    this.loadGalleryImages(sourceUrl, albumPath, this.overlaySessionId);
+
+    if (payload?.images && Array.isArray(payload.images)) {
+      this.imageUrls = payload.images.map(img => typeof img === 'string' ? img : img.proxyUrl || img.url);
+      this.currentImageIndex = Number.isInteger(payload.currentIndex) ? payload.currentIndex : 0;
+      this.updateNavButtons();
+    } else {
+      this.loadGalleryImages(sourceUrl, albumPath, this.overlaySessionId);
+    }
     this.animateIn();
   }
 
@@ -232,9 +239,6 @@ class FullAlbumOverlay {
       if (uniqueRealImages.length > 0) {
         this.imageUrls = sourceUrl ? [sourceUrl, ...uniqueRealImages] : uniqueRealImages;
         this.currentImageIndex = 0;
-        if (ViewUtil.isDisplayed(this.$overlayImage)) {
-          this.$overlayImage.attr('src', this.imageUrls[this.currentImageIndex]);
-        }
       }
       this.updateNavButtons();
     });

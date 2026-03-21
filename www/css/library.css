@@ -691,6 +691,7 @@
   left: auto;
   bottom: auto;
   top: 10px;
+  text-align: left;
 }
 
 .album-card:hover .format-pill,

@@ -177,6 +177,28 @@ class Service {
     this.serverErrorCounter = 0;
     this.serverErrorStartTime = 0;
 
+    // Normalize responses that include an XML declaration node produced by the parser
+    // e.g. { "?xml": {...}, "LibraryGet": {...} } -> strip the "?xml" key so
+    // callers see a single-root payload as expected elsewhere in the app.
+    try {
+      if (data && data['?xml'] !== undefined) {
+        const keys = Object.keys(data || {});
+        if (keys.length > 1) {
+          const cleaned = {};
+          for (const k of keys) {
+            if (k === '?xml') continue;
+            cleaned[k] = data[k];
+          }
+          data = cleaned;
+        } else {
+          // only ?xml present — treat as empty payload
+          data = {};
+        }
+      }
+    } catch (e) {
+      // ignore normalization failures
+    }
+
     // First, show toast on hqp-reported error
     const errorText = DataUtil.isResultError(data);
     if (errorText) {
