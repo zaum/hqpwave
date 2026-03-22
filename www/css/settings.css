@@ -190,6 +190,23 @@
   color: var(--accent);
 }
 
+.settingsNumberInput {
+  width: 4.8em;
+  min-width: 4.8em;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  text-align: right;
+}
+
+.settingsNumberInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    TOGGLE SWITCH
    ═══════════════════════════════════════════════════════════════ */

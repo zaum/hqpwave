@@ -31,7 +31,6 @@ export default class ArtistView extends Subview {
     this._loadRequestToken = 0;
     this._renderRequestToken = 0;
     this._reloadOperationToken = 0;
-    this._stabilizePassToken = 0;
 
     this.artist = null;
     this.artistImageUrls = [];
@@ -283,7 +282,6 @@ export default class ArtistView extends Subview {
     this._loadRequestToken++;
     this._renderRequestToken++;
     this._reloadOperationToken++;
-    this._stabilizePassToken++;
     // persist current view state (image index, scroll position) so returning restores last state
     try {
       if (this.artist && this.artist.id) {
@@ -305,194 +303,14 @@ export default class ArtistView extends Subview {
     this.updateBackgroundImage(url);
   }
 
-  applyArtistData(artist, options = {}) {
-    const { stabilize = false, loadToken = this._loadRequestToken } = options;
+  applyArtistData(artist) {
     if (!artist) return;
     this.artist = artist;
-    this.moreAlbumsAvailable = !!(artist.discography && artist.discography.length > 0);
     this.renderArtist(artist);
-
-    if (stabilize && artist.id) {
-      const stabilizeToken = ++this._stabilizePassToken;
-      const getArtistRichness = (candidate) => {
-        if (!candidate) return 0;
-        let score = 0;
-        if (candidate.wiki_url) score += 1000;
-        if (candidate.bio) score += Math.min(String(candidate.bio).length, 4000);
-        if (Array.isArray(candidate.discography)) score += candidate.discography.length * 50;
-        if (Array.isArray(candidate.images)) score += candidate.images.length * 10;
-        return score;
-      };
-      const isArtistFieldComplete = (candidate) => {
-        if (!candidate) return false;
-        const hasBio = !!(candidate.bio && String(candidate.bio).trim().length > 40);
-        const hasWiki = !!candidate.wiki_url;
-        const hasDiscography = Array.isArray(candidate.discography) && candidate.discography.length > 0;
-        return hasBio && hasWiki && hasDiscography;
-      };
-
-      let bestArtist = artist;
-      let bestScore = getArtistRichness(artist);
-
-      const runPass = async (attempt = 1) => {
-        if (loadToken !== this._loadRequestToken) return;
-        if (stabilizeToken !== this._stabilizePassToken) return;
-        try {
-          const res = await fetch(`/endpoints/artist?get&id=${encodeURIComponent(artist.id)}`);
-          if (!res.ok) return;
-          const json = await res.json();
-          if (loadToken !== this._loadRequestToken) return;
-          if (stabilizeToken !== this._stabilizePassToken) return;
-          if (json && json.artist && json.artist.id === artist.id) {
-            const candidate = json.artist;
-            const candidateScore = getArtistRichness(candidate);
-            if (candidateScore > bestScore) {
-              bestArtist = candidate;
-              bestScore = candidateScore;
-              this.artist = candidate;
-              this.moreAlbumsAvailable = !!(candidate.discography && candidate.discography.length > 0);
-              this.renderArtist(candidate);
-            }
-            if (isArtistFieldComplete(candidate)) {
-              return;
-            }
-          }
-        } catch (e) {
-          // ignore stabilization fetch failures
-        }
-
-        if (attempt >= 8) {
-          return;
-        }
-
-        const delayMs = attempt < 3 ? 120 : 300;
-        setTimeout(() => runPass(attempt + 1), delayMs);
-      };
-
-      setTimeout(() => runPass(1), 50);
-    }
   }
 
-  getArtistRichness(candidate) {
-    if (!candidate) return 0;
-    let score = 0;
-    if (candidate.wiki_url) score += 1000;
-    if (candidate.bio) score += Math.min(String(candidate.bio).length, 4000);
-    if (Array.isArray(candidate.discography)) score += candidate.discography.length * 50;
-    if (Array.isArray(candidate.images)) score += candidate.images.length * 10;
-    return score;
-  }
-
-  isArtistFieldComplete(candidate) {
-    if (!candidate) return false;
-    const hasBio = !!(candidate.bio && String(candidate.bio).trim().length > 40);
-    const hasWiki = !!candidate.wiki_url;
-    const hasDiscography = Array.isArray(candidate.discography) && candidate.discography.length > 0;
-    return hasDiscography && (hasBio || hasWiki);
-  }
-
-  shouldRetryArtistData(candidate) {
-    if (!candidate) return false;
-    const hasBio = !!(candidate.bio && String(candidate.bio).trim().length > 40);
-    const hasWiki = !!candidate.wiki_url;
-    const hasDiscography = Array.isArray(candidate.discography) && candidate.discography.length > 0;
-    const artistImageCount = Array.isArray(candidate.images)
-      ? candidate.images.filter((img) => img && img.id && !String(img.id).includes('-rel-')).length
-      : 0;
-    return !hasDiscography || (!hasBio && !hasWiki) || artistImageCount === 0;
-  }
-
-  async waitForRenderableArtist(artist, options = {}) {
-    const {
-      loadToken = this._loadRequestToken,
-      maxAttempts = 8,
-      firstDelayMs = 100,
-      nextDelayMs = 250
-    } = options;
-
-    if (!artist || !artist.id) return artist;
-
-    let bestArtist = artist;
-    let bestScore = this.getArtistRichness(artist);
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      if (loadToken !== this._loadRequestToken) {
-        return bestArtist;
-      }
-
-      if (attempt > 0 || !this.isArtistFieldComplete(bestArtist)) {
-        const delayMs = attempt === 0 ? firstDelayMs : nextDelayMs;
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
-
-      if (loadToken !== this._loadRequestToken) {
-        return bestArtist;
-      }
-
-      try {
-        const res = await fetch(`/endpoints/artist?get&id=${encodeURIComponent(artist.id)}`);
-        if (!res.ok) continue;
-        const json = await res.json();
-        if (loadToken !== this._loadRequestToken) {
-          return bestArtist;
-        }
-        if (json && json.artist && json.artist.id === artist.id) {
-          const candidate = json.artist;
-          const candidateScore = this.getArtistRichness(candidate);
-          if (candidateScore > bestScore) {
-            bestArtist = candidate;
-            bestScore = candidateScore;
-          }
-          if (this.isArtistFieldComplete(candidate)) {
-            return candidate;
-          }
-        }
-      } catch (e) {
-        // ignore transient fetch failures while waiting for artist data to settle
-      }
-    }
-
-    return bestArtist;
-  }
-
-  async refreshIncompleteArtistData(artist, options = {}) {
-    const { loadToken = this._loadRequestToken } = options;
-
-    if (!artist || !artist.name) {
-      return artist;
-    }
-
-    try {
-      if (this.$loadingStatus) this.$loadingStatus.text('Refreshing artist data...');
-      const startRes = await fetch('/endpoints/artistImport?wait=1&source=refresh-helper&name=' + encodeURIComponent(artist.name), { method: 'POST' });
-      if (!startRes.ok) {
-        return artist;
-      }
-      const startJson = await startRes.json();
-      if (loadToken !== this._loadRequestToken) {
-        return artist;
-      }
-
-      if (startJson && startJson.id) {
-        const res = await fetch(`/endpoints/artist?get&id=${encodeURIComponent(startJson.id)}`);
-        if (!res.ok) return artist;
-        const json = await res.json();
-        if (json && json.artist) {
-          return await this.waitForRenderableArtist(json.artist, { loadToken, maxAttempts: 10 });
-        }
-        return artist;
-      }
-    } catch (e) {
-      // ignore refresh errors and fall back to the best currently known artist object
-    }
-
-    return artist;
-  }
-
-  async ensureArtistReadyForRender(artist, options = {}) {
-    const { loadToken = this._loadRequestToken } = options;
-    if (!artist) return artist;
-    return await this.waitForRenderableArtist(artist, { loadToken, maxAttempts: 3, firstDelayMs: 80, nextDelayMs: 160 });
+  async ensureArtistReadyForRender(artist) {
+    return artist || null;
   }
 
   loadArtist(artistId) {
@@ -522,12 +340,12 @@ export default class ArtistView extends Subview {
           if (!isCurrentRequest()) return;
           if (data && data.artist) {
             // Found in cache
-            const renderableArtist = await this.ensureArtistReadyForRender(data.artist, { loadToken: requestToken });
+            const renderableArtist = await this.ensureArtistReadyForRender(data.artist);
             if (!isCurrentRequest()) return;
             this.$loading.hide();
             this.$backButton.show();
             if (this.$imageSpinner) this.$imageSpinner.hide();
-            this.applyArtistData(renderableArtist, { stabilize: true, loadToken: requestToken });
+            this.applyArtistData(renderableArtist);
           } else {
             // Not in cache, import from external sources
             this.importArtist(artistId, requestToken);
@@ -545,11 +363,11 @@ export default class ArtistView extends Subview {
       .then(async json => {
         if (!isCurrentRequest()) return;
         if (json && json.artist) {
-          const renderableArtist = await this.ensureArtistReadyForRender(json.artist, { loadToken: requestToken });
+          const renderableArtist = await this.ensureArtistReadyForRender(json.artist);
           if (!isCurrentRequest()) return;
           this.$loading.hide();
           this.$backButton.show();
-          this.applyArtistData(renderableArtist, { stabilize: true, loadToken: requestToken });
+          this.applyArtistData(renderableArtist);
         } else {
           this.$loading.hide();
           this.$backButton.show();
@@ -566,7 +384,7 @@ export default class ArtistView extends Subview {
   importArtist(artistId, requestToken = this._loadRequestToken) {
     const isCurrentRequest = () => requestToken === this._loadRequestToken;
     if (this.$loadingStatus) this.$loadingStatus.text('Importing artist data...');
-    fetch('/endpoints/artistImport?wait=1&source=artist-load&name=' + encodeURIComponent(artistId), { method: 'POST' })
+    fetch('/endpoints/artistImport?wait=1&source=artist-load&releaseLimit=' + encodeURIComponent(Settings.artistReleaseLimit) + '&name=' + encodeURIComponent(artistId), { method: 'POST' })
       .then(r => r.ok ? r.json() : null)
       .then(async j => {
         if (!isCurrentRequest()) return;
@@ -585,9 +403,9 @@ export default class ArtistView extends Subview {
         if (!(artistJson && artistJson.artist)) {
           throw new Error('Imported artist missing');
         }
-        const renderableArtist = await this.ensureArtistReadyForRender(artistJson.artist, { loadToken: requestToken });
+        const renderableArtist = await this.ensureArtistReadyForRender(artistJson.artist);
         if (!isCurrentRequest()) return;
-        this.applyArtistData(renderableArtist, { stabilize: true, loadToken: requestToken });
+        this.applyArtistData(renderableArtist);
         this.$loading.hide();
         this.$backButton.show();
         if (this.$loadingStatus) this.$loadingStatus.text('');
@@ -853,7 +671,7 @@ export default class ArtistView extends Subview {
             if (!isCurrentReload()) throw new Error('Reload superseded');
 
             if (this.$loadingStatus) this.$loadingStatus.text('Reloading artist data...');
-            const importRes = await fetch('/endpoints/artistImport?wait=1&source=reload-button&name=' + encodeURIComponent(artist.name), { method: 'POST' });
+            const importRes = await fetch('/endpoints/artistImport?wait=1&source=reload-button&releaseLimit=' + encodeURIComponent(Settings.artistReleaseLimit) + '&name=' + encodeURIComponent(artist.name), { method: 'POST' });
             if (!importRes.ok) throw new Error('Import request failed');
             const importJson = await importRes.json();
             if (!isCurrentReload()) throw new Error('Reload superseded');
@@ -867,11 +685,9 @@ export default class ArtistView extends Subview {
             if (!(artistJson && artistJson.artist && artistJson.artist.id === importJson.id)) {
               throw new Error('Imported artist not available');
             }
-            const verifiedArtist = await this.ensureArtistReadyForRender(artistJson.artist, {
-              loadToken: this._loadRequestToken
-            });
+            const verifiedArtist = await this.ensureArtistReadyForRender(artistJson.artist);
             if (!isCurrentReload()) throw new Error('Reload superseded');
-            this.applyArtistData(verifiedArtist, { stabilize: true, loadToken: this._loadRequestToken });
+            this.applyArtistData(verifiedArtist);
             if (this.$loadingStatus) this.$loadingStatus.text('');
             this.$backButton.show();
           } catch (e) {
@@ -1134,35 +950,7 @@ export default class ArtistView extends Subview {
         }
       })();
     }
-    // If we showed the maximum initial batch, offer a "Fetch more" button
-    // Click will request the server to fetch & append additional releases.
-    // If the server indicates more album-type releases are available, show a single "Fetch more" button.
     this.$el.find('.artist-fetch-more').remove();
-    if (this.moreAlbumsAvailable) {
-      const $moreWrap = $(`<div class="artist-fetch-more" style="text-align:center; margin: 12px 0;"><button class="textButton" id="artistFetchMoreReleasesBtn">Fetch more releases</button></div>`);
-      this.$discography.after($moreWrap);
-      $moreWrap.find('#artistFetchMoreReleasesBtn').on('click', (e) => {
-        const $btn = $(e.currentTarget);
-        if ($btn.prop('disabled')) return;
-        $btn.prop('disabled', true).text('Loading...');
-        fetch(`/endpoints/artist?moreReleases&id=${encodeURIComponent(artist.id)}`, { method: 'POST' })
-          .then(res => res.json())
-          .then(j => {
-            if (j && Array.isArray(j.added) && j.added.length > 0) {
-              // refresh the artist data to render appended releases
-              this.loadArtist(artist.id);
-            } else {
-              // nothing added - remove the button
-              $moreWrap.remove();
-            }
-          }).catch(() => {
-            $btn.prop('disabled', false).text('Fetch more releases');
-          });
-      });
-    } else {
-      // ensure no leftover button if server says no more
-      this.$el.find('.artist-fetch-more').remove();
-    }
   }
 
   // Refactored discography item rendering to avoid code duplication
@@ -1170,6 +958,7 @@ export default class ArtistView extends Subview {
       const isLocal = item.type === 'local';
       const albumInLibrary = isLocal ? item.album : (Model.hasLibrary ? Model.library.getAlbumByTitleAndArtist(item.release.title, artist.name) : null);
       let coverUrl = '';
+      let fallbackCoverUrl = '';
       if (isLocal) {
         try { coverUrl = DataUtil.getAlbumImageUrl(item.album); } catch (e) { coverUrl = ''; }
       } else {
@@ -1179,6 +968,7 @@ export default class ArtistView extends Subview {
           // The server also supports the synthetic artistImage endpoint, but using
           // the direct URL prevents issues when the server-side redirect/proxy fails.
           coverUrl = release.cover_url;
+          fallbackCoverUrl = release.cover_fallback_url || '';
         } else {
           const relId = String(release.id || '');
           const expectedImageId = `${artist.id}-rel-${relId}`;
@@ -1204,7 +994,7 @@ export default class ArtistView extends Subview {
       const $item = $(
         `<div class="artistDiscItem ${isLocal ? 'is-local' : 'not-local'}" title="${isLocal ? 'In library' : 'Not in library'}">
           <div class="coverWrap ${!hasCover ? 'no-cover' : ''} ${!isLocal && hasCover ? 'bw' : ''}" style="${isLocal ? 'cursor: pointer' : ''}">
-            <img src="${coverSrc}" alt="" onerror="this.src='/img/pixel-transparent.png'; this.parentElement.classList.add('no-cover')">
+            <img src="${coverSrc}" alt="" loading="lazy">
             ${isLocal ? `<div class="libraryItemPlayBtn" title="Play Album"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>` : ''}
             ${bitsHtml ? `<div class="libraryItemBits">${bitsHtml}</div>` : ''}
           </div>
@@ -1212,6 +1002,16 @@ export default class ArtistView extends Subview {
           <div class="releaseTitle">${Util.escapeHtml(title||'')}</div>
         </div>`
       );
+
+      $item.find('img').on('error', function() {
+        if (!isLocal && fallbackCoverUrl && this.dataset.fallbackTried !== '1' && this.src !== fallbackCoverUrl) {
+          this.dataset.fallbackTried = '1';
+          this.src = fallbackCoverUrl;
+          return;
+        }
+        this.src = '/img/pixel-transparent.png';
+        if (this.parentElement) this.parentElement.classList.add('no-cover');
+      });
 
       if (isLocal) {
         $item.on('click', () => { $(document).trigger('library-item-click', [item.album, $item]); });

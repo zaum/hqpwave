@@ -21,6 +21,7 @@ export default class SettingsView extends Subview {
   $showPlayButtonCheckbox;
   $showFormatOverlayCheckbox;
   $showLogoAnimationCheckbox;
+  $artistReleaseLimitInput;
   $highlightColorPicker;
   $playerBackgroundColorPicker;
   infoView;
@@ -41,6 +42,9 @@ export default class SettingsView extends Subview {
     this.$showFormatOverlayCheckbox.on('click tap', this.onShowFormatOverlayCheckbox);
     this.$showLogoAnimationCheckbox = this.$el.find('#settingsShowLogoAnimationCheckbox');
     this.$showLogoAnimationCheckbox.on('click tap', this.onShowLogoAnimationCheckbox);
+    this.$artistReleaseLimitInput = this.$el.find('#artistReleaseLimitInput');
+    this.$artistReleaseLimitInput.on('change', this.onArtistReleaseLimitChange);
+    this.$artistReleaseLimitInput.on('blur', this.onArtistReleaseLimitChange);
     this.$highlightColorPicker = this.$el.find('#highlightColorPicker');
     this.$highlightColorPicker.on('change', this.onHighlightColorChange);
     this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
@@ -247,6 +251,8 @@ export default class SettingsView extends Subview {
 
     this.updateShowLogoAnimationCheckbox();
 
+    this.updateArtistReleaseLimitInput();
+
     this.updateHighlightColorPicker();
 
     this.updatePlayerBackgroundColorPicker();
@@ -370,5 +376,14 @@ export default class SettingsView extends Subview {
   onShowLogoAnimationCheckbox = () => {
     Settings.showLogoAnimation = !Settings.showLogoAnimation;
     this.updateShowLogoAnimationCheckbox();
+  }
+
+  updateArtistReleaseLimitInput() {
+    this.$artistReleaseLimitInput.val(String(Settings.artistReleaseLimit));
+  }
+
+  onArtistReleaseLimitChange = () => {
+    Settings.artistReleaseLimit = this.$artistReleaseLimitInput.val();
+    this.updateArtistReleaseLimitInput();
   }
 }

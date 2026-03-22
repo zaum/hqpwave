@@ -18,6 +18,7 @@ class Settings {
   _showPlayButton;
   _showFormatOverlay;
   _showLogoAnimation;
+  _artistReleaseLimit;
   _presetsArray;
   _currentRule;
   _thresholdRule;
@@ -52,6 +53,7 @@ class Settings {
     this._showLogoAnimation = this.storage.getItem('showLogoAnimation') || 'true';
     this._highlightColor = this.storage.getItem('highlightColor') || '#e8c88a';
     this._playerBackgroundColor = this.storage.getItem('playerBackgroundColor') || '#111112';
+    this._artistReleaseLimit = this._sanitizeArtistReleaseLimit(this.storage.getItem('artistReleaseLimit'));
 
     s = this.storage.getItem('presetsArray');
     try {
@@ -228,6 +230,24 @@ class Settings {
     this._showLogoAnimation = s;
     this.storage.setItem('showLogoAnimation', s);
     $(document).trigger('settings-show-logo-animation-changed');
+  }
+
+  _sanitizeArtistReleaseLimit(value) {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 99;
+    }
+    return Math.min(parsed, 9999);
+  }
+
+  get artistReleaseLimit() {
+    return this._artistReleaseLimit;
+  }
+
+  set artistReleaseLimit(value) {
+    const sanitized = this._sanitizeArtistReleaseLimit(value);
+    this._artistReleaseLimit = sanitized;
+    this.storage.setItem('artistReleaseLimit', String(sanitized));
   }
 
   get presetsArray() {

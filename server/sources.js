@@ -6,7 +6,6 @@ const crypto = require('crypto');
 const querystring = require('querystring');
 const sharp = require('sharp');
 const db = require('./db');
-const puppeteer = require('puppeteer');
 
 // Ensure DB initialized
 db.init();
@@ -82,6 +81,9 @@ const importInFlight = new Map();
 let importRunCounter = 0;
 const recentImportResults = new Map();
 const RECENT_IMPORT_TTL_MS = 15000;
+const DEFAULT_RELEASE_LIMIT = 99;
+const MAX_RELEASE_LIMIT = 9999;
+const MUSICBRAINZ_RELEASE_PAGE_LIMIT = 100;
 
 const setImportStatus = (key, statusObj) => {
   try {
@@ -95,7 +97,15 @@ const getImportStatus = (key) => {
   } catch (e) { return null; }
 };
 
-const getImportKey = (name) => String(name || '').trim().toLowerCase();
+const sanitizeReleaseLimit = (value) => {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_RELEASE_LIMIT;
+  }
+  return Math.min(parsed, MAX_RELEASE_LIMIT);
+};
+
+const getImportKey = (name, releaseLimit = DEFAULT_RELEASE_LIMIT) => `${String(name || '').trim().toLowerCase()}::${sanitizeReleaseLimit(releaseLimit)}`;
 const IMPORT_LOG_SEPARATOR = '[sources] ================================================================================';
 
 const isArtistRecordCompleteEnough = (artist) => {
@@ -160,55 +170,54 @@ const searchMusicBrainzArtist = (name, cb) => {
 };
 
 
-const fetchReleasesForArtist = (mbid, cb) => {
-  const q = querystring.stringify({ artist: mbid, fmt: 'json', limit: 100, inc: 'release-groups' });
-  const url = `https://musicbrainz.org/ws/2/release?${q}`;
-  console.log('[sources] Fetching releases from MusicBrainz:', url);
-  musicbrainzGet(url, (err, json) => {
-    if (err) {
-      console.error('[sources] MusicBrainz releases error:', err);
-      return cb(err);
-    }
-    const releases = (json && json.releases) ? json.releases : [];
-    cb(null, releases);
-  }, 10); // Priority 10
+const fetchReleasesForArtist = (mbid, releaseLimitOrCb, maybeCb) => {
+  const cb = (typeof releaseLimitOrCb === 'function') ? releaseLimitOrCb : maybeCb;
+  const targetAlbumCount = sanitizeReleaseLimit((typeof releaseLimitOrCb === 'function') ? DEFAULT_RELEASE_LIMIT : releaseLimitOrCb);
+  const collectedAlbums = [];
+
+  const fetchPage = (offset) => {
+    const q = querystring.stringify({
+      artist: mbid,
+      fmt: 'json',
+      limit: MUSICBRAINZ_RELEASE_PAGE_LIMIT,
+      offset: offset,
+      inc: 'release-groups'
+    });
+    const url = `https://musicbrainz.org/ws/2/release?${q}`;
+    console.log('[sources] Fetching releases from MusicBrainz:', url);
+    musicbrainzGet(url, (err, json) => {
+      if (err) {
+        console.error('[sources] MusicBrainz releases error:', err);
+        return cb(err);
+      }
+
+      const pageReleases = Array.isArray(json && json.releases) ? json.releases : [];
+      for (const release of pageReleases) {
+        const rg = release && release['release-group'];
+        if (rg && rg['primary-type'] === 'Album') {
+          collectedAlbums.push(release);
+          if (collectedAlbums.length >= targetAlbumCount) {
+            return cb(null, collectedAlbums.slice(0, targetAlbumCount));
+          }
+        }
+      }
+
+      if (pageReleases.length === MUSICBRAINZ_RELEASE_PAGE_LIMIT && collectedAlbums.length < targetAlbumCount) {
+        fetchPage(offset + pageReleases.length);
+        return;
+      }
+
+      cb(null, collectedAlbums.slice(0, targetAlbumCount));
+    }, 10); // Priority 10
+  };
+
+  fetchPage(0);
 };
 
 const fetchReleaseById = (releaseId, cb) => {
   if (!releaseId) return cb(new Error('missing_release_id'));
   const url = `https://musicbrainz.org/ws/2/release/${encodeURIComponent(releaseId)}?fmt=json`;
   musicbrainzGet(url, cb, 0); // Priority 0 (background)
-};
-
-const fetchCoverArt = (releaseId, releaseGroupId, cb) => {
-  const tryFetch = (pathSegment, id, cb2) => {
-    if (!id) return cb2(null, null);
-    // Use archive.org index.json for reliable access and thumbnail sizes
-    const indexUrl = `https://archive.org/download/mbid-${id}/index.json`;
-    httpGetJsonWithRetry(indexUrl, (err, json) => {
-      if (err) return cb2(null, null);
-      if (json && json.images && json.images[0]) {
-        const img = json.images[0];
-        // Prefer 500px thumbnail for balance of quality and size
-        const thumb = (img.thumbnails && (img.thumbnails['500'] || img.thumbnails['250'])) 
-          ? (img.thumbnails['500'] || img.thumbnails['250']) 
-          : (img.thumbnails && (img.thumbnails.large || img.thumbnails.small))
-            ? (img.thumbnails.large || img.thumbnails.small)
-            : (img.image || null);
-        cb2(null, thumb || img.image || null);
-        return;
-      }
-      cb2(null, null);
-    }, { timeout: 12000, maxAttempts: 3, retryDelayMs: 500 });
-  };
-
-  // Try release first, then release-group
-  tryFetch('release', releaseId, (err, result) => {
-    if (result) return cb(null, result);
-    tryFetch('release-group', releaseGroupId, (err2, result2) => {
-      return cb(null, result2);
-    });
-  });
 };
 
 const fetchWikipediaSummary = (title, cb) => {
@@ -259,26 +268,7 @@ const searchWikipediaByName = (name, cb) => {
 // Previously the code used Spotify API to fetch artist images. That logic
 // was removed to avoid external Spotify dependency and API credentials.
 
-const getImageSourcesConfig = () => {
-  const configPath = path.join(__dirname, 'data', 'imageSources.json');
-  const defaultConfig = {
-    enabled: true,
-    sources: ['https://www.last.fm/music/{ARTIST}/+images/*']
-  };
-  
-  if (!fs.existsSync(configPath)) {
-    return defaultConfig;
-  }
-  
-  try {
-    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  } catch (e) {
-    return defaultConfig;
-  }
-};
-
 const IMAGES_DIR = path.join(__dirname, 'data', 'images');
-const PUPPETEER_PROFILE_DIR = path.join(__dirname, 'data', 'puppeteer-profile');
 
 const ensureImagesDir = () => {
   if (!fs.existsSync(IMAGES_DIR)) {
@@ -373,12 +363,6 @@ const runWithConcurrency = async (items, limit, worker) => {
     }
   });
   await Promise.all(runners);
-};
-
-const ensurePuppeteerProfileDir = () => {
-  if (!fs.existsSync(PUPPETEER_PROFILE_DIR)) {
-    fs.mkdirSync(PUPPETEER_PROFILE_DIR, { recursive: true });
-  }
 };
 
 const normalizeArtistSlug = (value) => String(value || '')
@@ -520,228 +504,6 @@ const downloadImage = (url, imageKey) => {
   });
 };
 
-const scrapeArtistImages = (name, cb) => {
-  const config = getImageSourcesConfig();
-  
-  if (!config.enabled) {
-    console.log('[sources] Image scraping disabled');
-    return cb(null, []);
-  }
-  
-  const enabledSources = config.sources.filter(s => s.endsWith('*')).map(s => s.slice(0, -1));
-  
-  if (enabledSources.length === 0) {
-    console.log('[sources] No enabled image sources');
-    return cb(null, []);
-  }
-  
-  console.log('[sources] Scraping images for:', name, 'from', enabledSources.length, 'sources');
-  
-  const allImages = [];
-  let sourcesProcessed = 0;
-  const artistSlug = normalizeArtistSlug(name);
-  
-  for (let s = 0; s < enabledSources.length; s++) {
-    const sourceUrl = enabledSources[s].replace('{ARTIST}', encodeURIComponent(name));
-    const sourceBase = enabledSources[s].includes('last.fm') ? 'lastfm' : 'web';
-    console.log('[sources] Scraping from:', sourceUrl);
-    
-    (async () => {
-      let browser;
-      try {
-        ensurePuppeteerProfileDir();
-        browser = await puppeteer.launch({
-          headless: true,
-          userDataDir: path.join(PUPPETEER_PROFILE_DIR, sourceBase),
-          timeout: 15000,
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-        });
-        
-        const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        await page.setExtraHTTPHeaders({
-          'Accept-Language': 'en-US,en;q=0.9'
-        });
-        
-        await page.goto(sourceUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        
-        try {
-          await page.waitForSelector('a[href*="+images/"], img[src*="fastly.net"], img[data-src*="fastly.net"]', { timeout: 3500 });
-        } catch (e) {
-          console.log('[sources] Gallery selectors not found quickly, continuing with current DOM');
-        }
-        
-        const images = [];
-        
-        if (sourceBase === 'lastfm') {
-          
-          const galleryInfo = await page.evaluate((expectedArtistSlug) => {
-            const getHighResLastFmUrl = (url) => {
-              if (typeof url !== 'string') return url;
-              if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
-                return url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
-              }
-              return url;
-            };
-            const slugify = (value) => String(value || '')
-              .toLowerCase()
-              .replace(/&/g, 'and')
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-+|-+$/g, '');
-            const normalizeUrl = (value) => {
-              try {
-                return new URL(value, window.location.href);
-              } catch (e) {
-                return null;
-              }
-            };
-            const extractArtistSlug = (value) => {
-              const parsed = normalizeUrl(value);
-              if (!parsed) return '';
-              const parts = parsed.pathname.split('/').filter(Boolean);
-              const musicIndex = parts.findIndex((part) => part === 'music');
-              if (musicIndex === -1 || !parts[musicIndex + 1]) return '';
-              return slugify(decodeURIComponent(parts[musicIndex + 1]));
-            };
-            const isGalleryLink = (value) => {
-              const parsed = normalizeUrl(value);
-              if (!parsed) return false;
-              return extractArtistSlug(parsed.href) === expectedArtistSlug && /\/\+images\/[a-z0-9]+$/i.test(parsed.pathname);
-            };
-
-            const result = {
-              pageTitle: document.title,
-              imagePageUrls: [],
-              images: []
-            };
-            
-            Array.from(document.querySelectorAll('a')).forEach(a => {
-              if (isGalleryLink(a.href)) {
-                result.imagePageUrls.push(new URL(a.href, window.location.href).href);
-              }
-            });
-            
-            Array.from(document.querySelectorAll('a[href*="+images/"]')).forEach((anchor) => {
-              if (!isGalleryLink(anchor.href)) return;
-              anchor.querySelectorAll('img').forEach((img) => {
-                const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
-                if (!src || !src.includes('fastly.net')) return;
-                if (src.includes('/avatar') || src.includes('/34s') || src.includes('/64s') || src.includes('/170s/') || src.includes('2a96cbd8')) return;
-                const srcsetParts = String(img.srcset || '').split(',').map((s) => s.trim().split(' ')[0]).filter(Boolean);
-                const candidates = srcsetParts.length ? srcsetParts : [src];
-                candidates.forEach((candidate) => {
-                  if (!candidate.includes('fastly.net')) return;
-                  if (candidate.includes('2a96cbd8') || candidate.includes('/avatar')) return;
-                  result.images.push(getHighResLastFmUrl(candidate.split('#')[0]));
-                });
-                result.images.push(getHighResLastFmUrl(src.split('#')[0]));
-              });
-            });
-            
-            result.imagePageUrls = [...new Set(result.imagePageUrls)].slice(0, 2);
-            result.images = [...new Set(result.images)];
-            return result;
-          }, artistSlug);
-          
-          const uniqueImages = galleryInfo.images.filter((url) => {
-            const lower = String(url || '').toLowerCase();
-            return lower && !lower.includes('/avatar') && !lower.includes('2a96cbd8');
-          });
-          console.log('[sources] Gallery found', uniqueImages.length, 'direct images');
-          
-          if (uniqueImages.length > 0) {
-            for (let i = 0; i < Math.min(uniqueImages.length, 5); i++) {
-              images.push({ url: uniqueImages[i], source: sourceBase, id: `${name}-${sourceBase}-${i}` });
-            }
-          } else {
-            console.log('[sources] No direct images, trying image pages...');
-            const imagePageUrls = galleryInfo.imagePageUrls.slice(0, 2);
-            
-            for (let i = 0; i < imagePageUrls.length; i++) {
-              const imagePageUrl = imagePageUrls[i];
-              console.log('[sources] Scraping image page:', imagePageUrl);
-              try {
-                await page.goto(imagePageUrl, { waitUntil: 'domcontentloaded', timeout: 12000 });
-                
-                const pageImages = await page.evaluate((expectedArtistSlug) => {
-                  const getHighResLastFmUrl = (url) => {
-                    if (typeof url !== 'string') return url;
-                    if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
-                      return url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
-                    }
-                    return url;
-                  };
-                  const slugify = (value) => String(value || '')
-                    .toLowerCase()
-                    .replace(/&/g, 'and')
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '');
-                  const parts = window.location.pathname.split('/').filter(Boolean);
-                  const musicIndex = parts.findIndex((part) => part === 'music');
-                  const currentArtistSlug = musicIndex !== -1 ? slugify(decodeURIComponent(parts[musicIndex + 1] || '')) : '';
-                  if (currentArtistSlug !== expectedArtistSlug) return [];
-                  const imgs = [];
-                  const meta = document.querySelector('meta[property="og:image"]');
-                  if (meta && meta.content && meta.content.includes('fastly.net')) {
-                    imgs.push(getHighResLastFmUrl(meta.content.split('#')[0]));
-                  }
-                  document.querySelectorAll('img').forEach((img) => {
-                    const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
-                    if (src && src.includes('fastly.net') && !src.includes('2a96cbd8') && !src.includes('avatar') && !src.includes('/34s') && !src.includes('/64s') && !src.includes('/170s/')) {
-                      imgs.push(getHighResLastFmUrl(src.split('#')[0]));
-                    }
-                  });
-                  return [...new Set(imgs)];
-                }, artistSlug);
-                
-                if (pageImages.length > 0) {
-                  images.push({ url: pageImages[0], source: sourceBase, id: `${name}-${sourceBase}-${i}` });
-                }
-              } catch (imgErr) {
-                console.log('[sources] Image page error:', imgErr.message);
-              }
-            }
-          }
-        } else {
-          const imgElements = await page.$$('img');
-          for (let i = 0; i < imgElements.length; i++) {
-            const src = await imgElements[i].evaluate(el => {
-              return el.src || el.getAttribute('data-src') || ((el.getAttribute('srcset') || '').split(' ')[0]);
-            });
-            // Skip similar artist images, avatars, and small thumbnails
-            if (src && src.startsWith('http') && !src.includes('placeholder') && !src.includes('2a96cbd8') && !src.includes('/avatar') && !src.includes('/34s') && !src.includes('/64s')) {
-              images.push({ url: src, source: sourceBase, id: `${name}-${sourceBase}-${i}` });
-            }
-          }
-        }
-        
-        console.log('[sources] Source', sourceBase, 'found', images.length, 'images');
-        allImages.push(...images);
-        
-      } catch (err) {
-        console.log('[sources] Scrape error:', err.message);
-      } finally {
-        if (browser) {
-          try {
-            await browser.close();
-          } catch (closeErr) {
-            console.warn('[sources] Browser close warning:', closeErr.message);
-          }
-        }
-        sourcesProcessed++;
-        if (sourcesProcessed === enabledSources.length) {
-          console.log('[sources] Final images:', allImages.length);
-          cb(null, allImages.slice(0, 5));
-        }
-      }
-    })();
-  }
-  
-  if (enabledSources.length === 0) {
-    cb(null, []);
-  }
-};
-
 const searchLastFmImages = (name, cb) => {
   const artistPath = encodeLastFmArtistPath(name);
   const galleryUrl = `https://www.last.fm/music/${artistPath}/+images`;
@@ -802,9 +564,12 @@ const searchCommonsImages = (name, cb) => {
   });
 };
 
-const fetchAndStoreArtistByName = (nameRaw, cb) => {
+const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
+  const options = (typeof optionsOrCb === 'function' || !optionsOrCb) ? {} : optionsOrCb;
+  const cb = (typeof optionsOrCb === 'function') ? optionsOrCb : maybeCb;
   const name = (nameRaw || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-  const importKey = getImportKey(name);
+  const releaseLimit = sanitizeReleaseLimit(options.releaseLimit);
+  const importKey = getImportKey(name, releaseLimit);
   if (importInFlight.has(importKey)) {
     console.log('[sources] Joining in-flight import for artist:', name);
     importInFlight.get(importKey).push(cb);
@@ -822,7 +587,7 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
         console.warn('[sources] Recent import verification warning:', recentErr.message);
       }
       recentImportResults.delete(importKey);
-      fetchAndStoreArtistByName(name, cb);
+      fetchAndStoreArtistByName(name, { releaseLimit }, cb);
     });
     return;
   }
@@ -853,7 +618,7 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
   };
 
   console.log(IMPORT_LOG_SEPARATOR);
-  console.log(`[sources] IMPORT #${runId} START for "${name}"`);
+  console.log(`[sources] IMPORT #${runId} START for "${name}" (releaseLimit=${releaseLimit})`);
   console.log(IMPORT_LOG_SEPARATOR);
   console.log('[sources] Starting fetch for artist:', name);
   // initialize import status for this name
@@ -911,8 +676,10 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
     };
 
     // 1. Wikipedia fetch
+    console.log('[sources] Fetching Wikipedia data for:', mbArtist.name || name);
+    setImportStatus(name, { status: 'Fetching Wikipedia data', mbid });
     fetchWikipediaSummary(mbArtist.name || name, (errExact, exactData) => {
-      if (exactData && exactData.thumbnail) {
+      if (exactData && (exactData.thumbnail || exactData.extract || exactData.url)) {
         return onWikiDone(exactData);
       }
       searchWikipediaByName(name, (errS, title) => {
@@ -926,28 +693,22 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
 
   // 2. Releases fetch
     setImportStatus(name, { status: 'Fetching releases from MusicBrainz', mbid });
-    fetchReleasesForArtist(mbid, (errR, releases) => {
+    fetchReleasesForArtist(mbid, releaseLimit, (errR, releases) => {
       const disc = [];
-      // Limit to max 30 releases and only include primary-type 'Album'
-      const rels = (releases || []).filter(r => {
-        const rg = r['release-group'];
-        return rg && rg['primary-type'] === 'Album';
-      }).slice(0, 30);
+      const rels = releases || [];
       for (const r of rels) {
         const year = r.date ? (r.date.split('-')[0]) : null;
-        disc.push({ id: r.id, title: r.title, year: year, cover_url: null });
-      }
-      runWithConcurrency(rels, 6, async (r, index) => {
-        const entry = disc[index];
-        if (!entry) return;
         const rgid = (r['release-group'] && r['release-group'].id) ? r['release-group'].id : null;
-        await new Promise((res) => {
-          fetchCoverArt(r.id, rgid, (errC, url) => {
-            entry.cover_url = url || null;
-            res();
-          });
+        disc.push({
+          id: r.id,
+          title: r.title,
+          year: year,
+          release_group_id: rgid,
+          cover_url: `https://coverartarchive.org/release/${encodeURIComponent(r.id)}/front-250`,
+          cover_fallback_url: rgid ? `https://coverartarchive.org/release-group/${encodeURIComponent(rgid)}/front-250` : null
         });
-      }).then(() => onReleasesDone(disc)).catch(() => onReleasesDone(disc));
+      }
+      onReleasesDone(disc);
     });
 
     const finalize = async () => {
@@ -1099,6 +860,7 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
         });
       };
 
+      console.log('[sources] Fetching artist images from Last.fm for:', name);
       setImportStatus(name, { status: 'Fetching images from Last.fm', mbid });
       searchLastFmImages(name, async (errL, lastfmImgs) => {
         if (errL) console.warn('[sources] Last.fm image fetch warning:', errL);
@@ -1142,100 +904,8 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
   });
 };
 
-// Fetch additional releases beyond those currently stored for an artist and append them.
-const fetchAndAppendMoreReleases = (mbid, cb) => {
-  // Get full releases from MusicBrainz (up to 100)
-  fetchReleasesForArtist(mbid, (err, releasesFull) => {
-    if (err) return cb(err);
-    // Load current artist from DB to determine which releases we already have
-    db.getArtistById(mbid, (errDb, artistRow) => {
-      if (errDb) return cb(errDb);
-      const existingIds = new Set((artistRow && artistRow.discography ? artistRow.discography : []).map(r => String(r.id)));
-        const toAdd = [];
-        for (const r of (releasesFull || [])) {
-          // Only consider releases whose release-group primary-type is 'Album'
-          try {
-            const rg = r['release-group'];
-            if (!rg || rg['primary-type'] !== 'Album') continue;
-          } catch (e) {
-            continue;
-          }
-          if (!existingIds.has(String(r.id))) {
-            const year = r.date ? (r.date.split('-')[0]) : null;
-            toAdd.push({ id: r.id, title: r.title, year: year, cover_url: null });
-          }
-        }
-
-      if (toAdd.length === 0) {
-        return cb(null, []);
-      }
-
-      runWithConcurrency(toAdd, 4, async (entry) => {
-        const rf = releasesFull.find(x => String(x.id) === String(entry.id));
-        const rgid = (rf && rf['release-group'] && rf['release-group'].id) ? rf['release-group'].id : null;
-        await new Promise((res) => {
-          fetchCoverArt(entry.id, rgid, (errC, url) => {
-            entry.cover_url = url || null;
-            res();
-          });
-        });
-      }).then(() => {
-        // merge with existing discography and dedupe by release id
-        const existing = (artistRow && artistRow.discography) ? artistRow.discography : [];
-        const map = new Map();
-        for (const e of existing) {
-          if (e && e.id) map.set(String(e.id), e);
-        }
-        for (const e of toAdd) {
-          if (e && e.id && !map.has(String(e.id))) map.set(String(e.id), e);
-        }
-        const combined = Array.from(map.values());
-        // upsert artist with combined discography
-        const artistObj = {
-          id: mbid,
-          name: (artistRow && artistRow.name) ? artistRow.name : '',
-          disambiguation: (artistRow && artistRow.disambiguation) ? artistRow.disambiguation : '',
-          bio: (artistRow && artistRow.bio) ? artistRow.bio : '',
-          wiki_url: (artistRow && artistRow.wiki_url) ? artistRow.wiki_url : null,
-          discography: combined,
-          default_image_id: (artistRow && artistRow.default_image_id) ? artistRow.default_image_id : null
-        };
-
-        db.upsertArtist(artistObj, (errU) => {
-          if (errU) return cb(errU);
-          // prepare images: include existing + new releases
-          const images = [];
-          const seen = new Set();
-          // First: add existing images to preserve them
-          if (artistRow && artistRow.images) {
-            for (const img of artistRow.images) {
-              if (img.url) {
-                images.push(img);
-                seen.add(img.url);
-              }
-            }
-          }
-          // Then: add new release covers
-          for (const d of toAdd) {
-            if (d.cover_url && !seen.has(d.cover_url)) {
-              images.push({ id: `${mbid}-rel-${d.id}`, url: d.cover_url, source: 'coverartarchive', thumbnail_url: d.cover_url });
-              seen.add(d.cover_url);
-            }
-          }
-          if (images.length === 0) return cb(null, toAdd);
-          db.addImagesBulk(mbid, images, (errAdd) => {
-            if (errAdd) return cb(errAdd);
-            cb(null, toAdd);
-          });
-        });
-      }).catch(e => cb(e));
-    });
-  });
-};
-
 module.exports = {
   fetchAndStoreArtistByName,
-  fetchAndAppendMoreReleases,
   // exported for use by handlers that need to check available releases
   fetchReleasesForArtist,
   fetchReleaseById,

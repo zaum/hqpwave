@@ -318,18 +318,23 @@ app.post('/endpoints/artistImport', (request, response) => {
   const name = request.query['name'] || (request.body && request.body.name);
   const waitForCompletion = request.query['wait'] !== undefined || (request.body && request.body.wait);
   const source = request.query['source'] || (request.body && request.body.source) || 'unknown';
+  const releaseLimitRaw = request.query['releaseLimit'] || (request.body && request.body.releaseLimit);
+  const parsedReleaseLimit = parseInt(releaseLimitRaw, 10);
+  const releaseLimit = (!Number.isFinite(parsedReleaseLimit) || parsedReleaseLimit <= 0)
+    ? 99
+    : Math.min(parsedReleaseLimit, 9999);
   if (!name) {
     safeStatusJson(response, 400, { error: 'missing_required_param' });
     return;
   }
   try {
-    console.log(`[server] artistImport request: name="${name}" source="${source}" wait=${waitForCompletion ? '1' : '0'}`);
+    console.log(`[server] artistImport request: name="${name}" source="${source}" wait=${waitForCompletion ? '1' : '0'} releaseLimit=${releaseLimit}`);
     if (sources.setImportStatus) {
       sources.setImportStatus(name, { status: 'Starting import' });
     }
 
     if (waitForCompletion) {
-      sources.fetchAndStoreArtistByName(name, (err, mbid) => {
+      sources.fetchAndStoreArtistByName(name, { releaseLimit }, (err, mbid) => {
         if (err) {
           console.error('[server] artistImport sync error:', err);
           safeStatusJson(response, 500, { error: 'import_failed', message: err.message || String(err) });
@@ -342,7 +347,7 @@ app.post('/endpoints/artistImport', (request, response) => {
 
     // Start import in background and return immediately. Client will poll status.
     setImmediate(() => {
-      sources.fetchAndStoreArtistByName(name, (err, mbid) => {
+      sources.fetchAndStoreArtistByName(name, { releaseLimit }, (err, mbid) => {
         if (err) console.error('[server] artistImport background error:', err);
       });
     });

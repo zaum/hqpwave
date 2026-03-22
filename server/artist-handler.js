@@ -188,19 +188,6 @@ const doPost = (request, response) => {
     return;
   }
 
-  if (request.query['moreReleases'] !== undefined) {
-    // Trigger fetching additional releases for this artist and append them.
-    sources.fetchAndAppendMoreReleases(id, (err, added) => {
-      if (err) {
-        console.error('[artist-handler] moreReleases error', err);
-          safeStatusJson(response, 500, { error: 'fetch_error' });
-        return;
-      }
-        safeJson(response, { added: added });
-    });
-    return;
-  }
-
   if (request.query['clearCache'] !== undefined) {
     db.deleteArtistById(id, (err) => {
       if (err) {
