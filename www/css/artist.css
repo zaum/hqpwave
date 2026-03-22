@@ -114,6 +114,11 @@
   -webkit-filter: grayscale(100%) saturate(0%) brightness(0.8) !important;
   opacity: 0.15;
   z-index: 1;
+  transition: opacity 0.18s ease;
+}
+
+#artistViewBgImage.is-hidden {
+  opacity: 0;
 }
 
 #artistViewBgOverlayRight {
@@ -144,6 +149,8 @@
   position: relative;
   width: 100%;
   z-index: 10;
+  display: flex;
+  justify-content: center;
 }
 
 @media (min-width: 1024px) {
@@ -159,9 +166,11 @@
 .artistViewPictureOuter {
   position: relative;
   width: 100%;
+  max-width: 314px;
   min-height: 400px;
   overflow: visible;
   z-index: 10;
+  margin: 0 auto;
 }
 
 @media (max-width: 1023px) {
@@ -242,14 +251,34 @@
   align-items: center;
   gap: 12px;
   z-index: 20;
+  width: 250px;
 }
 
 /* Image nav buttons - centered within wrapper */
 #artistViewImageNav {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  column-gap: 12px;
   justify-content: center;
   align-items: center;
+  width: 100%;
+}
+
+/* Fixed width for nav buttons so they don't shift when hidden */
+.artistViewImageNavButton {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+/* Fixed width wrapper for nav buttons - prevents layout shift when hidden */
+.nav-button-wrapper {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 /* Default button controls */
@@ -258,6 +287,31 @@
   justify-content: center;
   align-items: center;
   gap: 12px;
+}
+
+/* Reload button loading state */
+.iconButton.is-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.iconButton.is-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -7px;
+  margin-left: -7px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--text-2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: btn-spin 0.8s linear infinite;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1023px) {
@@ -270,7 +324,7 @@
     margin: 12px auto 0;
   }
   #artistViewImageNav {
-    width: auto;
+    width: 100%;
   }
   #artistViewPictureControls {
     width: auto;
@@ -299,6 +353,11 @@
 }
 
 .artistViewImageNavButton.isGhost {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#artistViewImageNav.is-single .artistViewImageNavButton {
   opacity: 0;
   pointer-events: none;
 }
@@ -608,6 +667,10 @@
 /* Release text color: restore to primary bio color */
 .artistDiscItem .releaseTitle {
   color: var(--text-2);
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  box-sizing: border-box;
 }
 
 /* Reload button next to artist name (mask-based SVG for reliable coloring) */
@@ -896,6 +959,7 @@
   margin-top: 12px;
   margin-bottom: 4px;
   width: 100%;
+  text-align: left;
 }
 
 .releaseTitle {
@@ -909,6 +973,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   width: 100%;
+  text-align: left;
 }
 
 .lightTheme .artistDiscItem .coverWrap {

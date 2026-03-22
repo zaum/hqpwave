@@ -26,7 +26,8 @@ export default class ArtistView extends Subview {
     this.$discography = this.$el.find('#artistDiscography');
     this.$prevImageButton = this.$el.find('#artistViewPrevImageButton');
     this.$nextImageButton = this.$el.find('#artistViewNextImageButton');
-    this.$backButton = this.$el.find('#artistBackToLibraryButton');
+    this.$backButton = $('#backToLibraryButton');
+    this._backgroundRequestToken = 0;
 
     this.artist = null;
     this.artistImageUrls = [];
@@ -184,8 +185,11 @@ export default class ArtistView extends Subview {
     }
     const max = this.artistImageUrls.length - 1;
     this.artistImageIndex = Math.max(0, Math.min(index, max));
-    const url = this.artistImageUrls[this.artistImageIndex].url || this.artistImageUrls[this.artistImageIndex].proxyUrl;
-    this.$picture.attr('src', url);
+    const currentImg = this.artistImageUrls[this.artistImageIndex];
+    const url = currentImg.url || currentImg.proxyUrl;
+    const sourceMap = { wikipedia: 'Wikipedia', commons: 'Commons', lastfm: 'Last.fm' };
+    const sourceName = currentImg.source ? (sourceMap[currentImg.source] || currentImg.source.charAt(0).toUpperCase() + currentImg.source.slice(1)) : 'Image';
+    this.$picture.attr('src', url).attr('title', sourceName);
     this.$pictureBlur.attr('src', url);
     this.updateBackgroundImage(url);
     this.updateImageNav();
@@ -195,17 +199,33 @@ export default class ArtistView extends Subview {
     const $bg = this.$el.find('#artistViewBgImage');
     if ($bg.length) {
       const bgUrl = url.includes('/endpoints/artistImage?') ? url + '&background' : url;
-      $bg.attr('src', bgUrl);
+      const requestToken = ++this._backgroundRequestToken;
+      const preloader = new Image();
+      preloader.onload = () => {
+        if (requestToken !== this._backgroundRequestToken) return;
+        $bg.attr('src', bgUrl).removeClass('is-hidden');
+      };
+      preloader.onerror = () => {
+        if (requestToken !== this._backgroundRequestToken) return;
+        $bg.addClass('is-hidden');
+      };
+      preloader.src = bgUrl;
     }
   }
 
   updateImageNav() {
     const count = (this.artistImageUrls || []).length;
     const show = count > 1;
-    ViewUtil.setDisplayed(this.$prevImageButton, show);
-    ViewUtil.setDisplayed(this.$nextImageButton, show);
+    this.$prevImageButton.css('display', 'flex');
+    this.$nextImageButton.css('display', 'flex');
+    this.$el.find('#artistViewImageNav').toggleClass('is-single', !show);
     this.$prevImageButton.toggleClass('isGhost', this.artistImageIndex <= 0);
     this.$nextImageButton.toggleClass('isGhost', this.artistImageIndex >= count - 1);
+    this.$gallery.find('.artistImageThumb').removeClass('is-selected');
+    const navImg = this.artistImageUrls[this.artistImageIndex];
+    if (navImg && navImg.id) {
+      this.$gallery.find(`.artistImageThumb[data-image-id="${navImg.id}"]`).addClass('is-selected');
+    }
 
     // Update "Set Default" button visibility and label
     const $setDefaultBtn = this.$el.find('#artistViewSetDefaultImage');
@@ -245,6 +265,8 @@ export default class ArtistView extends Subview {
   showError(artistId) {
     this.$name.text(artistId || 'Unknown Artist');
     this.$disambiguation.text('Profile unavailable');
+    this.$loading.hide();
+    this.$backButton.show();
     
     // Create the error block securely without inline onclick executing in global scope
     const $err = $(`<div class="artist-error" style="margin-top: 20px; color: var(--text-3);">
@@ -288,6 +310,7 @@ export default class ArtistView extends Subview {
   loadArtist(artistId) {
     if (!artistId) return;
     this.$loading.css('display', 'flex');
+    this.$backButton.hide();
     // If the provided identifier is not a MusicBrainz UUID, treat it as a name
     const isMbUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(artistId);
     const fetchArtistJson = () => {
@@ -318,6 +341,8 @@ export default class ArtistView extends Subview {
           if (data && data.artist) {
             // Found in cache
             this.$loading.hide();
+            this.$backButton.show();
+            if (this.$imageSpinner) this.$imageSpinner.hide();
             this.artist = data.artist;
             this.moreAlbumsAvailable = !!(data.artist.discography && data.artist.discography.length > 0);
             this.renderArtist(data.artist);
@@ -336,6 +361,7 @@ export default class ArtistView extends Subview {
     fetchArtistJson()
       .then(json => {
         this.$loading.hide();
+        this.$backButton.show();
         if (json && json.artist) {
           this.artist = json.artist;
           this.moreAlbumsAvailable = !!json.more_albums_available;
@@ -381,6 +407,7 @@ export default class ArtistView extends Subview {
                       this.moreAlbumsAvailable = !!(artJson.artist.discography && artJson.artist.discography.length > 0);
                       this.renderArtist(artJson.artist);
                       this.$loading.hide();
+                      this.$backButton.show();
                       if (this.$loadingStatus) this.$loadingStatus.text('');
                       return;
                     }
@@ -408,6 +435,8 @@ export default class ArtistView extends Subview {
         } else if (j.id) {
           // server returned completed id immediately
           return fetch('/endpoints/artist?get&id=' + encodeURIComponent(j.id)).then(r2 => r2.json()).then(json => {
+            this.$loading.hide();
+            this.$backButton.show();
             if (json && json.artist) {
               this.artist = json.artist;
               this.moreAlbumsAvailable = !!(json.artist.discography && json.artist.discography.length > 0);
@@ -579,7 +608,9 @@ export default class ArtistView extends Subview {
 
     // images
     console.log('[artist-view] renderArtist called for', artist && artist.name ? artist.name : artist, 'images count:', (artist && artist.images && artist.images.length) || 0);
-    if (artist && artist.images && artist.images.length) console.log('[artist-view] artist.images sample:', artist.images.slice(0,10).map(i => ({ id: i.id, url: i.url, thumbnail: i.thumbnail_url, source: i.source })));
+    if (artist && artist.images && artist.images.length) {
+      console.log('[artist-view] artist.images sample:', artist.images.slice(0,10).map(i => ({ id: i.id, url: i.url, thumbnail: i.thumbnail_url, source: i.source })));
+    }
     this.artistImageUrls = [];
     this.$gallery.empty();
     if (artist.images && artist.images.length) {
@@ -596,15 +627,17 @@ export default class ArtistView extends Subview {
       const allowedSources = new Set(['wikipedia', 'commons', 'lastfm']);
       const desiredDefaultId = artist.default_image_id;
       for (const img of artist.images) {
-        if (!img.url) continue;
-        if (isReleaseCoverId(img.id)) continue;
+        if (!img.url) { console.log('[artist-view] Skip - no url:', img.id); continue; }
+        if (isReleaseCoverId(img.id)) { console.log('[artist-view] Skip - release cover:', img.id); continue; }
         const src = resolveSourceFromId(img);
-        // include image if from allowed sources, or if it's the current default image id
-        if (!src || (!allowedSources.has(src) && String(img.id) !== String(desiredDefaultId))) continue;
-        const proxyUrl = `/endpoints/artistImage?artist_id=${encodeURIComponent(artist.id)}&image_id=${encodeURIComponent(img.id)}`;
+        if (!src || (!allowedSources.has(src) && String(img.id) !== String(desiredDefaultId))) { 
+          console.log('[artist-view] Skip - source rejected:', { id: img.id, src, allowed: [...allowedSources], defaultId: desiredDefaultId }); 
+          continue; 
+        }
+        const proxyUrl = `/endpoints/artistImage?artist_id=${encodeURIComponent(artist.id)}&image_id=${encodeURIComponent(img.id)}&_cb=${Date.now()}`;
         if (seen.has(img.url)) continue;
         seen.add(img.url);
-        this.artistImageUrls.push({ id: img.id, proxyUrl });
+        this.artistImageUrls.push({ id: img.id, proxyUrl, source: src });
       }
     }
 
@@ -621,16 +654,9 @@ export default class ArtistView extends Subview {
           const $thumb = $(`<div class="artistImageThumb ${img.id === defaultImageId ? 'is-selected' : ''}" data-image-id="${img.id}" data-image-url="${img.proxyUrl}"><img src="${img.proxyUrl}" alt=""></div>`);
           this.$gallery.append($thumb);
         }
-        ViewUtil.setDisplayed(this.$prevImageButton, true);
-        ViewUtil.setDisplayed(this.$nextImageButton, true);
-      } else {
-        ViewUtil.setDisplayed(this.$prevImageButton, false);
-        ViewUtil.setDisplayed(this.$nextImageButton, false);
       }
     } else {
       this.setDisplayedImage('/img/pixel-transparent.png');
-      ViewUtil.setDisplayed(this.$prevImageButton, false);
-      ViewUtil.setDisplayed(this.$nextImageButton, false);
     }
     this.setArtistImageByIndex(this.artistImageIndex);
 
@@ -665,18 +691,63 @@ export default class ArtistView extends Subview {
         $controls.append($reloadBtn);
         $controlsContainer.append($controls);
 
-        // reload action
+        // reload action - clear existing artist data first, then poll for import completion
         $reloadBtn.on('click', () => {
           $reloadBtn.prop('disabled', true).addClass('is-loading');
-          this.$loading.css('display', 'flex');
+          
+          // Clear artist images and bio immediately
+          this.$gallery.empty();
+          this.$bio.empty();
+          this.setDisplayedImage('/img/pixel-transparent.png');
+          this.artistImageUrls = [];
+          this.$el.find('#artistViewSetDefaultImage').hide();
+          
+          if (this.$loadingStatus) this.$loadingStatus.text('Reloading: starting...');
+          
           fetch('/endpoints/artistImport?name=' + encodeURIComponent(artist.name), { method: 'POST' })
             .then(r => r.json())
             .then(j => {
-              if (j && j.id) this.loadArtist(j.id);
-              else this.loadArtist(artist.id);
-            }).catch(() => {
-              this.loadArtist(artist.id);
-            }).finally(() => {
+              if (!j) throw new Error('Import request failed');
+              
+              // Poll for import completion like importArtist does
+              const start = Date.now();
+              const pollInterval = 800;
+              const timeoutMs = 120000;
+              
+              const poller = setInterval(async () => {
+                try {
+                  const res = await fetch('/endpoints/artistImportStatus?name=' + encodeURIComponent(artist.name));
+                  if (!res.ok) throw new Error('status fetch failed');
+                  const body = await res.json();
+                  const st = body && body.status ? body.status : null;
+                  
+                  if (st && st.status) {
+                    if (this.$loadingStatus) this.$loadingStatus.text('Reloading: ' + st.status);
+                    
+                    if (st.status === 'Done' && st.mbid) {
+                      clearInterval(poller);
+                      this.loadArtist(st.mbid);
+                      if (this.$loadingStatus) this.$loadingStatus.text('');
+                      $reloadBtn.prop('disabled', false).removeClass('is-loading');
+                      return;
+                    }
+                  }
+                  
+                  if (Date.now() - start > timeoutMs) {
+                    clearInterval(poller);
+                    if (this.$loadingStatus) this.$loadingStatus.text('Reload timed out');
+                    $reloadBtn.prop('disabled', false).removeClass('is-loading');
+                  }
+                } catch (e) {
+                  clearInterval(poller);
+                  console.error('Reload status poll error:', e);
+                  if (this.$loadingStatus) this.$loadingStatus.text('Reload failed');
+                  $reloadBtn.prop('disabled', false).removeClass('is-loading');
+                }
+              }, pollInterval);
+            }).catch(e => {
+              console.error('Reload error:', e);
+              if (this.$loadingStatus) this.$loadingStatus.text('Reload failed');
               $reloadBtn.prop('disabled', false).removeClass('is-loading');
             });
         });

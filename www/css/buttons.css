@@ -370,6 +370,7 @@
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  will-change: transform;
 }
 
 @keyframes spin {

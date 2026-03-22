@@ -220,15 +220,21 @@ const doImage = (request, response) => {
   const serveImage = (url, isLocal = false) => {
     if (isLocal) {
       try {
-        const p = path.resolve(url);
-        if (fs.existsSync(p)) {
+        // Normalize Windows paths for Node.js: I:\path -> I:/path (forward slashes)
+        let normalizedUrl = url;
+        if (/^[a-zA-Z]:[/\\]/.test(url)) {
+          normalizedUrl = url.replace(/\\/g, '/');
+        }
+        console.log('[artist-handler] Local file check:', { url, normalizedUrl, exists: fs.existsSync(normalizedUrl) });
+        if (fs.existsSync(normalizedUrl)) {
           if (forBackground && sharp) {
-            sharp(p)
+            sharp(normalizedUrl)
               .resize(maxBgSize, maxBgSize, { fit: 'inside', withoutEnlargement: true })
               .jpeg({ quality: 85 })
               .toBuffer((err, data) => {
+                if (response.headersSent || response.finished) return;
                 if (err) {
-                  response.sendFile(p);
+                  response.sendFile(normalizedUrl);
                 } else {
                   response.set('Content-Type', 'image/jpeg');
                   response.set('Cache-Control', 'public, max-age=86400');
@@ -236,11 +242,15 @@ const doImage = (request, response) => {
                 }
               });
           } else {
-            response.sendFile(p);
+            response.sendFile(normalizedUrl);
           }
           return true;
+        } else {
+          console.log('[artist-handler] Local file not found:', normalizedUrl);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log('[artist-handler] Local file error:', e.message);
+      }
       return false;
     }
 
@@ -269,7 +279,9 @@ const doImage = (request, response) => {
       return;
     }
     const imgs = artist.images || [];
+    console.log('[artist-handler] Looking for image:', { imageId, availableIds: imgs.map(i => i.id) });
     let image = imgs.find(i => i.id == imageId);
+    console.log('[artist-handler] Found image:', image ? { id: image.id, url: image.url } : null);
 
     if (!image) {
       try {
@@ -288,11 +300,12 @@ const doImage = (request, response) => {
 
     let url = image.url || '';
     if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
-      // Automatically upgrade Last.fm thumbnails/resized images to original quality
       url = url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
     }
     
-    if (!serveImage(url)) {
+    const isLocalPath = !url.startsWith('http://') && !url.startsWith('https://') && (url.includes('\\') || url.includes('/') || url.includes(':'));
+    console.log('[artist-handler] Serving image:', { imageId, url, isLocalPath });
+    if (!serveImage(url, isLocalPath)) {
       safeStatusJson(response, 404, { error: 'image_url_invalid' });
     }
   });

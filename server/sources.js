@@ -1,7 +1,9 @@
 const https = require('https');
+const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const querystring = require('querystring');
+const sharp = require('sharp');
 const db = require('./db');
 const puppeteer = require('puppeteer');
 
@@ -164,15 +166,17 @@ const fetchCoverArt = (releaseId, releaseGroupId, cb) => {
 
 const fetchWikipediaSummary = (title, cb) => {
   const encoded = encodeURIComponent(title.replace(/ /g, '_'));
-  // Use the query API to get a longer plaintext extract, thumbnail and fullurl
-  const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|pageimages|info&explaintext=1&piprop=thumbnail&pithumbsize=600&inprop=url&titles=${encoded}&formatversion=2`;
+  // Use the query API to get a longer plaintext extract, fullurl, and the best available image.
+  const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|pageimages|info&explaintext=1&piprop=original|thumbnail&pithumbsize=1600&inprop=url&titles=${encoded}&formatversion=2`;
   httpGetJson(url, (err, json) => {
     if (err) return cb(null, null);
     try {
       const page = json.query && json.query.pages && json.query.pages[0] ? json.query.pages[0] : null;
-      if (!page) return cb(null, null);
+      if (!page || page.missing) return cb(null, null);
       const extract = page.extract || '';
-      const thumbnail = (page.thumbnail && page.thumbnail.source) ? page.thumbnail.source : null;
+      const thumbnail =
+        (page.original && page.original.source) ? page.original.source :
+        ((page.thumbnail && page.thumbnail.source) ? page.thumbnail.source : null);
       const pageUrl = page.fullurl || (`https://en.wikipedia.org/wiki/${encoded}`);
       cb(null, { extract, thumbnail, url: pageUrl });
     } catch (e) { cb(null, null); }
@@ -189,11 +193,15 @@ const getHighResLastFmUrl = (url) => {
 };
 
 const searchWikipediaByName = (name, cb) => {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name)}&format=json&srlimit=1`;
+  const escapedName = String(name || '').replace(/"/g, '\\"').trim();
+  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(`intitle:"${escapedName}"`)}&format=json&srlimit=5`;
   httpGetJson(url, (err, json) => {
     if (err) return cb(null, null);
     try {
-      const first = json.query && json.query.search && json.query.search[0];
+      const results = json.query && json.query.search ? json.query.search : [];
+      const exact = results.find((item) => item && item.title && item.title.toLowerCase() === escapedName.toLowerCase());
+      if (exact && exact.title) return cb(null, exact.title);
+      const first = results[0];
       if (first && first.title) return cb(null, first.title);
     } catch (e) {}
     cb(null, null);
@@ -223,11 +231,115 @@ const getImageSourcesConfig = () => {
 };
 
 const IMAGES_DIR = path.join(__dirname, 'data', 'images');
+const PUPPETEER_PROFILE_DIR = path.join(__dirname, 'data', 'puppeteer-profile');
 
 const ensureImagesDir = () => {
   if (!fs.existsSync(IMAGES_DIR)) {
     fs.mkdirSync(IMAGES_DIR, { recursive: true });
   }
+};
+
+const httpGetText = (url, cb, redirects = 0) => {
+  if (redirects > 5) return cb(new Error('too_many_redirects'));
+  try {
+    const opts = new URL(url);
+    const protocol = opts.protocol === 'http:' ? require('http') : https;
+    const req = protocol.request(opts, { method: 'GET', headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' }, timeout: 5000 }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        const next = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, url).toString();
+        res.resume();
+        return httpGetText(next, cb, redirects + 1);
+      }
+      let data = '';
+      res.on('data', (d) => data += d);
+      res.on('end', () => {
+        if (res.statusCode >= 400) {
+          cb(new Error(`HTTP error ${res.statusCode}`), null);
+          return;
+        }
+        cb(null, data);
+      });
+    });
+    req.on('timeout', () => { req.destroy(); cb(new Error('timeout')); });
+    req.on('error', (e) => cb(e));
+    req.end();
+  } catch (e) {
+    cb(e);
+  }
+};
+
+const ensurePuppeteerProfileDir = () => {
+  if (!fs.existsSync(PUPPETEER_PROFILE_DIR)) {
+    fs.mkdirSync(PUPPETEER_PROFILE_DIR, { recursive: true });
+  }
+};
+
+const normalizeArtistSlug = (value) => String(value || '')
+  .toLowerCase()
+  .replace(/&/g, 'and')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
+const encodeLastFmArtistPath = (name) => encodeURIComponent(String(name || '')).replace(/%20/g, '+');
+
+const decodeHtmlEntity = (value) => String(value || '')
+  .replace(/&amp;/g, '&')
+  .replace(/&#39;|&apos;/g, "'")
+  .replace(/&quot;|&#34;/g, '"');
+
+const buildLastFmImageUrlFromId = (id) => {
+  if (!id) return null;
+  return `https://lastfm.freetls.fastly.net/i/u/770x0/${id}.jpg`;
+};
+
+const parseLastFmImageCandidates = (html, artistName) => {
+  const artistSlug = normalizeArtistSlug(artistName);
+  const candidateUrls = [];
+  const candidateIds = [];
+  const seenIds = new Set();
+  const seenUrls = new Set();
+
+  const addUrl = (value) => {
+    const normalized = getHighResLastFmUrl(decodeHtmlEntity(String(value || '').replace(/\\\//g, '/').replace(/#.*/, '')));
+    if (!normalized || seenUrls.has(normalized)) return;
+    seenUrls.add(normalized);
+    candidateUrls.push(normalized);
+  };
+
+  const addId = (value) => {
+    const match = String(value || '').match(/([a-f0-9]{32})/i);
+    if (!match) return;
+    const id = match[1].toLowerCase();
+    if (seenIds.has(id)) return;
+    seenIds.add(id);
+    candidateIds.push(id);
+  };
+
+  const ogImageMatches = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/ig) || [];
+  ogImageMatches.forEach((tag) => {
+    const match = tag.match(/content="([^"]+)"/i);
+    if (match && match[1] && match[1].includes('lastfm.freetls.fastly.net')) addUrl(match[1]);
+  });
+
+  const linkRegex = /href="([^"]*\/music\/[^"]*\/\+images\/([a-f0-9]{32})[^"]*)"/ig;
+  let linkMatch;
+  while ((linkMatch = linkRegex.exec(html))) {
+    const href = decodeHtmlEntity(linkMatch[1]);
+    const hrefArtistMatch = href.match(/\/music\/([^/]+)\/\+images\//i);
+    const hrefArtistSlug = hrefArtistMatch ? normalizeArtistSlug(decodeURIComponent(hrefArtistMatch[1].replace(/\+/g, ' '))) : '';
+    if (hrefArtistSlug && hrefArtistSlug === artistSlug) addId(linkMatch[2]);
+  }
+
+  const fastlyRegex = /lastfm\.freetls\.fastly\.net\/i\/u\/[^"'<)\s]+/ig;
+  let fastlyMatch;
+  while ((fastlyMatch = fastlyRegex.exec(html))) {
+    const cleaned = decodeHtmlEntity(fastlyMatch[0]).replace(/\\+/g, '').replace(/#.*/, '');
+    const idMatch = cleaned.match(/\/([a-f0-9]{32})(?:\.jpg)?$/i);
+    if (idMatch) addId(idMatch[1]);
+  }
+
+  for (const id of candidateIds) addUrl(buildLastFmImageUrlFromId(id));
+  return candidateUrls.slice(0, 5);
 };
 
 const downloadImage = (url, artistMbid, imageIndex) => {
@@ -240,29 +352,47 @@ const downloadImage = (url, artistMbid, imageIndex) => {
     
     if (fs.existsSync(localPath)) {
       console.log('[sources] Image already cached:', filename);
-      return resolve(localPath);
+      return resolve({ path: localPath, width: null, height: null });
     }
     
     const protocol = url.startsWith('https') ? https : http;
     const req = protocol.get(url, { headers: { 'User-Agent': UA } }, (res) => {
       if (res.statusCode >= 200 && res.statusCode < 400) {
-        const file = fs.createWriteStream(localPath);
-        res.pipe(file);
-        file.on('finish', () => {
-          file.close();
-          console.log('[sources] Downloaded image:', filename);
-          resolve(localPath);
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', async () => {
+          try {
+            const buffer = Buffer.concat(chunks);
+            const tempPath = localPath + '.tmp';
+            fs.writeFileSync(tempPath, buffer);
+            
+            const metadata = await sharp(tempPath).metadata();
+            
+            if (metadata.width > 800 || metadata.height > 800) {
+              await sharp(tempPath)
+                .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: 85 })
+                .toFile(localPath);
+              try { fs.unlinkSync(tempPath); } catch (e) {}
+              console.log('[sources] Downloaded & resized:', filename, `(${metadata.width}x${metadata.height} -> 800px)`);
+            } else {
+              fs.renameSync(tempPath, localPath);
+              console.log('[sources] Downloaded:', filename, `(${metadata.width}x${metadata.height})`);
+            }
+            
+            resolve({ path: localPath, width: metadata.width, height: metadata.height });
+          } catch (err) {
+            try { if (fs.existsSync(localPath + '.tmp')) fs.unlinkSync(localPath + '.tmp'); } catch (e) {}
+            reject(err);
+          }
         });
-        file.on('error', (err) => {
-          fs.unlink(localPath, () => {});
-          reject(err);
-        });
+        res.on('error', reject);
       } else {
         reject(new Error(`HTTP ${res.statusCode}`));
       }
     });
     req.on('error', reject);
-    req.setTimeout(15000, () => {
+    req.setTimeout(10000, () => {
       req.destroy();
       reject(new Error('timeout'));
     });
@@ -288,6 +418,7 @@ const scrapeArtistImages = (name, cb) => {
   
   const allImages = [];
   let sourcesProcessed = 0;
+  const artistSlug = normalizeArtistSlug(name);
   
   for (let s = 0; s < enabledSources.length; s++) {
     const sourceUrl = enabledSources[s].replace('{ARTIST}', encodeURIComponent(name));
@@ -297,8 +428,11 @@ const scrapeArtistImages = (name, cb) => {
     (async () => {
       let browser;
       try {
+        ensurePuppeteerProfileDir();
         browser = await puppeteer.launch({
           headless: true,
+          userDataDir: path.join(PUPPETEER_PROFILE_DIR, sourceBase),
+          timeout: 15000,
           args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         });
         
@@ -308,25 +442,19 @@ const scrapeArtistImages = (name, cb) => {
           'Accept-Language': 'en-US,en;q=0.9'
         });
         
-        await page.goto(sourceUrl, { waitUntil: 'networkidle0', timeout: 60000 });
+        await page.goto(sourceUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
         
         try {
-          await page.waitForSelector('img[src*="fastly.net"]:not([src*="2a96cbd8"])', { timeout: 10000 });
+          await page.waitForSelector('a[href*="+images/"], img[src*="fastly.net"], img[data-src*="fastly.net"]', { timeout: 3500 });
         } catch (e) {
-          console.log('[sources] No images with src, trying data-src...');
-          try {
-            await page.waitForSelector('img[data-src*="fastly.net"]:not([data-src*="2a96cbd8"])', { timeout: 5000 });
-          } catch (e2) {
-            console.log('[sources] No images with data-src either');
-            await new Promise(resolve => setTimeout(resolve, 3000));
-          }
+          console.log('[sources] Gallery selectors not found quickly, continuing with current DOM');
         }
         
         const images = [];
         
         if (sourceBase === 'lastfm') {
           
-          const galleryInfo = await page.evaluate(() => {
+          const galleryInfo = await page.evaluate((expectedArtistSlug) => {
             const getHighResLastFmUrl = (url) => {
               if (typeof url !== 'string') return url;
               if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
@@ -334,42 +462,70 @@ const scrapeArtistImages = (name, cb) => {
               }
               return url;
             };
+            const slugify = (value) => String(value || '')
+              .toLowerCase()
+              .replace(/&/g, 'and')
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '');
+            const normalizeUrl = (value) => {
+              try {
+                return new URL(value, window.location.href);
+              } catch (e) {
+                return null;
+              }
+            };
+            const extractArtistSlug = (value) => {
+              const parsed = normalizeUrl(value);
+              if (!parsed) return '';
+              const parts = parsed.pathname.split('/').filter(Boolean);
+              const musicIndex = parts.findIndex((part) => part === 'music');
+              if (musicIndex === -1 || !parts[musicIndex + 1]) return '';
+              return slugify(decodeURIComponent(parts[musicIndex + 1]));
+            };
+            const isGalleryLink = (value) => {
+              const parsed = normalizeUrl(value);
+              if (!parsed) return false;
+              return extractArtistSlug(parsed.href) === expectedArtistSlug && /\/\+images\/[a-z0-9]+$/i.test(parsed.pathname);
+            };
 
             const result = {
               pageTitle: document.title,
-              allLinks: [],
+              imagePageUrls: [],
               images: []
             };
             
             Array.from(document.querySelectorAll('a')).forEach(a => {
-              if (a.href.includes('images') || a.href.includes('photo')) {
-                result.allLinks.push({
-                  href: a.href,
-                  text: a.textContent.trim().substring(0, 50),
-                  className: a.className
-                });
+              if (isGalleryLink(a.href)) {
+                result.imagePageUrls.push(new URL(a.href, window.location.href).href);
               }
             });
             
-            document.querySelectorAll('img').forEach((img) => {
-              const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
-              if (src && src.includes('fastly.net') && !src.includes('2a96cbd8') && !src.includes('avatar')) {
+            Array.from(document.querySelectorAll('a[href*="+images/"]')).forEach((anchor) => {
+              if (!isGalleryLink(anchor.href)) return;
+              anchor.querySelectorAll('img').forEach((img) => {
+                const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
+                if (!src || !src.includes('fastly.net')) return;
+                if (src.includes('/avatar') || src.includes('/34s') || src.includes('/64s') || src.includes('/170s/') || src.includes('2a96cbd8')) return;
+                const srcsetParts = String(img.srcset || '').split(',').map((s) => s.trim().split(' ')[0]).filter(Boolean);
+                const candidates = srcsetParts.length ? srcsetParts : [src];
+                candidates.forEach((candidate) => {
+                  if (!candidate.includes('fastly.net')) return;
+                  if (candidate.includes('2a96cbd8') || candidate.includes('/avatar')) return;
+                  result.images.push(getHighResLastFmUrl(candidate.split('#')[0]));
+                });
                 result.images.push(getHighResLastFmUrl(src.split('#')[0]));
-              }
-              if (img.srcset) {
-                const parts = img.srcset.split(',').map(s => s.trim().split(' ')[0]);
-                parts.forEach(p => {
-                  if (p && p.includes('fastly.net') && !p.includes('2a96cbd8') && !p.includes('avatar')) {
-                    result.images.push(getHighResLastFmUrl(p.split('#')[0]));
-                  }
-                });
-              }
+              });
             });
             
+            result.imagePageUrls = [...new Set(result.imagePageUrls)].slice(0, 2);
+            result.images = [...new Set(result.images)];
             return result;
-          });
+          }, artistSlug);
           
-          const uniqueImages = [...new Set(galleryInfo.images)];
+          const uniqueImages = galleryInfo.images.filter((url) => {
+            const lower = String(url || '').toLowerCase();
+            return lower && !lower.includes('/avatar') && !lower.includes('2a96cbd8');
+          });
           console.log('[sources] Gallery found', uniqueImages.length, 'direct images');
           
           if (uniqueImages.length > 0) {
@@ -378,35 +534,44 @@ const scrapeArtistImages = (name, cb) => {
             }
           } else {
             console.log('[sources] No direct images, trying image pages...');
-            let imagePageUrls = galleryInfo.allLinks
-              .filter(l => l.href.match(/\+images\/[a-f0-9]+$/) || l.href.match(/\/photo\/[a-f0-9]+$/))
-              .map(l => l.href)
-              .slice(0, 3);
+            const imagePageUrls = galleryInfo.imagePageUrls.slice(0, 2);
             
             for (let i = 0; i < imagePageUrls.length; i++) {
               const imagePageUrl = imagePageUrls[i];
               console.log('[sources] Scraping image page:', imagePageUrl);
               try {
-                await page.goto(imagePageUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await page.goto(imagePageUrl, { waitUntil: 'domcontentloaded', timeout: 12000 });
                 
-                const pageImages = await page.evaluate(() => {
+                const pageImages = await page.evaluate((expectedArtistSlug) => {
                   const getHighResLastFmUrl = (url) => {
                     if (typeof url !== 'string') return url;
                     if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
                       return url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
                     }
                     return url;
-                  }
+                  };
+                  const slugify = (value) => String(value || '')
+                    .toLowerCase()
+                    .replace(/&/g, 'and')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                  const parts = window.location.pathname.split('/').filter(Boolean);
+                  const musicIndex = parts.findIndex((part) => part === 'music');
+                  const currentArtistSlug = musicIndex !== -1 ? slugify(decodeURIComponent(parts[musicIndex + 1] || '')) : '';
+                  if (currentArtistSlug !== expectedArtistSlug) return [];
                   const imgs = [];
+                  const meta = document.querySelector('meta[property="og:image"]');
+                  if (meta && meta.content && meta.content.includes('fastly.net')) {
+                    imgs.push(getHighResLastFmUrl(meta.content.split('#')[0]));
+                  }
                   document.querySelectorAll('img').forEach((img) => {
                     const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
-                    if (src && src.includes('fastly.net') && !src.includes('2a96cbd8')) {
+                    if (src && src.includes('fastly.net') && !src.includes('2a96cbd8') && !src.includes('avatar') && !src.includes('/34s') && !src.includes('/64s') && !src.includes('/170s/')) {
                       imgs.push(getHighResLastFmUrl(src.split('#')[0]));
                     }
                   });
                   return [...new Set(imgs)];
-                });
+                }, artistSlug);
                 
                 if (pageImages.length > 0) {
                   images.push({ url: pageImages[0], source: sourceBase, id: `${name}-${sourceBase}-${i}` });
@@ -422,7 +587,8 @@ const scrapeArtistImages = (name, cb) => {
             const src = await imgElements[i].evaluate(el => {
               return el.src || el.getAttribute('data-src') || ((el.getAttribute('srcset') || '').split(' ')[0]);
             });
-            if (src && src.startsWith('http') && !src.includes('placeholder') && !src.includes('2a96cbd8')) {
+            // Skip similar artist images, avatars, and small thumbnails
+            if (src && src.startsWith('http') && !src.includes('placeholder') && !src.includes('2a96cbd8') && !src.includes('/avatar') && !src.includes('/34s') && !src.includes('/64s')) {
               images.push({ url: src, source: sourceBase, id: `${name}-${sourceBase}-${i}` });
             }
           }
@@ -434,7 +600,13 @@ const scrapeArtistImages = (name, cb) => {
       } catch (err) {
         console.log('[sources] Scrape error:', err.message);
       } finally {
-        if (browser) await browser.close();
+        if (browser) {
+          try {
+            await browser.close();
+          } catch (closeErr) {
+            console.warn('[sources] Browser close warning:', closeErr.message);
+          }
+        }
         sourcesProcessed++;
         if (sourcesProcessed === enabledSources.length) {
           console.log('[sources] Final images:', allImages.length);
@@ -449,7 +621,25 @@ const scrapeArtistImages = (name, cb) => {
   }
 };
 
-const searchLastFmImages = scrapeArtistImages;
+const searchLastFmImages = (name, cb) => {
+  const artistPath = encodeLastFmArtistPath(name);
+  const galleryUrl = `https://www.last.fm/music/${artistPath}/+images`;
+  httpGetText(galleryUrl, (err, html) => {
+    if (err || !html) {
+      console.warn('[sources] Last.fm HTML fetch error:', err ? err.message : 'empty_response');
+      return cb(null, []);
+    }
+    try {
+      const urls = parseLastFmImageCandidates(html, name);
+      const images = urls.map((url, i) => ({ url, source: 'lastfm', id: `${name}-lastfm-${i}` }));
+      console.log('[sources] Last.fm HTML parser found', images.length, 'images');
+      cb(null, images);
+    } catch (parseErr) {
+      console.warn('[sources] Last.fm HTML parse error:', parseErr.message);
+      cb(null, []);
+    }
+  });
+};
 
 const searchCommonsImages = (name, cb) => {
   const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=10&prop=imageinfo&iiprop=url|mime|extmetadata`;
@@ -516,12 +706,17 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
     };
 
     // 1. Wikipedia fetch
-    searchWikipediaByName(name, (errS, title) => {
-      if (title) {
-        fetchWikipediaSummary(title, (errW, data) => onWikiDone(data));
-      } else {
-        onWikiDone(null);
+    fetchWikipediaSummary(mbArtist.name || name, (errExact, exactData) => {
+      if (exactData && exactData.thumbnail) {
+        return onWikiDone(exactData);
       }
+      searchWikipediaByName(name, (errS, title) => {
+        if (title) {
+          fetchWikipediaSummary(title, (errW, data) => onWikiDone(data || exactData || null));
+        } else {
+          onWikiDone(exactData || null);
+        }
+      });
     });
 
   // 2. Releases fetch
@@ -568,6 +763,7 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
 
       const images = [];
       const seen = new Set();
+      let nextImageIndex = 0;
       
       const isLikelyCover = (url) => {
         if (!url) return false;
@@ -577,27 +773,49 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
       };
 
       const addImg = async (urlRaw, src, id) => {
-        const url = (src === 'lastfm') ? getHighResLastFmUrl(urlRaw) : urlRaw;
-        if (url && !seen.has(url) && images.length < 5) {
-          if (src !== 'spotify' && isLikelyCover(url)) return false;
-          
-          let localPath = url;
-          try {
-            if (url.startsWith('http')) {
-              const imgIndex = images.length;
-              setImportStatus(name, { status: `Downloading image ${imgIndex + 1}/5 (${images.length} saved)...`, mbid });
-              await new Promise(r => setTimeout(r, 100)); // small delay for visibility
-              localPath = await downloadImage(url, mbid, imgIndex);
+        const originalUrl = urlRaw;
+        const highResUrl = (src === 'lastfm') ? getHighResLastFmUrl(urlRaw) : urlRaw;
+
+        if (!highResUrl || seen.has(highResUrl) || images.length >= 5) return false;
+        if (src === 'lastfm' && isLikelyCover(highResUrl)) return false;
+
+        seen.add(highResUrl);
+        let localPath = highResUrl;
+        const isLastFm = src === 'lastfm';
+        const imgIndex = nextImageIndex++;
+
+        try {
+          if (highResUrl.startsWith('http')) {
+            setImportStatus(name, { status: `Downloading image ${Math.min(images.length + 1, 5)}/5...`, mbid });
+
+            if (isLastFm && highResUrl !== originalUrl) {
+              try {
+                const result = await downloadImage(highResUrl, mbid, imgIndex);
+                localPath = result.path;
+                // If the "original" Last.fm asset is tiny, fall back to the displayed variant.
+                if (result.width && result.width < 400) {
+                  console.log('[sources] High-res too small (' + result.width + 'px), trying thumbnail...');
+                  localPath = await downloadImage(originalUrl, mbid, imgIndex);
+                  if (typeof localPath === 'object') localPath = localPath.path;
+                }
+              } catch (highResErr) {
+                console.log('[sources] High-res failed, trying thumbnail...');
+                localPath = await downloadImage(originalUrl, mbid, imgIndex);
+                if (typeof localPath === 'object') localPath = localPath.path;
+              }
+            } else {
+              localPath = await downloadImage(highResUrl, mbid, imgIndex);
+              if (typeof localPath === 'object') localPath = localPath.path;
             }
-          } catch (dlErr) {
-            console.warn('[sources] Failed to download image, using remote URL:', dlErr.message);
           }
-          
-          images.push({ id: id, url: localPath, source: src, thumbnail_url: localPath });
-          seen.add(url);
-          return true;
+        } catch (dlErr) {
+          console.warn('[sources] Failed to download image:', dlErr.message);
+          return false;
         }
-        return false;
+
+        if (typeof localPath === 'object') localPath = localPath.path;
+        images.push({ id: id, url: localPath, source: src, thumbnail_url: localPath });
+        return true;
       };
 
       if (wikiData && wikiData.thumbnail) {
@@ -617,24 +835,39 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
         const lastfm = imgs.filter(i => i.source === 'lastfm');
         const commons = imgs.filter(i => i.source === 'commons');
         const others = imgs.filter(i => !['wikipedia', 'wiki', 'lastfm', 'commons'].some(s => i.source && i.source.includes(s)));
-        const orderedImgs = [...wikipedia, ...lastfm, ...commons, ...others];
+        const orderedImgs = [...wikipedia, ...lastfm, ...commons, ...others].slice(0, 5);
         
-        // Select default: prefer wikipedia if no existing default
-        let defaultImg = orderedImgs[0];
-        if (!existingDefaultImageId && wikipedia.length > 0) {
+        // Select default: preserve an existing valid choice, otherwise prefer wikipedia.
+        let defaultImg = null;
+        if (existingDefaultImageId) {
+          defaultImg = orderedImgs.find((img) => String(img.id) === String(existingDefaultImageId)) || null;
+        }
+        if (!defaultImg && wikipedia.length > 0) {
           defaultImg = wikipedia[0];
+        }
+        if (!defaultImg) {
+          defaultImg = orderedImgs[0] || null;
         }
         
         db.addImagesBulk(mbid, orderedImgs, (errB) => {
           if (errB) console.error('[sources] addImagesBulk failed:', errB);
+          const imgCount = orderedImgs.length;
+          const srcCount = { wikipedia: 0, lastfm: 0, commons: 0 };
+          orderedImgs.forEach(img => {
+            if (img.source === 'wikipedia' || img.source === 'wiki') srcCount.wikipedia++;
+            else if (img.source === 'lastfm') srcCount.lastfm++;
+            else if (img.source === 'commons') srcCount.commons++;
+          });
           if (defaultImg) {
             db.setDefaultImage(mbid, defaultImg.id, (errD) => {
               if (errD) console.warn('[sources] setDefaultImage failed:', errD);
               setImportStatus(name, { status: 'Done', mbid });
+              console.log(`[sources] DONE: "${name}" - ${imgCount} images (Wikipedia: ${srcCount.wikipedia}, Last.fm: ${srcCount.lastfm}, Commons: ${srcCount.commons})`);
               safeCallback(null, mbid);
             });
           } else {
             setImportStatus(name, { status: 'Done', mbid });
+            console.log(`[sources] DONE: "${name}" - ${imgCount} images (Wikipedia: ${srcCount.wikipedia}, Last.fm: ${srcCount.lastfm}, Commons: ${srcCount.commons})`);
             safeCallback(null, mbid);
           }
         });
@@ -644,9 +877,13 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
       searchLastFmImages(name, async (errL, lastfmImgs) => {
         if (errL) console.warn('[sources] Last.fm image fetch warning:', errL);
         const foundLast = (lastfmImgs || []).length;
-        for (let i = 0; i < foundLast; i++) {
-          await addImg(lastfmImgs[i].url, 'lastfm', `${mbid}-lastfm-${i}`);
+        
+        if (foundLast > 0) {
+          for (let i = 0; i < lastfmImgs.length && images.length < 5; i++) {
+            await addImg(lastfmImgs[i].url, 'lastfm', `${mbid}-lastfm-${i}`);
+          }
         }
+        
         if (images.length > 0) {
           setImportStatus(name, { status: `${images.length} image(s) saved from Last.fm`, mbid });
         }
@@ -655,15 +892,17 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
           setImportStatus(name, { status: 'Fetching images from Commons', mbid });
           searchCommonsImages(name, async (errC, commons) => {
             if (errC) console.warn('[sources] Commons image fetch warning:', errC);
-            for (let i = 0; i < (commons || []).length; i++) {
-              await addImg(commons[i].url, 'commons', `${mbid}-comm-${i}`);
+            
+            if ((commons || []).length > 0) {
+              for (let i = 0; i < commons.length && images.length < 5; i++) {
+                await addImg(commons[i].url, 'commons', `${mbid}-comm-${i}`);
+              }
             }
+            
             setImportStatus(name, { status: `${images.length} image(s) saved total`, mbid });
-            await new Promise(r => setTimeout(r, 500));
             onImagesReady(images);
           });
         } else {
-          await new Promise(r => setTimeout(r, 500));
           onImagesReady(images);
         }
       });
