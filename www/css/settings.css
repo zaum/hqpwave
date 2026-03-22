@@ -207,6 +207,18 @@
   border-color: var(--accent);
 }
 
+.artistImageSourcesSummary {
+  gap: 6px;
+}
+
+.artistImageSourcesSummary .row-desc {
+  margin-top: 0;
+}
+
+.imageSourcesSection {
+  margin-top: -24px;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    TOGGLE SWITCH
    ═══════════════════════════════════════════════════════════════ */

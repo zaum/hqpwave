@@ -13,11 +13,6 @@
   color: var(--text);
   scrollbar-color: var(--text-3) var(--surface);
   -webkit-tap-highlight-color: transparent;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -o-user-select: none;
   -webkit-user-drag: none;
 }
 
@@ -78,6 +73,34 @@ li:before {
 input,
 html input[disabled] {
   all: unset;
+}
+
+button,
+.button,
+.iconButton,
+.textButton,
+.toggle-switch,
+.theme-chip,
+.color-swatch,
+.dropdownItem,
+.contextItem,
+img,
+svg {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -o-user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  -moz-user-select: text;
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  -o-user-select: text;
 }
 
 /* Firefox inner focus pseudo-element adjusted separately for compatibility */
