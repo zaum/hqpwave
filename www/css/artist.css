@@ -24,14 +24,27 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .view-loading {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
-  z-index: 100;
+  background: var(--bg) !important;
+  z-index: 10000;
+}
+
+.artist-loading-status {
+  color: var(--text-3);
+  font-size: 13px;
+  margin-top: 18px;
+  text-align: center;
+  max-width: 90%;
+  word-break: break-word;
+  opacity: 1 !important;
 }
 
 /* Hide the artist-specific loading container by default; shown by JS when needed */
@@ -218,47 +231,49 @@
   display: block;
 }
 
-/* Center image nav under the picture frame */
-#artistViewImageNav {
+/* Wrapper for nav and controls - centered under picture frame */
+.artist-image-controls {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: calc(32px + 250px + 12px); /* frame top (32px) + frame size (250px) + gap */
+  top: calc(32px + 250px + 12px);
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 12px;
   z-index: 20;
 }
 
+/* Image nav buttons - centered within wrapper */
+#artistViewImageNav {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Default button controls */
 #artistViewPictureControls {
-  position: absolute;
-  right: 32px;
-  top: 330px;
-  left: calc(100% - 314px);
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 12px;
-  z-index: 20;
 }
 
 @media (max-width: 1023px) {
-  #artistViewImageNav {
+  .artist-image-controls {
     position: relative;
-    right: auto;
-    top: auto;
     left: auto;
+    transform: none;
+    top: auto;
     width: 250px;
-    margin: 16px auto 0;
+    margin: 12px auto 0;
+  }
+  #artistViewImageNav {
+    width: auto;
   }
   #artistViewPictureControls {
-    position: relative;
-    right: auto;
-    top: auto;
-    left: auto;
-    width: 250px;
-    margin: 8px auto 0;
+    width: auto;
   }
 }
 
@@ -289,8 +304,8 @@
 }
 
 .artistViewImageNavIcon {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   fill: currentColor;
 }
 
@@ -304,7 +319,7 @@
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(8px);
   border-radius: 20px;
-  color: white;
+  color: var(--text-2);
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
@@ -503,16 +518,6 @@
 .artistDiscItem.not-local:hover {
   transform: none;
   box-shadow: none;
-
-/* Loading status text under spinner */
-.artist-loading-status {
-  color: var(--text-2);
-  font-size: 13px;
-  margin-top: 18px; /* space after spinner circle */
-  text-align: center;
-  max-width: 90%;
-  word-break: break-word;
-}
 }
 
 /* Positioning for play button/format bit overlays (reuse library classes) */

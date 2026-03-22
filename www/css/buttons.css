@@ -219,6 +219,7 @@
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: all 0.18s;
+  text-decoration: none;
 }
 
 .textButton:hover {

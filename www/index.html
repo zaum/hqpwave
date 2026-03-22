@@ -400,7 +400,7 @@
       <section id="artistView" class="subview" tabindex="0">
         <div id="artistViewLoading" class="view-loading">
           <div class="spinner"></div>
-          <div id="artistViewLoadingStatus" class="artist-loading-status text-2" aria-live="polite" role="status"></div>
+          <div id="artistViewLoadingStatus" class="artist-loading-status text-3" aria-live="polite" role="status"></div>
         </div>
 
         <div id="artistViewBg">
@@ -416,23 +416,25 @@
             <div class="artistPictureFrame">
               <img id="artistViewPicture" alt="Artist photo">
             </div>
-            <div id="artistViewImageNav">
-              <button id="artistViewPrevImageButton" class="artistViewImageNavButton"
-                aria-label="Previous artist image">
-                <svg class="artistViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
-                  <path
-                    d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
-                </svg>
-              </button>
-              <div id="artistViewSetDefaultImage" class="artistViewSetDefaultBtn">Set as default image</div>
-              <button id="artistViewNextImageButton" class="artistViewImageNavButton" aria-label="Next artist image">
-                <svg class="artistViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
-                  <path
-                    d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
-                </svg>
-              </button>
+            <div id="artistViewImageControls" class="artist-image-controls">
+              <div id="artistViewImageNav">
+                <button id="artistViewPrevImageButton" class="artistViewImageNavButton"
+                  aria-label="Previous artist image">
+                  <svg class="artistViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+                    <path
+                      d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
+                  </svg>
+                </button>
+                <div id="artistViewSetDefaultImage" class="artistViewSetDefaultBtn">Set as default image</div>
+                <button id="artistViewNextImageButton" class="artistViewImageNavButton" aria-label="Next artist image">
+                  <svg class="artistViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
+                    <path
+                      d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
+                  </svg>
+                </button>
+              </div>
+              <div id="artistViewPictureControls"></div>
             </div>
-            <div id="artistViewPictureControls"></div>
             <div id="artistViewImageGallery"></div>
           </div>
         </div>
@@ -757,23 +759,23 @@
             <div class="settings-card">
               <div class="settings-card-row">
                 <div>
-                  <div class="row-label">Backup Data</div>
-                  <div class="row-desc">Download a local copy of all your metadata (play counts, favorites, history, and
-                    custom playlists)</div>
+                  <div class="row-label">Private metadata</div>
+                  <div class="row-desc">Play counts, favorites, history, and custom playlists</div>
                 </div>
                 <div class="row-right">
                   <a href="#" id="metaDownload" class="textButton">Download backup</a>
                 </div>
               </div>
               <div class="settings-card-row column-stack">
+                <div class="row-label">Artist image sources from web</div>
+                <div class="row-desc" style="margin-top: 8px;">Album covers, artist images, bios</div>
                 <div class="row-between">
                   <div>
-                    <div class="row-label">Artist Metadata Cache</div>
-                    <div class="row-desc">Album covers (CoverArtArchive), artist images (Wikipedia, Spotify, Commons), artist bios</div>
+                    <span id="artistDbSize" class="metaCaption mono-small"></span>
                   </div>
                   <div class="row-right gap-16">
-                    <span id="artistDbSize" class="metaCaption mono-small"></span>
                     <button id="clearArtistDbBtn" class="textButton">Clear</button>
+                    <a href="#" id="artistDbDownload" class="textButton">Download backup</a>
                   </div>
                 </div>
               </div>
@@ -781,7 +783,6 @@
           </div>
 
           <div class="settings-section">
-            <div class="settings-label">Artist Image Sources</div>
             <div class="settings-card">
               <div class="settings-card-row">
                 <div>

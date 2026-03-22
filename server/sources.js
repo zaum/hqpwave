@@ -222,6 +222,53 @@ const getImageSourcesConfig = () => {
   }
 };
 
+const IMAGES_DIR = path.join(__dirname, 'data', 'images');
+
+const ensureImagesDir = () => {
+  if (!fs.existsSync(IMAGES_DIR)) {
+    fs.mkdirSync(IMAGES_DIR, { recursive: true });
+  }
+};
+
+const downloadImage = (url, artistMbid, imageIndex) => {
+  return new Promise((resolve, reject) => {
+    ensureImagesDir();
+    
+    const ext = path.extname(new URL(url).pathname) || '.jpg';
+    const filename = `${artistMbid}-artist-${imageIndex}${ext}`;
+    const localPath = path.join(IMAGES_DIR, filename);
+    
+    if (fs.existsSync(localPath)) {
+      console.log('[sources] Image already cached:', filename);
+      return resolve(localPath);
+    }
+    
+    const protocol = url.startsWith('https') ? https : http;
+    const req = protocol.get(url, { headers: { 'User-Agent': UA } }, (res) => {
+      if (res.statusCode >= 200 && res.statusCode < 400) {
+        const file = fs.createWriteStream(localPath);
+        res.pipe(file);
+        file.on('finish', () => {
+          file.close();
+          console.log('[sources] Downloaded image:', filename);
+          resolve(localPath);
+        });
+        file.on('error', (err) => {
+          fs.unlink(localPath, () => {});
+          reject(err);
+        });
+      } else {
+        reject(new Error(`HTTP ${res.statusCode}`));
+      }
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => {
+      req.destroy();
+      reject(new Error('timeout'));
+    });
+  });
+};
+
 const scrapeArtistImages = (name, cb) => {
   const config = getImageSourcesConfig();
   
@@ -499,110 +546,130 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
       Promise.all(coverPromises).then(() => onReleasesDone(disc));
     });
 
-    const finalize = () => {
-      db.getArtistById(mbid, (errExisting, existingArtist) => {
-        const existingDefaultImageId = (existingArtist && existingArtist.default_image_id) ? existingArtist.default_image_id : null;
-        
-        const artistObj = {
-          id: mbid,
-          name: mbArtist.name,
-          disambiguation: disambiguation,
-          bio: (wikiData && wikiData.extract) ? wikiData.extract : '',
-          wiki_url: (wikiData && wikiData.url) ? wikiData.url : null,
-          discography: discography,
-          default_image_id: existingDefaultImageId
-        };
+    const finalize = async () => {
+      const existingArtist = await new Promise((res) => db.getArtistById(mbid, (e, r) => res(r)));
+      const existingDefaultImageId = (existingArtist && existingArtist.default_image_id) ? existingArtist.default_image_id : null;
+      
+      const artistObj = {
+        id: mbid,
+        name: mbArtist.name,
+        disambiguation: disambiguation,
+        bio: (wikiData && wikiData.extract) ? wikiData.extract : '',
+        wiki_url: (wikiData && wikiData.url) ? wikiData.url : null,
+        discography: discography,
+        default_image_id: existingDefaultImageId
+      };
 
-        console.log('[sources] Finalizing and upserting artist to DB:', mbid, 'preserving default_image_id:', existingDefaultImageId);
-        db.upsertArtist(artistObj, (errU) => {
-          if (errU) {
-            console.error('[sources] upsertArtist failed:', errU);
-            return cb(errU);
-          }
+      console.log('[sources] Finalizing and upserting artist to DB:', mbid, 'preserving default_image_id:', existingDefaultImageId);
+      await new Promise((res, rej) => db.upsertArtist(artistObj, (errU) => {
+        if (errU) { console.error('[sources] upsertArtist failed:', errU); return rej(errU); }
+        res();
+      }));
 
-          // Gather all image sources (dedupe by URL)
-          const images = [];
-          const seen = new Set();
+      const images = [];
+      const seen = new Set();
+      
+      const isLikelyCover = (url) => {
+        if (!url) return false;
+        const u = url.toLowerCase();
+        const skipKeywords = ['cover', 'album', 'single', 'sleeve', 'artwork', 'front', 'back', 'vinyl', 'cd_', 'digipak', 'booklet', 'insert', 'tray'];
+        return skipKeywords.some(kw => u.includes(kw));
+      };
+
+      const addImg = async (urlRaw, src, id) => {
+        const url = (src === 'lastfm') ? getHighResLastFmUrl(urlRaw) : urlRaw;
+        if (url && !seen.has(url) && images.length < 5) {
+          if (src !== 'spotify' && isLikelyCover(url)) return false;
           
-          const isLikelyCover = (url) => {
-            if (!url) return false;
-            const u = url.toLowerCase();
-            const skipKeywords = ['cover', 'album', 'single', 'sleeve', 'artwork', 'front', 'back', 'vinyl', 'cd_', 'digipak', 'booklet', 'insert', 'tray'];
-            return skipKeywords.some(kw => u.includes(kw));
-          };
-
-          const addImg = (urlRaw, src, id) => {
-            const url = (src === 'lastfm') ? getHighResLastFmUrl(urlRaw) : urlRaw;
-            if (url && !seen.has(url) && images.length < 5) {
-              if (src !== 'spotify' && isLikelyCover(url)) return false;
-              images.push({ id: id, url: url, source: src, thumbnail_url: url });
-              seen.add(url);
-              return true;
+          let localPath = url;
+          try {
+            if (url.startsWith('http')) {
+              const imgIndex = images.length;
+              setImportStatus(name, { status: `Downloading image ${imgIndex + 1}/5 (${images.length} saved)...`, mbid });
+              await new Promise(r => setTimeout(r, 100)); // small delay for visibility
+              localPath = await downloadImage(url, mbid, imgIndex);
             }
-            return false;
-          };
-
-          if (wikiData && wikiData.thumbnail) {
-            addImg(wikiData.thumbnail, 'wikipedia', `${mbid}-wiki`);
+          } catch (dlErr) {
+            console.warn('[sources] Failed to download image, using remote URL:', dlErr.message);
           }
+          
+          images.push({ id: id, url: localPath, source: src, thumbnail_url: localPath });
+          seen.add(url);
+          return true;
+        }
+        return false;
+      };
 
-          let imageFetchComplete = false;
-          const safeCallback = (err, result) => {
-            if (imageFetchComplete) return;
-            imageFetchComplete = true;
-            cb(err, result);
-          };
+      if (wikiData && wikiData.thumbnail) {
+        await addImg(wikiData.thumbnail, 'wikipedia', `${mbid}-wiki`);
+      }
 
-          const onImagesReady = (imgs) => {
-            console.log('[sources] Adding images bulk, count:', imgs.length);
-            setImportStatus(name, { status: `Storing ${imgs.length} images`, mbid });
-            db.addImagesBulk(mbid, imgs, (errB) => {
-              if (errB) {
-                console.error('[sources] addImagesBulk failed:', errB);
-              }
-              const first = imgs[0];
-              if (first) {
-                db.setDefaultImage(mbid, first.id, (errD) => {
-                  if (errD) console.warn('[sources] setDefaultImage failed:', errD);
-                  setImportStatus(name, { status: 'Done', mbid });
-                  safeCallback(null, mbid);
-                });
-              } else {
-                setImportStatus(name, { status: 'Done', mbid });
-                safeCallback(null, mbid);
-              }
+      const safeCallback = (err, result) => {
+        cb(err, result);
+      };
+
+      const onImagesReady = (imgs) => {
+        console.log('[sources] Adding images bulk, count:', imgs.length);
+        setImportStatus(name, { status: `Storing ${imgs.length} images`, mbid });
+        
+        // Reorder: put wikipedia first, then lastfm, then commons
+        const wikipedia = imgs.filter(i => i.source && (i.source === 'wikipedia' || i.source === 'wiki' || i.source.includes('wiki')));
+        const lastfm = imgs.filter(i => i.source === 'lastfm');
+        const commons = imgs.filter(i => i.source === 'commons');
+        const others = imgs.filter(i => !['wikipedia', 'wiki', 'lastfm', 'commons'].some(s => i.source && i.source.includes(s)));
+        const orderedImgs = [...wikipedia, ...lastfm, ...commons, ...others];
+        
+        // Select default: prefer wikipedia if no existing default
+        let defaultImg = orderedImgs[0];
+        if (!existingDefaultImageId && wikipedia.length > 0) {
+          defaultImg = wikipedia[0];
+        }
+        
+        db.addImagesBulk(mbid, orderedImgs, (errB) => {
+          if (errB) console.error('[sources] addImagesBulk failed:', errB);
+          if (defaultImg) {
+            db.setDefaultImage(mbid, defaultImg.id, (errD) => {
+              if (errD) console.warn('[sources] setDefaultImage failed:', errD);
+              setImportStatus(name, { status: 'Done', mbid });
+              safeCallback(null, mbid);
             });
-          };
-
-          // Removed Spotify lookup; use Last.fm then Commons as fallback
-          // Fetch images from Last.fm then Commons; update status as we go
-          setImportStatus(name, { status: 'Fetching images from Last.fm', mbid });
-          searchLastFmImages(name, (errL, lastfmImgs) => {
-            if (errL) console.warn('[sources] Last.fm image fetch warning:', errL);
-            const foundLast = (lastfmImgs || []).length;
-            for (let i = 0; i < foundLast; i++) {
-              if (!addImg(lastfmImgs[i].url, 'lastfm', `${mbid}-lastfm-${i}`)) {
-              }
-            }
-            setImportStatus(name, { status: `Found ${images.length} images (Last.fm)`, mbid });
-
-            if (images.length < 5) {
-              setImportStatus(name, { status: 'Fetching images from Commons', mbid });
-              searchCommonsImages(name, (errC, commons) => {
-                if (errC) console.warn('[sources] Commons image fetch warning:', errC);
-                for (let i = 0; i < (commons || []).length; i++) {
-                  addImg(commons[i].url, 'commons', `${mbid}-comm-${i}`);
-                }
-                setImportStatus(name, { status: `Found ${images.length} images (total)`, mbid });
-                onImagesReady(images);
-              });
-            } else {
-              onImagesReady(images);
-            }
-          });
+          } else {
+            setImportStatus(name, { status: 'Done', mbid });
+            safeCallback(null, mbid);
+          }
         });
+      };
+
+      setImportStatus(name, { status: 'Fetching images from Last.fm', mbid });
+      searchLastFmImages(name, async (errL, lastfmImgs) => {
+        if (errL) console.warn('[sources] Last.fm image fetch warning:', errL);
+        const foundLast = (lastfmImgs || []).length;
+        for (let i = 0; i < foundLast; i++) {
+          await addImg(lastfmImgs[i].url, 'lastfm', `${mbid}-lastfm-${i}`);
+        }
+        if (images.length > 0) {
+          setImportStatus(name, { status: `${images.length} image(s) saved from Last.fm`, mbid });
+        }
+
+        if (images.length < 5) {
+          setImportStatus(name, { status: 'Fetching images from Commons', mbid });
+          searchCommonsImages(name, async (errC, commons) => {
+            if (errC) console.warn('[sources] Commons image fetch warning:', errC);
+            for (let i = 0; i < (commons || []).length; i++) {
+              await addImg(commons[i].url, 'commons', `${mbid}-comm-${i}`);
+            }
+            setImportStatus(name, { status: `${images.length} image(s) saved total`, mbid });
+            await new Promise(r => setTimeout(r, 500));
+            onImagesReady(images);
+          });
+        } else {
+          await new Promise(r => setTimeout(r, 500));
+          onImagesReady(images);
+        }
       });
-    }
+    };
+    
+    finalize().catch((err) => { console.error('[sources] finalize error:', err); cb(err); });
   });
 };
 

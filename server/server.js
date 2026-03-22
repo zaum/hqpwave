@@ -8,6 +8,7 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const express = require('express');
 const bodyParser = require("body-parser");
+const archiver = require('archiver');
 const app = express();
 const os = require('os');
 
@@ -353,13 +354,14 @@ app.get('/endpoints/artistImage', (request, response) => {
 app.get('/endpoints/artistDbStats', (req, res) => {
   const dbPath = path.join(__dirname, 'data', 'artists.db');
   const imagesPath = path.join(__dirname, 'data', 'images');
-  let size = 0;
+  let dbSize = 0;
+  let imagesSize = 0;
   let imageCount = 0;
   
   if (fs.existsSync(dbPath)) {
     try {
       const stats = fs.statSync(dbPath);
-      size += stats.size;
+      dbSize = stats.size;
     } catch (e) {}
   }
   
@@ -367,31 +369,88 @@ app.get('/endpoints/artistDbStats', (req, res) => {
     try {
       const files = fs.readdirSync(imagesPath);
       imageCount = files.length;
+      for (const file of files) {
+        try {
+          const filePath = path.join(imagesPath, file);
+          const fileStats = fs.statSync(filePath);
+          imagesSize += fileStats.size;
+        } catch (e) {}
+      }
     } catch (e) {}
   }
   
+  const totalSize = dbSize + imagesSize;
   res.json({
-    dbSize: size,
-    dbSizeFormatted: formatBytes(size),
+    dbSize: dbSize,
+    imagesSize: imagesSize,
+    totalSize: totalSize,
+    dbSizeFormatted: formatBytes(dbSize),
+    imagesSizeFormatted: formatBytes(imagesSize),
+    totalSizeFormatted: formatBytes(totalSize),
     imageCount: imageCount
   });
 });
 
 app.post('/endpoints/artistDbClear', (req, res) => {
   const dbPath = path.join(__dirname, 'data', 'artists.db');
+  const imagesPath = path.join(__dirname, 'data', 'images');
+  let errors = [];
+  
   try {
     if (fs.existsSync(dbPath)) {
       db.close();
       fs.unlinkSync(dbPath);
       db.init();
-      res.json({ success: true });
-    } else {
-      res.json({ success: true, message: 'Database already empty' });
     }
   } catch (e) {
-    console.error('[server] artistDbClear error:', e);
-    res.status(500).json({ error: e.message });
+    errors.push('DB: ' + e.message);
   }
+  
+  try {
+    if (fs.existsSync(imagesPath)) {
+      const files = fs.readdirSync(imagesPath);
+      for (const file of files) {
+        try {
+          fs.unlinkSync(path.join(imagesPath, file));
+        } catch (e) {}
+      }
+    }
+  } catch (e) {
+    errors.push('Images: ' + e.message);
+  }
+  
+  if (errors.length > 0) {
+    res.status(500).json({ success: false, error: errors.join(', ') });
+  } else {
+    res.json({ success: true });
+  }
+});
+
+app.get('/endpoints/artistDbDownload', (req, res) => {
+  const dataDir = path.join(__dirname, 'data');
+  const dbPath = path.join(dataDir, 'artists.db');
+  const imagesPath = path.join(dataDir, 'images');
+  
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename=artist-metadata.zip');
+  
+  archive.on('error', (err) => {
+    res.status(500).send(err.message);
+  });
+  
+  archive.pipe(res);
+  
+  if (fs.existsSync(dbPath)) {
+    archive.file(dbPath, { name: 'artists.db' });
+  }
+  
+  if (fs.existsSync(imagesPath)) {
+    archive.directory(imagesPath, 'images');
+  }
+  
+  archive.finalize();
 });
 
 function formatBytes(bytes) {

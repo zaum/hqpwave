@@ -287,7 +287,7 @@ export default class ArtistView extends Subview {
 
   loadArtist(artistId) {
     if (!artistId) return;
-    this.$loading.show();
+    this.$loading.css('display', 'flex');
     // If the provided identifier is not a MusicBrainz UUID, treat it as a name
     const isMbUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(artistId);
     const fetchArtistJson = () => {
@@ -656,7 +656,7 @@ export default class ArtistView extends Subview {
             <div class="toggle-thumb"></div>
           </label>
         `);
-        const $modeLabel = $(`<span class="mode-label" style="font-size: 11px; color: var(--text-3); letter-spacing: 0.05em;">${initialLabel}</span>`);
+        const $modeLabel = $(`<span class="mode-label" style="font-size: 11px; color: var(--text-2); letter-spacing: 0.05em;">${initialLabel}</span>`);
         
         const $reloadBtn = $(`<button class="iconButton" id="artistReloadButton" title="Reload artist data" aria-label="Reload artist data"></button>`);
         
@@ -668,7 +668,7 @@ export default class ArtistView extends Subview {
         // reload action
         $reloadBtn.on('click', () => {
           $reloadBtn.prop('disabled', true).addClass('is-loading');
-          this.$loading.show();
+          this.$loading.css('display', 'flex');
           fetch('/endpoints/artistImport?name=' + encodeURIComponent(artist.name), { method: 'POST' })
             .then(r => r.json())
             .then(j => {
@@ -718,6 +718,13 @@ export default class ArtistView extends Subview {
     } catch (e) {
       // ignore
     }
+
+    // Close zoomed covers when clicking anywhere outside the cover
+    $(document).off('click.artistZoom').on('click.artistZoom', (e) => {
+      if (!$(e.target).closest('.artistDiscItem.not-local .coverWrap').length) {
+        this.$discography.find('.coverWrap.is-zoomed').removeClass('is-zoomed');
+      }
+    });
 
     // discography
     this.$discography.empty();
@@ -930,9 +937,14 @@ export default class ArtistView extends Subview {
         $item.on('click', () => { $(document).trigger('library-item-click', [item.album, $item]); });
         $item.find('.libraryItemPlayBtn').on('click tap', (e) => { e.stopPropagation(); const commands = Commands.playlistAddUsingAlbumAndIndices(item.album, 0, -1); AppUtil.doPlaylistAdds(commands, true, true); });
       } else if (hasCover) {
-        // Task: allow clicking non-local covers to zoom them in-place
         $item.find('.coverWrap').on('click tap', (e) => {
-          $(e.currentTarget).toggleClass('is-zoomed');
+          const $cover = $(e.currentTarget);
+          if ($cover.hasClass('is-zoomed')) {
+            $cover.removeClass('is-zoomed');
+          } else {
+            this.$discography.find('.coverWrap.is-zoomed').removeClass('is-zoomed');
+            $cover.addClass('is-zoomed');
+          }
         });
       }
       if (Settings.showPlayButton) $item.addClass('show-play-button'); else $item.removeClass('show-play-button');

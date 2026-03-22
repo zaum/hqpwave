@@ -50,6 +50,11 @@ export default class SettingsView extends Subview {
     this.$artistDbSize = this.$el.find('#artistDbSize');
     this.$clearArtistDbBtn = this.$el.find('#clearArtistDbBtn');
     this.$clearArtistDbBtn.on('click', () => this.clearArtistDb());
+    this.$artistDbDownload = this.$el.find('#artistDbDownload');
+    this.$artistDbDownload.on('click', (e) => {
+      e.preventDefault();
+      window.location.href = '/endpoints/artistDbDownload';
+    });
 
     this.$imageScrapingEnabled = this.$el.find('#imageScrapingEnabled');
     this.$imageSourcesList = this.$el.find('#imageSourcesList');
@@ -73,9 +78,8 @@ export default class SettingsView extends Subview {
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data) {
-          const sizeText = data.dbSizeFormatted || '0 B';
-          const imgText = data.imageCount > 0 ? `, ${data.imageCount} images` : '';
-          this.$artistDbSize.text(`${sizeText}${imgText}`);
+          const totalText = data.totalSizeFormatted || '0 B';
+          this.$artistDbSize.text(totalText);
         } else {
           this.$artistDbSize.text('0 B');
         }
@@ -86,7 +90,7 @@ export default class SettingsView extends Subview {
   }
 
   clearArtistDb() {
-    if (!confirm('Clear all cached artist metadata (covers, bios, images)? This cannot be undone.')) {
+    if (!confirm('Clear all cached artist data (database + images folder)? This cannot be undone.')) {
       return;
     }
     this.$clearArtistDbBtn.text('Clearing...').prop('disabled', true);
@@ -94,7 +98,9 @@ export default class SettingsView extends Subview {
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data && data.success) {
-          this.$artistDbSize.text('0 B');
+          this.loadArtistDbStats();
+        } else if (data && data.error) {
+          alert('Error clearing data: ' + data.error);
         }
       })
       .catch(e => console.error('Error clearing artist DB', e))
