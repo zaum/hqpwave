@@ -15,6 +15,7 @@ export default class ArtistView extends Subview {
     super($el);
     this.$el = $el;
     this.$loading = this.$el.find('#artistViewLoading');
+    this.$loadingStatus = this.$el.find('#artistViewLoadingStatus');
     this.$picture = this.$el.find('#artistViewPicture');
     this.$pictureBlur = this.$el.find('#artistViewPictureBlur');
     this.$name = this.$el.find('#artistViewName');
@@ -46,15 +47,40 @@ export default class ArtistView extends Subview {
     this.$el.on('click', '#artistViewSetDefaultImage', () => {
       const img = this.artistImageUrls[this.artistImageIndex];
       const imageId = img ? img.id : null;
-      if (!this.artist || !this.artist.id || !imageId) return;
+      console.log('[artist-view] Set default image clicked:', { imageId, artistId: this.artist?.id, imgIndex: this.artistImageIndex });
+      if (!this.artist || !this.artist.id || !imageId) {
+        console.warn('[artist-view] Cannot set default image - missing data');
+        return;
+      }
+
+      const $btn = this.$el.find('#artistViewSetDefaultImage');
+      $btn.prop('disabled', true).addClass('is-loading');
+
+      const $frame = this.$el.find('.artistPictureFrame');
+      $frame.addClass('is-setting-default');
+      setTimeout(() => $frame.removeClass('is-setting-default'), 1200);
+
       fetch(`/endpoints/artist?setDefaultImage&id=${encodeURIComponent(this.artist.id)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image_id: imageId })
       }).then(res => res.json()).then(j => {
-        // refresh
-        this.loadArtist(this.artist.id);
-      }).catch(() => {});
+        console.log('[artist-view] Set default image result:', j);
+        if (j.result) {
+          this.artist.default_image_id = imageId;
+          // Update thumbnails selection
+          this.$gallery.find('.artistImageThumb').removeClass('is-selected');
+          this.$gallery.find(`.artistImageThumb[data-image-id="${imageId}"]`).addClass('is-selected');
+          
+          $(document).trigger('toast', { message: 'Default artist image updated' });
+          // We don't necessarily need to full reload, but it ensures everything is in sync
+          // However, let's just update the local state to be snappy
+        }
+      }).catch(e => {
+        console.error('[artist-view] Set default image error:', e);
+      }).finally(() => {
+        $btn.prop('disabled', false).removeClass('is-loading');
+      });
     });
 
     this.$prevImageButton.on('click', (e) => {
@@ -152,6 +178,7 @@ export default class ArtistView extends Subview {
       this.artistImageIndex = 0;
       this.$picture.attr('src', '/img/pixel-transparent.png');
       this.$pictureBlur.attr('src', '/img/pixel-transparent.png');
+      this.updateBackgroundImage('/img/pixel-transparent.png');
       this.updateImageNav();
       return;
     }
@@ -160,7 +187,16 @@ export default class ArtistView extends Subview {
     const url = this.artistImageUrls[this.artistImageIndex].url || this.artistImageUrls[this.artistImageIndex].proxyUrl;
     this.$picture.attr('src', url);
     this.$pictureBlur.attr('src', url);
+    this.updateBackgroundImage(url);
     this.updateImageNav();
+  }
+
+  updateBackgroundImage(url) {
+    const $bg = this.$el.find('#artistViewBgImage');
+    if ($bg.length) {
+      const bgUrl = url.includes('/endpoints/artistImage?') ? url + '&background' : url;
+      $bg.attr('src', bgUrl);
+    }
   }
 
   updateImageNav() {
@@ -170,6 +206,21 @@ export default class ArtistView extends Subview {
     ViewUtil.setDisplayed(this.$nextImageButton, show);
     this.$prevImageButton.toggleClass('isGhost', this.artistImageIndex <= 0);
     this.$nextImageButton.toggleClass('isGhost', this.artistImageIndex >= count - 1);
+
+    // Update "Set Default" button visibility and label
+    const $setDefaultBtn = this.$el.find('#artistViewSetDefaultImage');
+    if ($setDefaultBtn.length && this.artist) {
+      const currentImg = this.artistImageUrls[this.artistImageIndex];
+      const isDefault = currentImg && String(currentImg.id) === String(this.artist.default_image_id);
+      // Only show the button when there are at least two images and the current
+      // image is not already the default. If it's default, hide the button.
+      if (isDefault) {
+        $setDefaultBtn.hide();
+      } else {
+        $setDefaultBtn.text('Set as default image').removeClass('is-active').prop('disabled', false).show();
+      }
+      if (count <= 1) $setDefaultBtn.hide();
+    }
   }
 
   clearView() {
@@ -230,8 +281,8 @@ export default class ArtistView extends Subview {
 
   setDisplayedImage(url) {
     this.$picture.attr('src', url);
-    const $bg = this.$el.find('#artistViewBgImage');
-    if ($bg.length) $bg.attr('src', url);
+    this.$pictureBlur.attr('src', url);
+    this.updateBackgroundImage(url);
   }
 
   loadArtist(artistId) {
@@ -300,26 +351,78 @@ export default class ArtistView extends Subview {
   }
 
   importArtist(artistId) {
+    if (this.$loadingStatus) this.$loadingStatus.text('Import: starting...');
     fetch('/endpoints/artistImport?name=' + encodeURIComponent(artistId), { method: 'POST' })
       .then(r => r.ok ? r.json() : null)
       .then(j => {
-        if (j && j.id) {
-          return fetch('/endpoints/artist?get&id=' + encodeURIComponent(j.id)).then(r2 => r2.json());
-        }
-        return null;
-      })
-      .then(json => {
-        this.$loading.hide();
-        if (json && json.artist) {
-          this.artist = json.artist;
-          this.moreAlbumsAvailable = !!(json.artist.discography && json.artist.discography.length > 0);
-          this.renderArtist(json.artist);
+        if (!j) throw new Error('Import request failed');
+        // If server started background import, poll status endpoint
+        if (j.started) {
+          if (this.$loadingStatus) this.$loadingStatus.text('Import started');
+          const start = Date.now();
+          const pollInterval = 800; // ms
+          const timeoutMs = 120000; // 2 minutes
+          const poller = setInterval(async () => {
+            try {
+              const res = await fetch('/endpoints/artistImportStatus?name=' + encodeURIComponent(artistId));
+              if (!res.ok) throw new Error('status fetch failed');
+              const body = await res.json();
+              const st = body && body.status ? body.status : null;
+              if (st && st.status) {
+                if (this.$loadingStatus) this.$loadingStatus.text(st.status);
+                if (st.status === 'Done' && st.mbid) {
+                  clearInterval(poller);
+                  // fetch the newly-imported artist by mbid
+                  const artRes = await fetch('/endpoints/artist?get&id=' + encodeURIComponent(st.mbid));
+                  if (artRes.ok) {
+                    const artJson = await artRes.json();
+                    if (artJson && artJson.artist) {
+                      this.artist = artJson.artist;
+                      this.moreAlbumsAvailable = !!(artJson.artist.discography && artJson.artist.discography.length > 0);
+                      this.renderArtist(artJson.artist);
+                      this.$loading.hide();
+                      if (this.$loadingStatus) this.$loadingStatus.text('');
+                      return;
+                    }
+                  }
+                  // if fetch failed, fall through to error
+                  this.$loading.hide();
+                  if (this.$loadingStatus) this.$loadingStatus.text('');
+                  this.showError(artistId);
+                }
+              }
+              if (Date.now() - start > timeoutMs) {
+                clearInterval(poller);
+                this.$loading.hide();
+                if (this.$loadingStatus) this.$loadingStatus.text('Import timed out');
+                this.showError(artistId);
+              }
+            } catch (e) {
+              clearInterval(poller);
+              console.error('Import status poll error:', e);
+              this.$loading.hide();
+              if (this.$loadingStatus) this.$loadingStatus.text('Import failed');
+              this.showError(artistId);
+            }
+          }, pollInterval);
+        } else if (j.id) {
+          // server returned completed id immediately
+          return fetch('/endpoints/artist?get&id=' + encodeURIComponent(j.id)).then(r2 => r2.json()).then(json => {
+            if (json && json.artist) {
+              this.artist = json.artist;
+              this.moreAlbumsAvailable = !!(json.artist.discography && json.artist.discography.length > 0);
+              this.renderArtist(json.artist);
+            } else {
+              this.showError(artistId);
+            }
+          });
         } else {
-          this.showError(artistId);
+          throw new Error('Unexpected import response');
         }
       }).catch((e) => {
         console.error('Artist import error:', e);
         this.$loading.hide();
+        if (this.$loadingStatus) this.$loadingStatus.text('Import failed');
         this.showError(artistId);
       });
   }
@@ -475,6 +578,8 @@ export default class ArtistView extends Subview {
     }
 
     // images
+    console.log('[artist-view] renderArtist called for', artist && artist.name ? artist.name : artist, 'images count:', (artist && artist.images && artist.images.length) || 0);
+    if (artist && artist.images && artist.images.length) console.log('[artist-view] artist.images sample:', artist.images.slice(0,10).map(i => ({ id: i.id, url: i.url, thumbnail: i.thumbnail_url, source: i.source })));
     this.artistImageUrls = [];
     this.$gallery.empty();
     if (artist.images && artist.images.length) {
@@ -485,16 +590,17 @@ export default class ArtistView extends Subview {
         const id = img && img.id ? String(img.id) : '';
         if (id.endsWith('-wiki')) return 'wikipedia';
         if (id.includes('-comm-')) return 'commons';
-        if (id.includes('-spotify-')) return 'spotify';
         if (id.includes('-lastfm-')) return 'lastfm';
         return null;
       };
-      const allowedSources = new Set(['wikipedia', 'commons', 'spotify', 'lastfm']);
+      const allowedSources = new Set(['wikipedia', 'commons', 'lastfm']);
+      const desiredDefaultId = artist.default_image_id;
       for (const img of artist.images) {
         if (!img.url) continue;
         if (isReleaseCoverId(img.id)) continue;
         const src = resolveSourceFromId(img);
-        if (!src || !allowedSources.has(src)) continue;
+        // include image if from allowed sources, or if it's the current default image id
+        if (!src || (!allowedSources.has(src) && String(img.id) !== String(desiredDefaultId))) continue;
         const proxyUrl = `/endpoints/artistImage?artist_id=${encodeURIComponent(artist.id)}&image_id=${encodeURIComponent(img.id)}`;
         if (seen.has(img.url)) continue;
         seen.add(img.url);
@@ -534,13 +640,14 @@ export default class ArtistView extends Subview {
     // Create picture controls: reload button + non-local cover mode toggle
     try {
       this.$el.find('.artist-picture-controls').remove();
-      const $picOuter = this.$el.find('.artistViewPictureOuter');
-      if ($picOuter && $picOuter.length) {
+      const $controlsContainer = this.$el.find('#artistViewPictureControls');
+      if ($controlsContainer && $controlsContainer.length) {
+        $controlsContainer.empty();
         const $controls = $(`<div class="artist-picture-controls"></div>`);
         
         const modeKey = `hqpwv:artist:${artist.id}:nonLocalCoverMode`;
         const curMode = localStorage.getItem(modeKey) || 'legacy';
-        const initialLabel = curMode === 'fullcolor' ? 'Full color' : 'Faded';
+        const initialLabel = curMode === 'fullcolor' ? 'Full color covers' : 'Faded covers';
         
         const $modeToggle = $(`
           <label class="toggle-switch" title="Toggle non-local cover mode">
@@ -556,7 +663,7 @@ export default class ArtistView extends Subview {
         $controls.append($modeLabel);
         $controls.append($modeToggle);
         $controls.append($reloadBtn);
-        $picOuter.append($controls);
+        $controlsContainer.append($controls);
 
         // reload action
         $reloadBtn.on('click', () => {
@@ -577,7 +684,7 @@ export default class ArtistView extends Subview {
         // mode cycling
         const applyMode = (mode) => {
           try { localStorage.setItem(modeKey, mode); } catch (e) {}
-          $modeLabel.text(mode === 'fullcolor' ? 'Full color' : 'Faded');
+          $modeLabel.text(mode === 'fullcolor' ? 'Full color covers' : 'Faded covers');
           this.$el.removeClass('mode-legacy mode-fullcolor');
           this.$el.addClass('mode-' + mode);
         };
@@ -781,7 +888,10 @@ export default class ArtistView extends Subview {
       } else {
         const release = item.release;
         if (release.cover_url && release.cover_url !== '') {
-          coverUrl = `/endpoints/artistImage?artist_id=${encodeURIComponent(artist.id)}&image_id=${encodeURIComponent(artist.id + '-rel-' + release.id)}`;
+          // Use direct cover URL when available to avoid an extra redirect/proxy hop
+          // The server also supports the synthetic artistImage endpoint, but using
+          // the direct URL prevents issues when the server-side redirect/proxy fails.
+          coverUrl = release.cover_url;
         } else {
           const relId = String(release.id || '');
           const expectedImageId = `${artist.id}-rel-${relId}`;
@@ -819,6 +929,11 @@ export default class ArtistView extends Subview {
       if (isLocal) {
         $item.on('click', () => { $(document).trigger('library-item-click', [item.album, $item]); });
         $item.find('.libraryItemPlayBtn').on('click tap', (e) => { e.stopPropagation(); const commands = Commands.playlistAddUsingAlbumAndIndices(item.album, 0, -1); AppUtil.doPlaylistAdds(commands, true, true); });
+      } else if (hasCover) {
+        // Task: allow clicking non-local covers to zoom them in-place
+        $item.find('.coverWrap').on('click tap', (e) => {
+          $(e.currentTarget).toggleClass('is-zoomed');
+        });
       }
       if (Settings.showPlayButton) $item.addClass('show-play-button'); else $item.removeClass('show-play-button');
       if (Settings.showFormatOverlay) $item.addClass('show-format-overlay'); else $item.removeClass('show-format-overlay');

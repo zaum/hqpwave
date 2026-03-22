@@ -4,6 +4,8 @@
 const log = require('./log');
 const playlists = require('./playlists');
 
+const { safeJson, safeStatusJson, safeSend } = require('./response-util');
+
 const doGet = (request, response) => {
 
   if (request.query['getPlaylists'] !== undefined) {
@@ -13,44 +15,44 @@ const doGet = (request, response) => {
   if (request.query['deletePlaylist'] !== undefined) {
     const filename = request.query.name;
     if (!filename) {
-      response.status(400).json( {error: 'missing_name_param'} );
+      safeStatusJson(response, 400, { error: 'missing_name_param' });
       return;
     }
     const isSuccess = playlists.deletePlaylist(filename);
     if (!isSuccess) {
-      response.status(400).json( {error: 'delete_failed'} );
+      safeStatusJson(response, 400, { error: 'delete_failed' });
     } else {
-      response.send('OK');
+      safeSend(response, 'OK');
     }
     return;
   }
 
-  response.status(400).json( {error: 'missing_required_param'} );
+  safeStatusJson(response, 400, { error: 'missing_required_param' });
 };
 
 const doPost = (request, response) => {
   if (request.query['savePlaylist'] != undefined) {
     let filename = request.query.name;
     if (!filename) {
-      response.status(400).json( {error: 'missing_name'} );
+      safeStatusJson(response, 400, { error: 'missing_name' });
       return;
     }
     if (!request.body || !request.body.data || request.body.data.length == 0) {
-      response.status(400).json( {error: 'missing_contents'} );
+      safeStatusJson(response, 400, { error: 'missing_contents' });
       return;
     }
     const isSuccess = playlists.savePlaylist(filename, request.body.data);
     if (!isSuccess) {
-      response.status(400).json( {error: 'failed'} );
+      safeStatusJson(response, 400, { error: 'failed' });
       return;
     }
 
     const list = playlists.getPlaylists();
-    response.send( { result: list } );
+    safeJson(response, { result: list });
     return;
   }
 
-  response.status(400).json( {error: 'missing_required_param'} );
+  safeStatusJson(response, 400, { error: 'missing_required_param' });
 };
 
 module.exports = {

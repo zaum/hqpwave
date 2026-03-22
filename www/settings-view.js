@@ -23,9 +23,6 @@ export default class SettingsView extends Subview {
   $showLogoAnimationCheckbox;
   $highlightColorPicker;
   $playerBackgroundColorPicker;
-  $spotifyConnectionLed;
-  $spotifyConnectionText;
-  $testSpotifyBtn;
   infoView;
 
   constructor() {
@@ -50,15 +47,6 @@ export default class SettingsView extends Subview {
     this.$playerBackgroundColorPicker.on('change', this.onPlayerBackgroundColorChange);
     this.$el.find('#metaDownload').attr('href', Values.META_DOWNLOAD_LINK);
 
-    this.$spotifyClientId = this.$el.find('#spotifyClientId');
-    this.$spotifyClientSecret = this.$el.find('#spotifyClientSecret');
-    this.$saveSpotifyBtn = this.$el.find('#saveSpotifyBtn');
-    this.$spotifyConnectionLed = this.$el.find('#spotifyConnectionLed');
-    this.$spotifyConnectionText = this.$el.find('#spotifyConnectionText');
-    this.$testSpotifyBtn = this.$el.find('#testSpotifyBtn');
-    this.$saveSpotifyBtn.on('click', () => this.saveSpotifyCredentials());
-    this.$testSpotifyBtn.on('click', () => this.testSpotifyConnection(true));
-
     this.$artistDbSize = this.$el.find('#artistDbSize');
     this.$clearArtistDbBtn = this.$el.find('#clearArtistDbBtn');
     this.$clearArtistDbBtn.on('click', () => this.clearArtistDb());
@@ -78,19 +66,6 @@ export default class SettingsView extends Subview {
     this.setupColorPresets();
 
     Util.addAppListener(this, 'model-info-updated', () => this.infoView.update());
-  }
-
-  loadSpotifyCredentials() {
-    fetch('/endpoints/spotifyCredentials')
-      .then(res => {
-         if (!res.ok) throw new Error('server_error');
-         return res.json();
-      })
-      .then(data => {
-         this.$spotifyClientId.val(data.clientId || '');
-         this.$spotifyClientSecret.val(data.clientSecret || '');
-      })
-       .catch(e => console.error('Error loading Spotify credentials', e));
   }
 
   loadArtistDbStats() {
@@ -231,40 +206,6 @@ export default class SettingsView extends Subview {
     });
   }
 
-  saveSpotifyCredentials() {
-    const clientId = this.$spotifyClientId.val();
-    const clientSecret = this.$spotifyClientSecret.val();
-    this.$saveSpotifyBtn.text('Saving...').prop('disabled', true);
-    fetch('/endpoints/spotifyCredentials', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId, clientSecret })
-    })
-    .then(res => {
-       if (!res.ok) throw new Error('server_error');
-       return res.json();
-    })
-    .then(data => {
-       if (data.success) {
-         this.$saveSpotifyBtn.text('Saved!');
-         // Refresh connection test after saving credentials.
-         this.testSpotifyConnection(false);
-         setTimeout(() => {
-           this.$saveSpotifyBtn.text('Save Spotify Credentials').prop('disabled', false);
-         }, 2000);
-       } else {
-         throw new Error(data.error);
-       }
-    })
-     .catch(e => {
-        console.error('Error saving Spotify credentials', e);
-        this.$saveSpotifyBtn.text('Error!');
-        setTimeout(() => {
-            this.$saveSpotifyBtn.text('Save Spotify Credentials').prop('disabled', false);
-        }, 2000);
-      });
-  }
-
   setupColorPresets() {
     // Accent color presets
     $('#highlightColorPresets').on('click', '.color-preset:not(.custom)', (e) => {
@@ -308,75 +249,10 @@ export default class SettingsView extends Subview {
 
     Service.queueCommandFront(Commands.getInfo());
 
-    this.loadSpotifyCredentials();
     this.loadArtistDbStats();
     this.loadImageSources();
-    // Auto-test Spotify connectivity when Settings opens.
-    this.testSpotifyConnection(false);
 
     $(document).trigger('enable-user-input');
-  }
-
-  testSpotifyConnection(manualTriggered = false) {
-    try {
-      if (manualTriggered && this.$testSpotifyBtn && this.$testSpotifyBtn.length) {
-        this.$testSpotifyBtn.text('Testing...').prop('disabled', true);
-      }
-      if (this.$spotifyConnectionText && this.$spotifyConnectionText.length) {
-        this.$spotifyConnectionText.text('Testing...');
-      }
-      if (this.$spotifyConnectionLed && this.$spotifyConnectionLed.length) {
-        this.$spotifyConnectionLed.removeClass('led-connected').addClass('led-disconnected');
-      }
-
-      fetch('/endpoints/testSpotifyConnection')
-        .then(res => {
-          if (!res.ok) throw new Error('server_error');
-          return res.json();
-        })
-        .then(data => {
-          const ok = !!data && data.success;
-          if (ok) {
-            if (this.$spotifyConnectionLed && this.$spotifyConnectionLed.length) {
-              this.$spotifyConnectionLed.addClass('led-connected').removeClass('led-disconnected');
-            }
-            if (this.$spotifyConnectionText && this.$spotifyConnectionText.length) {
-              this.$spotifyConnectionText.text(data.message || 'Connected');
-            }
-          } else {
-            if (this.$spotifyConnectionLed && this.$spotifyConnectionLed.length) {
-              this.$spotifyConnectionLed.addClass('led-disconnected').removeClass('led-connected');
-            }
-            if (this.$spotifyConnectionText && this.$spotifyConnectionText.length) {
-              this.$spotifyConnectionText.text(data && data.error ? data.error : 'Disconnected');
-            }
-          }
-        })
-        .catch(() => {
-          if (this.$spotifyConnectionLed && this.$spotifyConnectionLed.length) {
-            this.$spotifyConnectionLed.addClass('led-disconnected').removeClass('led-connected');
-          }
-          if (this.$spotifyConnectionText && this.$spotifyConnectionText.length) {
-            this.$spotifyConnectionText.text('Error');
-          }
-        })
-        .finally(() => {
-          if (manualTriggered && this.$testSpotifyBtn && this.$testSpotifyBtn.length) {
-            this.$testSpotifyBtn.text('Test Spotify Connection').prop('disabled', false);
-          }
-        });
-    } catch (e) {
-      if (manualTriggered && this.$testSpotifyBtn && this.$testSpotifyBtn.length) {
-        this.$testSpotifyBtn.text('Test Spotify Connection').prop('disabled', false);
-      }
-      if (this.$spotifyConnectionLed && this.$spotifyConnectionLed.length) {
-        this.$spotifyConnectionLed.addClass('led-disconnected').removeClass('led-connected');
-      }
-      if (this.$spotifyConnectionText && this.$spotifyConnectionText.length) {
-        this.$spotifyConnectionText.text('Error');
-      }
-      console.error('testSpotifyConnection failed', e);
-    }
   }
 
   hide() {

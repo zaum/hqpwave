@@ -45,6 +45,21 @@ const musicbrainzCache = new Map();
 const musicbrainzQueue = [];
 let musicbrainzProcessing = false;
 
+// Track import progress per artist name (or temporary key)
+const importStatus = new Map();
+
+const setImportStatus = (key, statusObj) => {
+  try {
+    importStatus.set(String(key), statusObj);
+  } catch (e) {}
+};
+
+const getImportStatus = (key) => {
+  try {
+    return importStatus.get(String(key)) || null;
+  } catch (e) { return null; }
+};
+
 const processMusicBrainzQueue = () => {
   if (musicbrainzProcessing || musicbrainzQueue.length === 0) return;
   musicbrainzProcessing = true;
@@ -94,6 +109,7 @@ const searchMusicBrainzArtist = (name, cb) => {
     cb(null, artist);
   }, 10); // Priority 10
 };
+
 
 const fetchReleasesForArtist = (mbid, cb) => {
   const q = querystring.stringify({ artist: mbid, fmt: 'json', limit: 100, inc: 'release-groups' });
@@ -163,6 +179,15 @@ const fetchWikipediaSummary = (title, cb) => {
   });
 };
 
+const getHighResLastFmUrl = (url) => {
+  if (typeof url !== 'string') return url;
+  if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
+    // Replace size segment (e.g., 300x300, avatar170s, 770x0) with '_' for original quality
+    return url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
+  }
+  return url;
+};
+
 const searchWikipediaByName = (name, cb) => {
   const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name)}&format=json&srlimit=1`;
   httpGetJson(url, (err, json) => {
@@ -175,83 +200,9 @@ const searchWikipediaByName = (name, cb) => {
   });
 };
 
-const searchSpotifyArtistImages = (name, cb) => {
-  let called = false;
-  const done = (err, res) => {
-    if (called) return;
-    called = true;
-    cb(err, res);
-  };
-
-  const configPath = path.join(__dirname, 'data', 'spotify.json');
-  if (!fs.existsSync(configPath)) return done(null, []);
-
-  let config;
-  try {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  } catch (e) {
-    console.error('[sources] error reading spotify.json', e);
-    return done(null, []);
-  }
-
-  const { clientId, clientSecret } = config;
-  if (!clientId || !clientSecret) return done(null, []);
-
-  // 1. Get Access Token
-  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const authUrl = 'https://accounts.spotify.com/api/token';
-  const fetch = require('node-fetch');
-
-  const parseJsonResponse = async (res, label) => {
-    const text = await res.text();
-    try {
-      return text ? JSON.parse(text) : null;
-    } catch (e) {
-      console.warn('[sources] Spotify non-JSON response:', {
-        label,
-        status: res.status,
-        // Keep the log small; most pages include useful hint near the beginning.
-        sample: String(text).slice(0, 240)
-      });
-      return null;
-    }
-  };
-
-  fetch(authUrl, {
-    method: 'POST',
-    headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-    body: 'grant_type=client_credentials'
-  })
-  .then(res => parseJsonResponse(res, 'token'))
-  .then(authJson => {
-    const token = authJson.access_token;
-    if (!token) {
-      // Make misconfiguration obvious: client credentials should return access_token.
-      console.warn('[sources] Spotify token missing:', {
-        error: authJson && authJson.error ? authJson.error : 'unknown',
-        status: authJson && authJson.status ? authJson.status : undefined
-      });
-      return done(null, []);
-    }
-
-    // 2. Search Artist
-    const searchUrl = `https://api.spotify.com/v1/search?q=${encodeURIComponent(name)}&type=artist&limit=1`;
-    return fetch(searchUrl, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-    });
-  })
-  .then(res => res ? parseJsonResponse(res, 'search') : null)
-  .then(searchJson => {
-    if (!searchJson || !searchJson.artists || !searchJson.artists.items[0]) return done(null, []);
-    const artist = searchJson.artists.items[0];
-    const images = (artist.images || []).map(img => ({ url: img.url, source: 'spotify' }));
-    done(null, images);
-  })
-  .catch(err => {
-    console.error('[sources] Spotify error:', err);
-    done(null, []);
-  });
-};
+// Spotify image fetch removed per user request.
+// Previously the code used Spotify API to fetch artist images. That logic
+// was removed to avoid external Spotify dependency and API credentials.
 
 const getImageSourcesConfig = () => {
   const configPath = path.join(__dirname, 'data', 'imageSources.json');
@@ -310,15 +261,33 @@ const scrapeArtistImages = (name, cb) => {
           'Accept-Language': 'en-US,en;q=0.9'
         });
         
-        await page.goto(sourceUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await page.goto(sourceUrl, { waitUntil: 'networkidle0', timeout: 60000 });
+        
+        try {
+          await page.waitForSelector('img[src*="fastly.net"]:not([src*="2a96cbd8"])', { timeout: 10000 });
+        } catch (e) {
+          console.log('[sources] No images with src, trying data-src...');
+          try {
+            await page.waitForSelector('img[data-src*="fastly.net"]:not([data-src*="2a96cbd8"])', { timeout: 5000 });
+          } catch (e2) {
+            console.log('[sources] No images with data-src either');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+          }
+        }
         
         const images = [];
         
         if (sourceBase === 'lastfm') {
-          await new Promise(resolve => setTimeout(resolve, 1000));
           
           const galleryInfo = await page.evaluate(() => {
+            const getHighResLastFmUrl = (url) => {
+              if (typeof url !== 'string') return url;
+              if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
+                return url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
+              }
+              return url;
+            };
+
             const result = {
               pageTitle: document.title,
               allLinks: [],
@@ -337,14 +306,14 @@ const scrapeArtistImages = (name, cb) => {
             
             document.querySelectorAll('img').forEach((img) => {
               const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
-              if (src && src.includes('fastly.net') && !src.includes('2a96cbd8')) {
-                result.images.push(src.split('#')[0]);
+              if (src && src.includes('fastly.net') && !src.includes('2a96cbd8') && !src.includes('avatar')) {
+                result.images.push(getHighResLastFmUrl(src.split('#')[0]));
               }
               if (img.srcset) {
                 const parts = img.srcset.split(',').map(s => s.trim().split(' ')[0]);
                 parts.forEach(p => {
-                  if (p && p.includes('fastly.net') && !p.includes('2a96cbd8')) {
-                    result.images.push(p.split('#')[0]);
+                  if (p && p.includes('fastly.net') && !p.includes('2a96cbd8') && !p.includes('avatar')) {
+                    result.images.push(getHighResLastFmUrl(p.split('#')[0]));
                   }
                 });
               }
@@ -363,7 +332,7 @@ const scrapeArtistImages = (name, cb) => {
           } else {
             console.log('[sources] No direct images, trying image pages...');
             let imagePageUrls = galleryInfo.allLinks
-              .filter(l => l.href.match(/\/\+images\/[a-f0-9]+$/) || l.href.match(/\/photo\/[a-f0-9]+$/))
+              .filter(l => l.href.match(/\+images\/[a-f0-9]+$/) || l.href.match(/\/photo\/[a-f0-9]+$/))
               .map(l => l.href)
               .slice(0, 3);
             
@@ -375,11 +344,18 @@ const scrapeArtistImages = (name, cb) => {
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
                 const pageImages = await page.evaluate(() => {
+                  const getHighResLastFmUrl = (url) => {
+                    if (typeof url !== 'string') return url;
+                    if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
+                      return url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
+                    }
+                    return url;
+                  }
                   const imgs = [];
                   document.querySelectorAll('img').forEach((img) => {
                     const src = img.src || img.getAttribute('data-src') || img.getAttribute('data-image');
                     if (src && src.includes('fastly.net') && !src.includes('2a96cbd8')) {
-                      imgs.push(src.split('#')[0]);
+                      imgs.push(getHighResLastFmUrl(src.split('#')[0]));
                     }
                   });
                   return [...new Set(imgs)];
@@ -458,12 +434,16 @@ const searchCommonsImages = (name, cb) => {
 const fetchAndStoreArtistByName = (nameRaw, cb) => {
   const name = (nameRaw || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
   console.log('[sources] Starting fetch for artist:', name);
+  // initialize import status for this name
+  setImportStatus(name, { status: 'Starting import' });
   
   searchMusicBrainzArtist(name, (err, mbArtist) => {
     if (err || !mbArtist) {
       console.log('[sources] MusicBrainz lookup failed for:', name, err);
+      setImportStatus(name, { status: 'MusicBrainz lookup failed', error: err ? String(err) : 'not_found' });
       return cb(err || new Error('mb_not_found'));
     }
+    setImportStatus(name, { status: 'Found MusicBrainz artist', mbid: mbArtist.id });
 
     const mbid = mbArtist.id;
     const disambiguation = mbArtist.disambiguation || '';
@@ -498,6 +478,7 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
     });
 
   // 2. Releases fetch
+    setImportStatus(name, { status: 'Fetching releases from MusicBrainz', mbid });
     fetchReleasesForArtist(mbid, (errR, releases) => {
       const disc = [];
       const coverPromises = [];
@@ -519,113 +500,109 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
     });
 
     const finalize = () => {
-      const artistObj = {
-        id: mbid,
-        name: mbArtist.name,
-        disambiguation: disambiguation,
-        bio: (wikiData && wikiData.extract) ? wikiData.extract : '',
-        wiki_url: (wikiData && wikiData.url) ? wikiData.url : null,
-        discography: discography,
-        default_image_id: null
-      };
-
-      console.log('[sources] Finalizing and upserting artist to DB:', mbid);
-      db.upsertArtist(artistObj, (errU) => {
-        if (errU) {
-          console.error('[sources] upsertArtist failed:', errU);
-          return cb(errU);
-        }
-
-        // Gather all image sources (dedupe by URL)
-        const images = [];
-        const seen = new Set();
+      db.getArtistById(mbid, (errExisting, existingArtist) => {
+        const existingDefaultImageId = (existingArtist && existingArtist.default_image_id) ? existingArtist.default_image_id : null;
         
-        const isLikelyCover = (url) => {
-          if (!url) return false;
-          const u = url.toLowerCase();
-          const skipKeywords = ['cover', 'album', 'single', 'sleeve', 'artwork', 'front', 'back', 'vinyl', 'cd_', 'digipak', 'booklet', 'insert', 'tray'];
-          return skipKeywords.some(kw => u.includes(kw));
+        const artistObj = {
+          id: mbid,
+          name: mbArtist.name,
+          disambiguation: disambiguation,
+          bio: (wikiData && wikiData.extract) ? wikiData.extract : '',
+          wiki_url: (wikiData && wikiData.url) ? wikiData.url : null,
+          discography: discography,
+          default_image_id: existingDefaultImageId
         };
 
-        const addImg = (url, src, id) => {
-          if (url && !seen.has(url) && images.length < 5) {
-            // Spotify image URLs sometimes contain "cover/album" substrings even when the image
-            // is a proper artist portrait. Don't over-filter Spotify; still keep the heuristic
-            // for Wikipedia/Commons where we observed cover-likes more often.
-            if (src !== 'spotify' && isLikelyCover(url)) return false;
-            images.push({ id: id, url: url, source: src, thumbnail_url: url });
-            seen.add(url);
-            return true;
-          }
-          return false;
-        };
-
-        if (wikiData && wikiData.thumbnail) {
-          addImg(wikiData.thumbnail, 'wikipedia', `${mbid}-wiki`);
-        }
-
-        let imageFetchComplete = false;
-        const safeCallback = (err, result) => {
-          if (imageFetchComplete) return;
-          imageFetchComplete = true;
-          cb(err, result);
-        };
-
-        const onImagesReady = (imgs) => {
-          console.log('[sources] Adding images bulk, count:', imgs.length);
-          db.addImagesBulk(mbid, imgs, (errB) => {
-            if (errB) {
-              console.error('[sources] addImagesBulk failed:', errB);
-            }
-            const first = imgs[0];
-            if (first) {
-              db.setDefaultImage(mbid, first.id, (errD) => {
-                if (errD) console.warn('[sources] setDefaultImage failed:', errD);
-                safeCallback(null, mbid);
-              });
-            } else {
-              safeCallback(null, mbid);
-            }
-          });
-        };
-
-        // Fetch Spotify images (may fail without premium)
-        searchSpotifyArtistImages(name, (errS, spotifyImgs) => {
-          if (errS) console.warn('[sources] Spotify image fetch warning:', errS);
-          for (let i = 0; i < (spotifyImgs || []).length; i++) {
-            if (!addImg(spotifyImgs[i].url, 'spotify', `${mbid}-spotify-${i}`)) {
-               // do NOT break if one image is cover, just try next
-            }
+        console.log('[sources] Finalizing and upserting artist to DB:', mbid, 'preserving default_image_id:', existingDefaultImageId);
+        db.upsertArtist(artistObj, (errU) => {
+          if (errU) {
+            console.error('[sources] upsertArtist failed:', errU);
+            return cb(errU);
           }
 
-          // Fetch Last.fm images (free API)
-          if (images.length < 5) {
-            searchLastFmImages(name, (errL, lastfmImgs) => {
-              if (errL) console.warn('[sources] Last.fm image fetch warning:', errL);
-              for (let i = 0; i < (lastfmImgs || []).length; i++) {
-                if (!addImg(lastfmImgs[i].url, 'lastfm', `${mbid}-lastfm-${i}`)) {
-                }
+          // Gather all image sources (dedupe by URL)
+          const images = [];
+          const seen = new Set();
+          
+          const isLikelyCover = (url) => {
+            if (!url) return false;
+            const u = url.toLowerCase();
+            const skipKeywords = ['cover', 'album', 'single', 'sleeve', 'artwork', 'front', 'back', 'vinyl', 'cd_', 'digipak', 'booklet', 'insert', 'tray'];
+            return skipKeywords.some(kw => u.includes(kw));
+          };
+
+          const addImg = (urlRaw, src, id) => {
+            const url = (src === 'lastfm') ? getHighResLastFmUrl(urlRaw) : urlRaw;
+            if (url && !seen.has(url) && images.length < 5) {
+              if (src !== 'spotify' && isLikelyCover(url)) return false;
+              images.push({ id: id, url: url, source: src, thumbnail_url: url });
+              seen.add(url);
+              return true;
+            }
+            return false;
+          };
+
+          if (wikiData && wikiData.thumbnail) {
+            addImg(wikiData.thumbnail, 'wikipedia', `${mbid}-wiki`);
+          }
+
+          let imageFetchComplete = false;
+          const safeCallback = (err, result) => {
+            if (imageFetchComplete) return;
+            imageFetchComplete = true;
+            cb(err, result);
+          };
+
+          const onImagesReady = (imgs) => {
+            console.log('[sources] Adding images bulk, count:', imgs.length);
+            setImportStatus(name, { status: `Storing ${imgs.length} images`, mbid });
+            db.addImagesBulk(mbid, imgs, (errB) => {
+              if (errB) {
+                console.error('[sources] addImagesBulk failed:', errB);
               }
-
-              // If still under 5, add from Wikimedia Commons
-              if (images.length < 5) {
-                searchCommonsImages(name, (errC, commons) => {
-                  if (errC) console.warn('[sources] Commons image fetch warning:', errC);
-                  for (let i = 0; i < (commons || []).length; i++) {
-                    addImg(commons[i].url, 'commons', `${mbid}-comm-${i}`);
-                  }
-                  onImagesReady(images);
+              const first = imgs[0];
+              if (first) {
+                db.setDefaultImage(mbid, first.id, (errD) => {
+                  if (errD) console.warn('[sources] setDefaultImage failed:', errD);
+                  setImportStatus(name, { status: 'Done', mbid });
+                  safeCallback(null, mbid);
                 });
               } else {
-                onImagesReady(images);
+                setImportStatus(name, { status: 'Done', mbid });
+                safeCallback(null, mbid);
               }
             });
-          } else {
-            onImagesReady(images);
-          }
+          };
+
+          // Removed Spotify lookup; use Last.fm then Commons as fallback
+          // Fetch images from Last.fm then Commons; update status as we go
+          setImportStatus(name, { status: 'Fetching images from Last.fm', mbid });
+          searchLastFmImages(name, (errL, lastfmImgs) => {
+            if (errL) console.warn('[sources] Last.fm image fetch warning:', errL);
+            const foundLast = (lastfmImgs || []).length;
+            for (let i = 0; i < foundLast; i++) {
+              if (!addImg(lastfmImgs[i].url, 'lastfm', `${mbid}-lastfm-${i}`)) {
+              }
+            }
+            setImportStatus(name, { status: `Found ${images.length} images (Last.fm)`, mbid });
+
+            if (images.length < 5) {
+              setImportStatus(name, { status: 'Fetching images from Commons', mbid });
+              searchCommonsImages(name, (errC, commons) => {
+                if (errC) console.warn('[sources] Commons image fetch warning:', errC);
+                for (let i = 0; i < (commons || []).length; i++) {
+                  addImg(commons[i].url, 'commons', `${mbid}-comm-${i}`);
+                }
+                setImportStatus(name, { status: `Found ${images.length} images (total)`, mbid });
+                onImagesReady(images);
+              });
+            } else {
+              onImagesReady(images);
+            }
+          });
         });
       });
-    };
+    }
   });
 };
 
@@ -728,4 +705,5 @@ module.exports = {
   // exported for use by handlers that need to check available releases
   fetchReleasesForArtist,
   fetchReleaseById
+  , getImportStatus
 };

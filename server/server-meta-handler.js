@@ -4,6 +4,8 @@
 const log = require('./log');
 const meta = require('./meta');
 
+const { safeJson, safeStatusJson, safeSend } = require('./response-util');
+
 const doGet = (request, response) => {
 
   // Prevent caching of metadata responses
@@ -12,7 +14,7 @@ const doGet = (request, response) => {
   response.set('Expires', '0');
 
   if (request.query['info'] !== undefined) {
-    response.send({
+    safeJson(response, {
       'isEnabled': meta.getIsEnabled(),
       'mainFilepath': meta.getFilepath()
     });
@@ -20,7 +22,7 @@ const doGet = (request, response) => {
   }
 
   if (!meta.getIsEnabled()) {
-    response.send( { error: 'meta_disabled'} );
+    safeJson(response, { error: 'meta_disabled' });
     return;
   }
 
@@ -35,7 +37,7 @@ const doGet = (request, response) => {
   if (request.query['getDownload'] !== undefined) {
     response.setHeader('Content-Type', 'text/json');
     response.setHeader('Content-disposition', 'attachment;filename=hqpwv-metadata.json');
-    response.send(meta.getData());
+    safeSend(response, meta.getData());
     return;
   }
 
@@ -47,41 +49,41 @@ const doGet = (request, response) => {
 
   if (request.query['updateTrackFavorite'] !== undefined) {
     if (!hash || !value) {
-      response.status(400).json( {error: 'missing_required_sub_param'} );
+      safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
     }
     const result = meta.updateTrackFavorite(hash, value);
-    response.send( { result: result } );
+    safeJson(response, { result: result });
     return;
   }
 
   if (request.query['updateAlbumFavorite'] !== undefined) {
     if (!hash || !value) {
-      response.status(400).json( {error: 'missing_required_sub_param'} );
+      safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
     }
     const result = meta.updateAlbumFavorite(hash, value);
-    response.send( { result: result } );
+    safeJson(response, { result: result });
     return;
   }
 
   if (request.query['incrementTrackViews'] !== undefined) {
     if (!hash) {
-      response.status(400).json( {error: 'missing_required_sub_param'} );
+      safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
     }
     const result = meta.incrementTrackViews(hash);
-    response.send( { result: result } );
+    safeJson(response, { result: result });
     return;
   }
 
   if (request.query['updateTrackViews'] !== undefined) {
     if (!hash || !value) {
-      response.status(400).json( {error: 'missing_required_sub_param'} );
+      safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
     }
     const result = meta.updateTrackViews(hash, value);
-    response.send( { result: result } );
+    safeJson(response, { result: result });
     return;
   }
 
@@ -89,15 +91,15 @@ const doGet = (request, response) => {
     const name = request.query['name'];
     const index = request.query['index'];
     if (!name || isNaN(index)) {
-      response.status(400).json( {error: 'bad_param'} );
+      safeStatusJson(response, 400, { error: 'bad_param' });
       return;
     }
     const result = meta.deletePlaylist(name, index);
-    response.send( { result: result } );
+    safeJson(response, { result: result });
     return;
   }
 
-  response.status(400).json( {error: 'missing_required_param'} );
+  safeStatusJson(response, 400, { error: 'missing_required_param' });
 };
 
 const doPost = (request, response) => {
@@ -109,11 +111,11 @@ const doPost = (request, response) => {
       delete o[uriKey];
     }
     let result = meta.addPlaylist(request.body);
-    response.send({ result: result });
+    safeJson(response, { result: result });
     return;
   }
 
-  response.status(400).json( {error: 'missing_required_param'} );
+  safeStatusJson(response, 400, { error: 'missing_required_param' });
 };
 
 module.exports = {

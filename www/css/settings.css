@@ -398,6 +398,50 @@
   vertical-align: top;
 }
 
+/* Utilities for styles moved from inline in index.html */
+.mono-accent {
+  color: var(--accent);
+  font-family: 'Geist Mono', monospace;
+}
+
+.settingsSelectOuter {
+  margin-bottom: 0;
+  position: relative;
+}
+
+#hqpFiltersInfo {
+  margin-top: 0;
+}
+
+#hqpPresetsView {
+  align-items: flex-start;
+}
+
+#hqpPresetRulesView {
+  border: none;
+  background: transparent;
+}
+
+/* Color presets use data-color attributes; keep backgrounds in CSS */
+.color-preset[data-color="#e8c88a"] { background: #e8c88a; }
+.color-preset[data-color="#4ade80"] { background: #4ade80; }
+.color-preset[data-color="#f97316"] { background: #f97316; }
+.color-preset[data-color="#60a5fa"] { background: #60a5fa; }
+.color-preset[data-color="#c4b5fd"] { background: #c4b5fd; }
+.color-preset[data-color="#3a3026"] { background: #3a3026; }
+.color-preset[data-color="#1a1a1c"] { background: #1a1a1c; }
+.color-preset[data-color="#5a4d3f"] { background: #5a4d3f; }
+.color-preset[data-color="#cdbda7"] { background: #cdbda7; }
+.color-preset[data-color="#f1efeb"] { background: #f1efeb; }
+
+/* Layout utility classes used where inline styles were removed */
+.column-stack { flex-direction: column; align-items: stretch; gap: 12px; }
+.row-between { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.row-right.gap-16 { gap: 16px; }
+.mono-small { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--text-2); }
+.inputGroup.row { display: flex; align-items: center; gap: 8px; width: 100%; }
+.settingsInput.expanded { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2); }
+
 #settingsHotkeys .c1 {
   font-family: 'Geist Mono', monospace;
   font-size: 11px;
@@ -505,12 +549,6 @@
   box-shadow: 0 0 8px var(--green);
   margin-bottom: 0;
   flex-shrink: 0;
-}
-
-/* Align Spotify test LED with its label in the Settings card row. */
-#spotifyConnectionLed {
-  /* Move up by ~2px compared to the previous tweak. */
-  transform: translateY(-1px);
 }
 
 /* Settings > HQPlayer Connection layout:

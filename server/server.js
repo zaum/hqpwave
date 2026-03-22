@@ -22,6 +22,7 @@ const playlistHandler = require('./server-playlist-handler');
 const playlists = require('./playlists');
 const artistHandler = require('./artist-handler');
 const sources = require('./sources');
+const { safeJson, safeStatusJson, safeSend, safeSendFile } = require('./response-util');
 
 const APP_FILENAME = `hqpwv`;
 const WEBPAGE_DIR = path.join( __dirname, './../www' );
@@ -136,14 +137,14 @@ app.get('/endpoints/command', (request, response) => {
 app.get('/endpoints/proxyFetch', async (req, res) => {
   const url = req.query.url;
   if (!url || typeof url !== 'string') {
-    res.status(400).send('bad_param');
+    safeStatusJson(res, 400, { error: 'bad_param' });
     return;
   }
   try {
     const allowedHosts = new Set(['www.allmusic.com', 'allmusic.com']);
     const u = new URL(url);
     if (!allowedHosts.has(u.hostname)) {
-      res.status(403).send('forbidden_host');
+      safeStatusJson(res, 403, { error: 'forbidden_host' });
       return;
     }
     // perform server-side fetch
@@ -151,9 +152,9 @@ app.get('/endpoints/proxyFetch', async (req, res) => {
     const r = await fetch(url, { redirect: 'follow' });
     const text = await r.text();
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(text);
+    safeSend(res, text);
   } catch (e) {
-    res.status(500).send('error');
+    safeStatusJson(res, 500, { error: 'error' });
   }
 });
 
@@ -175,21 +176,21 @@ app.get('/endpoints/native', (request, response) => {
     const userAgent = (request.get('user-agent') || '').toLowerCase();
     const isMobileUa = /android|iphone|ipad|ipod|mobile|windows phone|blackberry/.test(userAgent);
     if (isMobileUa) {
-      response.status(403).json({ error: 'desktop_only' });
+      safeStatusJson(response, 403, { error: 'desktop_only' });
       return;
     }
 
     const inputPath = request.query.path;
     if (!inputPath || typeof inputPath !== 'string') {
-      response.status(400).json({ error: 'bad_param_data' });
+      safeStatusJson(response, 400, { error: 'bad_param_data' });
       return;
     }
 
     let pathToOpen = normalizeRequestedPath(inputPath);
 
     try {
-      if (!fs.existsSync(pathToOpen)) {
-        response.status(404).json({ error: 'path_not_found' });
+        if (!fs.existsSync(pathToOpen)) {
+        safeStatusJson(response, 404, { error: 'path_not_found' });
         return;
       }
 
@@ -217,10 +218,10 @@ app.get('/endpoints/native', (request, response) => {
       });
       child.unref();
 
-      response.send({ ok: true });
+      safeJson(response, { ok: true });
       return;
     } catch (error) {
-      response.status(500).json({ error: 'open_failed' });
+      safeStatusJson(response, 500, { error: 'open_failed' });
       return;
     }
   }
@@ -228,14 +229,14 @@ app.get('/endpoints/native', (request, response) => {
   if (request.query.albumImages !== undefined) {
     const inputPath = request.query.path;
     if (!inputPath || typeof inputPath !== 'string') {
-      response.status(400).json({ error: 'bad_param_data', images: [] });
+      safeStatusJson(response, 400, { error: 'bad_param_data', images: [] });
       return;
     }
 
     try {
       let folderPath = normalizeRequestedPath(inputPath);
-      if (!fs.existsSync(folderPath)) {
-        response.status(404).json({ error: 'path_not_found', images: [] });
+        if (!fs.existsSync(folderPath)) {
+        safeStatusJson(response, 404, { error: 'path_not_found', images: [] });
         return;
       }
 
@@ -248,10 +249,10 @@ app.get('/endpoints/native', (request, response) => {
         .sort((a, b) => a.relPath.localeCompare(b.relPath, undefined, { numeric: true, sensitivity: 'base' }))
         .map((item) => `/endpoints/native?albumImage=1&path=${encodeURIComponent(item.fullPath)}`);
 
-      response.json({ images });
+      safeJson(response, { images });
       return;
     } catch (error) {
-      response.status(500).json({ error: 'read_failed', images: [] });
+      safeStatusJson(response, 500, { error: 'read_failed', images: [] });
       return;
     }
   }
@@ -259,37 +260,38 @@ app.get('/endpoints/native', (request, response) => {
   if (request.query.albumImage !== undefined) {
     const inputPath = request.query.path;
     if (!inputPath || typeof inputPath !== 'string') {
-      response.status(400).json({ error: 'bad_param_data' });
+      safeStatusJson(response, 400, { error: 'bad_param_data' });
       return;
     }
 
     try {
       const imagePath = normalizeRequestedPath(inputPath);
       if (hasHiddenPathSegment(imagePath)) {
-        response.status(400).json({ error: 'bad_param_data' });
+        safeStatusJson(response, 400, { error: 'bad_param_data' });
         return;
       }
       if (!fs.existsSync(imagePath)) {
-        response.status(404).json({ error: 'path_not_found' });
+        safeStatusJson(response, 404, { error: 'path_not_found' });
         return;
       }
 
       const stat = fs.statSync(imagePath);
       if (!stat.isFile() || !isImageFilename(imagePath)) {
-        response.status(400).json({ error: 'bad_param_data' });
+        safeStatusJson(response, 400, { error: 'bad_param_data' });
         return;
       }
 
-      response.sendFile(path.resolve(imagePath));
+      // Use safeSendFile for file responses
+      safeSendFile(response, path.resolve(imagePath));
       return;
     } catch (error) {
-      response.status(500).json({ error: 'read_failed' });
+      safeStatusJson(response, 500, { error: 'read_failed' });
       return;
     }
   }
 
   // No recognized param
-  response.status(400).json( {error: 'bad_param_data'} );
+  safeStatusJson(response, 400, { error: 'bad_param_data' });
 });
 
 /**
@@ -314,21 +316,34 @@ app.post('/endpoints/artist', (request, response) => {
 app.post('/endpoints/artistImport', (request, response) => {
   const name = request.query['name'] || (request.body && request.body.name);
   if (!name) {
-    response.status(400).json({ error: 'missing_required_param' });
+    safeStatusJson(response, 400, { error: 'missing_required_param' });
     return;
   }
-  sources.fetchAndStoreArtistByName(name, (err, mbid) => {
-    if (err) {
-      console.error('[server] artistImport error:', err);
-      response.status(500).json({ error: 'source_fetch_error', message: err.message || err.toString() });
-      return;
-    }
-    if (!mbid) {
-      response.status(404).json({ error: 'not_found' });
-      return;
-    }
-    response.json({ result: true, id: mbid });
-  });
+  // Start import in background and return immediately. Client will poll status.
+  try {
+    // Kick off background import without waiting for completion
+    setImmediate(() => {
+      sources.fetchAndStoreArtistByName(name, (err, mbid) => {
+        if (err) console.error('[server] artistImport background error:', err);
+      });
+    });
+      safeJson(response, { result: true, started: true });
+  } catch (e) {
+    console.error('[server] artistImport start error:', e);
+      safeStatusJson(response, 500, { error: 'start_failed' });
+  }
+});
+
+// Return import progress for a given artist name
+app.get('/endpoints/artistImportStatus', (request, response) => {
+  const name = request.query['name'];
+  if (!name) return safeStatusJson(response, 400, { error: 'missing_required_param' });
+  try {
+    const status = sources.getImportStatus(name);
+    safeJson(response, { status: status });
+  } catch (e) {
+    safeStatusJson(response, 500, { error: 'status_error' });
+  }
 });
 
 app.get('/endpoints/artistImage', (request, response) => {
@@ -386,99 +401,6 @@ function formatBytes(bytes) {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
-
-app.get('/endpoints/spotifyCredentials', (req, res) => {
-  const configPath = path.join(__dirname, 'data', 'spotify.json');
-  if (!fs.existsSync(configPath)) {
-    return res.json({ clientId: '', clientSecret: '' });
-  }
-  try {
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    res.json({ clientId: config.clientId || '', clientSecret: config.clientSecret || '' });
-  } catch (e) {
-    res.status(500).json({ error: 'read_error' });
-  }
-});
-
-app.post('/endpoints/spotifyCredentials', (req, res) => {
-  const { clientId, clientSecret } = req.body;
-  if (clientId === undefined || clientSecret === undefined) {
-    return res.status(400).json({ error: 'missing_params' });
-  }
-  const configPath = path.join(__dirname, 'data', 'spotify.json');
-  const dataDir = path.join(__dirname, 'data');
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-  try {
-    fs.writeFileSync(configPath, JSON.stringify({ clientId, clientSecret }, null, 2), 'utf8');
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: 'write_error' });
-  }
-});
-
-// Test Spotify connectivity by validating we can obtain an access token.
-app.get('/endpoints/testSpotifyConnection', (req, res) => {
-  const configPath = path.join(__dirname, 'data', 'spotify.json');
-  if (!fs.existsSync(configPath)) {
-    return res.json({ success: false, error: 'missing_credentials' });
-  }
-  let config;
-  try {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  } catch (e) {
-    return res.json({ success: false, error: 'read_error' });
-  }
-
-  const clientId = config.clientId || '';
-  const clientSecret = config.clientSecret || '';
-  if (!clientId || !clientSecret) {
-    return res.json({ success: false, error: 'missing_credentials' });
-  }
-
-  const https = require('https');
-  const UA = 'HQPWV/0.1';
-  const auth = Buffer.from(clientId + ':' + clientSecret).toString('base64');
-
-  const payload = 'grant_type=client_credentials';
-  const options = {
-    method: 'POST',
-    hostname: 'accounts.spotify.com',
-    path: '/api/token',
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': UA,
-    },
-  };
-
-  const request = https.request(options, (response) => {
-    let body = '';
-    response.on('data', (chunk) => { body += chunk; });
-    response.on('end', () => {
-      try {
-        const json = body ? JSON.parse(body) : {};
-        if (response.statusCode >= 200 && response.statusCode < 300 && json.access_token) {
-          return res.json({ success: true, message: 'Connected' });
-        }
-        const error = json && json.error ? json.error : 'spotify_auth_failed';
-        return res.json({ success: false, error, status: response.statusCode });
-      } catch (e) {
-        return res.json({ success: false, error: 'invalid_response', status: response.statusCode });
-      }
-    });
-  });
-
-  request.on('error', () => {
-    return res.json({ success: false, error: 'request_error' });
-  });
-  request.setTimeout(5000, () => {
-    request.destroy(new Error('timeout'));
-  });
-
-  request.write(payload);
-  request.end();
-});
 
 
 /**

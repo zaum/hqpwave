@@ -5,6 +5,13 @@ const http = require('http');
 const db = require('./db');
 const sources = require('./sources');
 
+let sharp;
+try {
+  sharp = require('sharp');
+} catch (e) {
+  console.warn('[artist-handler] sharp not available, image resizing disabled');
+}
+
 // Ensure DB initialized
 try { db.init(); } catch (e) { /* ignore */ }
 
@@ -12,9 +19,7 @@ try { db.init(); } catch (e) { /* ignore */ }
 const CORS_FRIENDLY_DOMAINS = [
   'coverartarchive.org',
   'upload.wikimedia.org',
-  'commons.wikimedia.org',
-  'spotify.com',
-  'i.scdn.co'
+  'commons.wikimedia.org'
 ];
 
 const needsProxy = (url) => {
@@ -27,24 +32,76 @@ const needsProxy = (url) => {
   }
 };
 
-const proxyImage = (url, response) => {
+// Safe response helpers to avoid "headers already sent" errors
+const safeJson = (res, obj) => {
+  if (!res || res.headersSent || res.finished) return;
+  try { res.json(obj); } catch (e) {}
+};
+const safeStatusJson = (res, status, obj) => {
+  if (!res || res.headersSent || res.finished) return;
+  try { res.status(status).json(obj); } catch (e) {}
+};
+
+const proxyImage = (url, response, maxSize) => {
   const protocol = url.startsWith('https') ? https : http;
   const req = protocol.get(url, { headers: { 'User-Agent': 'hqpwv/1.0' } }, (res) => {
     if (res.statusCode >= 200 && res.statusCode < 400) {
-      response.set('Content-Type', res.headers['content-type'] || 'image/jpeg');
-      response.set('Cache-Control', 'public, max-age=86400');
-      res.pipe(response);
+      const contentType = res.headers['content-type'] || 'image/jpeg';
+      
+      if (maxSize && sharp && (contentType.startsWith('image/jpeg') || contentType.startsWith('image/png') || contentType.startsWith('image/webp'))) {
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          // Ensure we don't attempt to write if response already finished
+          if (response.headersSent || response.finished) return;
+          sharp(buffer)
+            .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 85 })
+            .toBuffer((err, data, info) => {
+              if (response.headersSent || response.finished) return;
+              if (err) {
+                console.error('[artist-handler] sharp resize error:', err.message);
+                try {
+                  response.set('Content-Type', contentType);
+                  response.set('Cache-Control', 'public, max-age=86400');
+                  response.send(buffer);
+                } catch (e) {}
+                return;
+              }
+              try {
+                response.set('Content-Type', 'image/jpeg');
+                response.set('Cache-Control', 'public, max-age=86400');
+                response.send(data);
+              } catch (e) {}
+            });
+        });
+      } else {
+        if (response.headersSent || response.finished) return;
+        try {
+          response.set('Content-Type', contentType);
+          response.set('Cache-Control', 'public, max-age=86400');
+        } catch (e) {}
+        // Pipe will end the response when source ends
+        res.pipe(response);
+      }
     } else {
-      response.status(404).json({ error: 'image_fetch_failed', status: res.statusCode });
+      if (!response.headersSent && !response.finished) {
+        try { safeStatusJson(response, 404, { error: 'image_fetch_failed', status: res.statusCode }); } catch (e) {}
+      }
     }
   });
   req.on('error', (err) => {
     console.error('[artist-handler] proxyImage error:', err.message);
-    response.status(404).json({ error: 'image_fetch_failed', message: err.message });
+    if (!response.headersSent && !response.finished) {
+      try { safeStatusJson(response, 404, { error: 'image_fetch_failed', message: err.message }); } catch (e) {}
+    }
   });
   req.setTimeout(10000, () => {
     req.destroy();
-    response.status(504).json({ error: 'image_fetch_timeout' });
+    if (!response.headersSent && !response.finished) {
+      try { safeStatusJson(response, 504, { error: 'image_fetch_timeout' }); } catch (e) {}
+    }
   });
 };
 
@@ -56,10 +113,10 @@ const doGet = (request, response) => {
   // Support fetching a single release by id for frontend metadata enrichment
   if (request.query['getRelease'] !== undefined) {
     const releaseId = request.query['release_id'];
-    if (!releaseId) { response.status(400).json({ error: 'missing_release_id' }); return; }
+    if (!releaseId) { safeStatusJson(response, 400, { error: 'missing_release_id' }); return; }
     sources.fetchReleaseById(releaseId, (err, rel) => {
-      if (err) { response.status(500).json({ error: 'fetch_error' }); return; }
-      response.json({ release: rel });
+      if (err) { safeStatusJson(response, 500, { error: 'fetch_error' }); return; }
+      safeJson(response, { release: rel });
     });
     return;
   }
@@ -70,63 +127,65 @@ const doGet = (request, response) => {
     const name = request.query['name'];
     if (name) {
       db.getArtistByName(name, (err, artist) => {
-        if (err) { console.error('[artist-handler] db error', err); response.status(500).json({ error: 'db_error' }); return; }
-        if (!artist) { response.status(404).json({ error: 'not_found' }); return; }
-        response.json({ artist });
+        if (err) { console.error('[artist-handler] db error', err); safeStatusJson(response, 500, { error: 'db_error' }); return; }
+        if (!artist) { safeStatusJson(response, 404, { error: 'not_found' }); return; }
+        safeJson(response, { artist });
       });
       return;
     }
-    response.status(400).json({ error: 'missing_required_param' });
+    safeStatusJson(response, 400, { error: 'missing_required_param' });
     return;
   }
 
   if (request.query['get'] !== undefined) {
     db.getArtistById(id, (err, artist) => {
       if (err) {
-        response.status(500).json({ error: 'db_error' });
+        safeStatusJson(response, 500, { error: 'db_error' });
         return;
       }
       if (!artist) {
           db.getArtistByName(id, (err2, artist2) => {
              if (err2 || !artist2) {
-                response.status(404).json({ error: 'not_found' });
+               safeStatusJson(response, 404, { error: 'not_found' });
              } else {
-                const hasDiscography = artist2.discography && artist2.discography.length > 0;
-                response.json({ artist: artist2, more_albums_available: hasDiscography });
+               const hasDiscography = artist2.discography && artist2.discography.length > 0;
+               safeJson(response, { artist: artist2, more_albums_available: hasDiscography });
              }
           });
           return;
         }
         const hasDiscography = artist.discography && artist.discography.length > 0;
-        response.json({ artist, more_albums_available: hasDiscography });
+        safeJson(response, { artist, more_albums_available: hasDiscography });
     });
     return;
   }
 
-  response.status(400).json({ error: 'missing_required_action' });
+  safeStatusJson(response, 400, { error: 'missing_required_action' });
 };
 
 const doPost = (request, response) => {
   const id = request.query['id'];
     console.log('[artist-handler] POST', { query: request.query, body: request.body });
-  if (!id) {
-    response.status(400).json({ error: 'missing_required_param' });
-    return;
-  }
+    if (!id) {
+      safeStatusJson(response, 400, { error: 'missing_required_param' });
+      return;
+    }
 
   if (request.query['setDefaultImage'] !== undefined) {
     const image_id = request.body && request.body.image_id;
+    console.log('[artist-handler] setDefaultImage called:', { id, image_id });
     if (!image_id) {
-      response.status(400).json({ error: 'missing_required_sub_param' });
+        safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
     }
     db.setDefaultImage(id, image_id, (err, changes) => {
         if (err) console.error('[artist-handler] setDefaultImage error', err);
       if (err) {
-        response.status(500).json({ error: 'db_error' });
+          safeStatusJson(response, 500, { error: 'db_error' });
         return;
       }
-      response.json({ result: true, changes: changes });
+      console.log('[artist-handler] setDefaultImage result:', { changes });
+        safeJson(response, { result: true, changes: changes });
     });
     return;
   }
@@ -136,88 +195,106 @@ const doPost = (request, response) => {
     sources.fetchAndAppendMoreReleases(id, (err, added) => {
       if (err) {
         console.error('[artist-handler] moreReleases error', err);
-        response.status(500).json({ error: 'fetch_error' });
+          safeStatusJson(response, 500, { error: 'fetch_error' });
         return;
       }
-      response.json({ added: added });
+        safeJson(response, { added: added });
     });
     return;
   }
 
-  response.status(400).json({ error: 'missing_required_action' });
+    safeStatusJson(response, 400, { error: 'missing_required_action' });
 };
 
 const doImage = (request, response) => {
-  // Serve or redirect to an image for an artist
   const artistId = request.query['artist_id'];
   const imageId = request.query['image_id'];
+  const forBackground = request.query['background'] !== undefined;
+  const maxBgSize = 640;
+  
   if (!artistId || !imageId) {
-    response.status(400).json({ error: 'missing_required_param' });
+    safeStatusJson(response, 400, { error: 'missing_required_param' });
     return;
   }
 
+  const serveImage = (url, isLocal = false) => {
+    if (isLocal) {
+      try {
+        const p = path.resolve(url);
+        if (fs.existsSync(p)) {
+          if (forBackground && sharp) {
+            sharp(p)
+              .resize(maxBgSize, maxBgSize, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 85 })
+              .toBuffer((err, data) => {
+                if (err) {
+                  response.sendFile(p);
+                } else {
+                  response.set('Content-Type', 'image/jpeg');
+                  response.set('Cache-Control', 'public, max-age=86400');
+                  response.send(data);
+                }
+              });
+          } else {
+            response.sendFile(p);
+          }
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (needsProxy(url)) {
+        proxyImage(url, response, forBackground ? maxBgSize : null);
+      } else {
+        if (forBackground && sharp) {
+          proxyImage(url, response, maxBgSize);
+        } else {
+          response.redirect(url);
+        }
+      }
+      return true;
+    }
+    return false;
+  };
+
   db.getArtistById(artistId, (err, artist) => {
     if (err) {
-      response.status(500).json({ error: 'db_error' });
+      safeStatusJson(response, 500, { error: 'db_error' });
       return;
     }
     if (!artist) {
-      response.status(404).json({ error: 'artist_not_found' });
+      safeStatusJson(response, 404, { error: 'artist_not_found' });
       return;
     }
     const imgs = artist.images || [];
     let image = imgs.find(i => i.id == imageId);
 
-    // If not found, support synthetic release image ids of the form
-    // "<artistId>-rel-<releaseId>" by looking up the release in the
-    // stored discography and using its cover_url if available.
     if (!image) {
       try {
         const disc = artist.discography || [];
         if (imageId && imageId.indexOf(artistId + '-rel-') === 0) {
           const relId = imageId.substring((artistId + '-rel-').length);
-          const rel = disc.find(r => r && String(r.id) === String(relId));
+          const rel = disc.find(r => String(r.id) === String(relId));
           if (rel && rel.cover_url) {
-            if (needsProxy(rel.cover_url)) {
-              proxyImage(rel.cover_url, response);
-            } else {
-              response.redirect(rel.cover_url);
-            }
-            return;
+            if (serveImage(rel.cover_url)) return;
           }
         }
-      } catch (e) {
-        // fall through to image_not_found below
-      }
-      response.status(404).json({ error: 'image_not_found' });
+      } catch (e) {}
+      safeStatusJson(response, 404, { error: 'image_not_found' });
       return;
     }
 
-    const url = image.url || '';
-    // If URL is a local file path that exists, serve it
-    try {
-      if (url.startsWith('/') || /^[a-zA-Z]:\\/.test(url)) {
-        const p = path.resolve(url);
-        if (fs.existsSync(p)) {
-          response.sendFile(p);
-          return;
-        }
-      }
-    } catch (e) {
-      // fallthrough
+    let url = image.url || '';
+    if (url.includes('lastfm.freetls.fastly.net/i/u/')) {
+      // Automatically upgrade Last.fm thumbnails/resized images to original quality
+      url = url.replace(/\/i\/u\/[^\/]+\//, '/i/u/_/');
     }
-
-    // For remote URLs: redirect for CORS-friendly, proxy for others
-    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-      if (needsProxy(url)) {
-        proxyImage(url, response);
-      } else {
-        response.redirect(url);
-      }
-      return;
+    
+    if (!serveImage(url)) {
+      safeStatusJson(response, 404, { error: 'image_url_invalid' });
     }
-
-    response.status(404).json({ error: 'image_url_invalid' });
   });
 };
 

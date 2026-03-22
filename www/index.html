@@ -398,8 +398,9 @@
 
       <!-- Artist View -->
       <section id="artistView" class="subview" tabindex="0">
-        <div id="artistViewLoading" class="view-loading" style="display: none;">
+        <div id="artistViewLoading" class="view-loading">
           <div class="spinner"></div>
+          <div id="artistViewLoadingStatus" class="artist-loading-status text-2" aria-live="polite" role="status"></div>
         </div>
 
         <div id="artistViewBg">
@@ -411,6 +412,7 @@
         <div class="artistViewPictureColumn">
 
           <div class="artistViewPictureOuter">
+            <img id="artistViewPictureBlur" alt="">
             <div class="artistPictureFrame">
               <img id="artistViewPicture" alt="Artist photo">
             </div>
@@ -422,7 +424,7 @@
                     d="M504-480 320-296q-11 11-27.5 11.5T264-295q-11-11-11-28t11-28l156-156-156-156q-11-11-11-28t11-28q11-11 28-11t28 11l184 184q12 12 12 28t-12 28Z" />
                 </svg>
               </button>
-              <div id="artistViewSetDefaultImage" class="artistViewSetDefaultBtn">Set as default</div>
+              <div id="artistViewSetDefaultImage" class="artistViewSetDefaultBtn">Set as default image</div>
               <button id="artistViewNextImageButton" class="artistViewImageNavButton" aria-label="Next artist image">
                 <svg class="artistViewImageNavIcon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false">
                   <path
@@ -430,6 +432,7 @@
                 </svg>
               </button>
             </div>
+            <div id="artistViewPictureControls"></div>
             <div id="artistViewImageGallery"></div>
           </div>
         </div>
@@ -504,8 +507,7 @@
               <div class="settings-card-row">
                 <div class="row-label">Current output bitrate</div>
                 <div class="row-right">
-                  <span id="outputBitrateValue"
-                    style="color: var(--accent); font-family: 'Geist Mono', monospace;"></span>
+                  <span id="outputBitrateValue" class="mono-accent"></span>
                 </div>
               </div>
               <div class="settings-card-row">
@@ -525,7 +527,7 @@
               <div class="settings-card-row">
                 <div class="row-label">Filter</div>
                 <div class="row-right">
-                  <div class="settingsSelectOuter" style="margin-bottom:0; position: relative;">
+                  <div class="settingsSelectOuter">
                     <select name="filterSelect" id="filterSelect"></select>
                     <div class="filter-clear-icon" id="filterClearIcon" title="Clear filter">✕</div>
                   </div>
@@ -534,14 +536,14 @@
               <div class="settings-card-row">
                 <div class="row-label">Shaper</div>
                 <div class="row-right">
-                  <div class="settingsSelectOuter" style="margin-bottom:0; position: relative;">
+                  <div class="settingsSelectOuter">
                     <select name="shaperSelect" id="shaperSelect"></select>
                     <div class="filter-clear-icon" id="shaperClearIcon" title="Clear shaper">✕</div>
                   </div>
                 </div>
               </div>
               <div class="settings-card-row">
-                <div class="row-desc" id="hqpFiltersInfo" style="margin-top:0;">* Changing upscaler settings will stop
+                <div class="row-desc" id="hqpFiltersInfo">* Changing upscaler settings will stop
                   playback.</div>
               </div>
             </div>
@@ -550,7 +552,7 @@
           <div class="settings-section">
             <div class="settings-label">Presets</div>
             <div class="settings-card">
-              <div class="settings-card-row" id="hqpPresetsView" style="align-items: flex-start;">
+              <div class="settings-card-row" id="hqpPresetsView">
                 <div class="savePresets">
                   <div class="presetLabel">Save to preset</div>
                   <div class="savePresetLine">
@@ -580,7 +582,7 @@
 
           <div class="settings-section">
             <div class="settings-label">Experimental</div>
-            <div class="settings-card" id="hqpPresetRulesView" style="border: none; background: transparent;">
+            <div class="settings-card" id="hqpPresetRulesView">
               <div class="hqpPresetRulesInner">
                 <div id="ruleThreshold" class="ruleItem">
                   <div id="ruleThresholdCheckbox" class="checkbox ruleCheckbox" data-settings-value="threshold"></div>
@@ -673,11 +675,11 @@
                 </div>
                 <div class="row-right">
                   <div class="color-presets" id="highlightColorPresets">
-                    <div class="color-preset" data-color="#e8c88a" style="background: #e8c88a;" title="Gold"></div>
-                    <div class="color-preset" data-color="#4ade80" style="background: #4ade80;" title="Green"></div>
-                    <div class="color-preset" data-color="#f97316" style="background: #f97316;" title="Orange"></div>
-                    <div class="color-preset" data-color="#60a5fa" style="background: #60a5fa;" title="Soft Blue"></div>
-                    <div class="color-preset" data-color="#c4b5fd" style="background: #c4b5fd;" title="Soft Purple">
+                    <div class="color-preset" data-color="#e8c88a" title="Gold"></div>
+                    <div class="color-preset" data-color="#4ade80" title="Green"></div>
+                    <div class="color-preset" data-color="#f97316" title="Orange"></div>
+                    <div class="color-preset" data-color="#60a5fa" title="Soft Blue"></div>
+                    <div class="color-preset" data-color="#c4b5fd" title="Soft Purple">
                     </div>
                     <div class="color-preset custom" id="highlightColorCustom" title="Custom">
                       <input type="color" id="highlightColorPicker" value="#e8c88a" class="colorPickerInput">
@@ -692,15 +694,15 @@
                 </div>
                 <div class="row-right">
                   <div class="color-presets" id="playerBackgroundColorPresets">
-                    <div class="color-preset" data-color="#3a3026" style="background: #3a3026;" title="Espresso Beige">
+                    <div class="color-preset" data-color="#3a3026" title="Espresso Beige">
                     </div>
-                    <div class="color-preset" data-color="#1a1a1c" style="background: #1a1a1c;" title="Graphite Gray">
+                    <div class="color-preset" data-color="#1a1a1c" title="Graphite Gray">
                     </div>
-                    <div class="color-preset" data-color="#5a4d3f" style="background: #5a4d3f;" title="Walnut Beige">
+                    <div class="color-preset" data-color="#5a4d3f" title="Walnut Beige">
                     </div>
-                    <div class="color-preset" data-color="#cdbda7" style="background: #cdbda7;" title="Linen Beige">
+                    <div class="color-preset" data-color="#cdbda7" title="Linen Beige">
                     </div>
-                    <div class="color-preset" data-color="#f1efeb" style="background: #f1efeb;" title="Pearl Gray">
+                    <div class="color-preset" data-color="#f1efeb" title="Pearl Gray">
                     </div>
                     <div class="color-preset custom" id="playerBackgroundColorCustom" title="Custom">
                       <input type="color" id="playerBackgroundColorPicker" value="#111112" class="colorPickerInput">
@@ -763,56 +765,16 @@
                   <a href="#" id="metaDownload" class="textButton">Download backup</a>
                 </div>
               </div>
-              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <div class="settings-card-row column-stack">
+                <div class="row-between">
                   <div>
                     <div class="row-label">Artist Metadata Cache</div>
                     <div class="row-desc">Album covers (CoverArtArchive), artist images (Wikipedia, Spotify, Commons), artist bios</div>
                   </div>
-                  <div class="row-right" style="gap: 16px;">
-                    <span id="artistDbSize" class="metaCaption" style="font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--text-2);"></span>
+                  <div class="row-right gap-16">
+                    <span id="artistDbSize" class="metaCaption mono-small"></span>
                     <button id="clearArtistDbBtn" class="textButton">Clear</button>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-label">Last.fm API (Optional)</div>
-            <div class="settings-card">
-              <div class="settings-card-row">
-                <div>
-                  <div class="row-label">Spotify Integration</div>
-                  <div class="row-desc">Connect to Spotify for playback control and additional metadata.</div>
-                </div>
-              </div>
-              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
-                <div class="inputGroup" style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                  <label for="spotifyClientId" class="metaCaption" style="width: 100px; flex-shrink: 0;">Client
-                    ID</label>
-                  <input type="text" id="spotifyClientId" class="settingsInput" placeholder="Enter Client ID"
-                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
-                </div>
-                <div class="inputGroup" style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                  <label for="spotifyClientSecret" class="metaCaption" style="width: 100px; flex-shrink: 0;">Client
-                    Secret</label>
-                  <input type="password" id="spotifyClientSecret" class="settingsInput"
-                    placeholder="Enter Client Secret"
-                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
-                </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                  <button id="saveSpotifyBtn" class="textButton">Save Spotify Credentials</button>
-                </div>
-
-                <div style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-top: 12px;">
-                  <div class="connection-led led-disconnected" id="spotifyConnectionLed" aria-label="Spotify connection status"></div>
-                  <div id="spotifyConnectionText" class="metaCaption" style="font-size: 12px; color: var(--text-2);">
-                    Not tested
-                  </div>
-                  <button id="testSpotifyBtn" class="textButton" style="padding-left: 16px; padding-right: 16px; margin-left: auto;">
-                    Test Spotify Connection
-                  </button>
                 </div>
               </div>
             </div>
@@ -833,11 +795,10 @@
                   </label>
                 </div>
               </div>
-              <div class="settings-card-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+              <div class="settings-card-row column-stack">
                 <div id="imageSourcesList" class="image-sources-list"></div>
-                <div class="inputGroup" style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                  <input type="text" id="newImageSourceUrl" class="settingsInput" placeholder="https://example.com/{ARTIST}/images"
-                    style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2);">
+                <div class="inputGroup row">
+                  <input type="text" id="newImageSourceUrl" class="settingsInput expanded" placeholder="https://example.com/{ARTIST}/images">
                   <button id="addImageSourceBtn" class="iconButton" title="Add source">+</button>
                 </div>
               </div>
