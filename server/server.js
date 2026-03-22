@@ -316,22 +316,40 @@ app.post('/endpoints/artist', (request, response) => {
 /** Import artist metadata from external sources (MusicBrainz/Wikipedia/CoverArt) */
 app.post('/endpoints/artistImport', (request, response) => {
   const name = request.query['name'] || (request.body && request.body.name);
+  const waitForCompletion = request.query['wait'] !== undefined || (request.body && request.body.wait);
+  const source = request.query['source'] || (request.body && request.body.source) || 'unknown';
   if (!name) {
     safeStatusJson(response, 400, { error: 'missing_required_param' });
     return;
   }
-  // Start import in background and return immediately. Client will poll status.
   try {
-    // Kick off background import without waiting for completion
+    console.log(`[server] artistImport request: name="${name}" source="${source}" wait=${waitForCompletion ? '1' : '0'}`);
+    if (sources.setImportStatus) {
+      sources.setImportStatus(name, { status: 'Starting import' });
+    }
+
+    if (waitForCompletion) {
+      sources.fetchAndStoreArtistByName(name, (err, mbid) => {
+        if (err) {
+          console.error('[server] artistImport sync error:', err);
+          safeStatusJson(response, 500, { error: 'import_failed', message: err.message || String(err) });
+          return;
+        }
+        safeJson(response, { result: true, id: mbid });
+      });
+      return;
+    }
+
+    // Start import in background and return immediately. Client will poll status.
     setImmediate(() => {
       sources.fetchAndStoreArtistByName(name, (err, mbid) => {
         if (err) console.error('[server] artistImport background error:', err);
       });
     });
-      safeJson(response, { result: true, started: true });
+    safeJson(response, { result: true, started: true });
   } catch (e) {
     console.error('[server] artistImport start error:', e);
-      safeStatusJson(response, 500, { error: 'start_failed' });
+    safeStatusJson(response, 500, { error: 'start_failed' });
   }
 });
 

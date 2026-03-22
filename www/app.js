@@ -174,6 +174,17 @@ export default class App {
     this.updatePageHolderSubviewClass(this.libraryView);
     ViewUtil.setVisible(this.playbarView.$el, true);
 
+    try {
+      const reloadArtistId = sessionStorage.getItem('hqpwv:reloadArtistId');
+      if (reloadArtistId) {
+        setTimeout(() => {
+          this.showArtistView(reloadArtistId);
+        }, 0);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+
     PresetRuleApplier.noop();
     FullAlbumOverlay.noop();
 
@@ -554,13 +565,14 @@ export default class App {
   showArtistView(artistId) {
     this.setActiveNavPill('artist');
     if (this.getTopSubview() === this.artistView) {
-      try {
-        this.artistView.loadArtist(artistId);
-        if (this.artistView.$el && this.artistView.$el[0]) this.artistView.$el[0].scrollTop = 0;
-        $(document).trigger('enable-user-input');
-      } catch (e) {
-        this.showSubview(this.artistView, artistId);
-      }
+      this.transition(() => {
+        this.artistView.hide();
+        TopBarUtil.returnSubviewHeader(true);
+        this.subviewZ++;
+        this.artistView.$el.css('z-index', this.subviewZ);
+        this.artistView.show(artistId);
+        this.updatePageHolderSubviewClass(this.artistView);
+      });
       return;
     }
 

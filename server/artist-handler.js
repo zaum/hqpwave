@@ -14,6 +14,7 @@ try {
 
 // Ensure DB initialized
 try { db.init(); } catch (e) { /* ignore */ }
+const IMAGES_DIR = path.join(__dirname, 'data', 'images');
 
 // Domains that support CORS - use redirect for faster loading
 const CORS_FRIENDLY_DOMAINS = [
@@ -165,7 +166,6 @@ const doGet = (request, response) => {
 
 const doPost = (request, response) => {
   const id = request.query['id'];
-    console.log('[artist-handler] POST', { query: request.query, body: request.body });
     if (!id) {
       safeStatusJson(response, 400, { error: 'missing_required_param' });
       return;
@@ -173,7 +173,6 @@ const doPost = (request, response) => {
 
   if (request.query['setDefaultImage'] !== undefined) {
     const image_id = request.body && request.body.image_id;
-    console.log('[artist-handler] setDefaultImage called:', { id, image_id });
     if (!image_id) {
         safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
@@ -184,7 +183,6 @@ const doPost = (request, response) => {
           safeStatusJson(response, 500, { error: 'db_error' });
         return;
       }
-      console.log('[artist-handler] setDefaultImage result:', { changes });
         safeJson(response, { result: true, changes: changes });
     });
     return;
@@ -199,6 +197,31 @@ const doPost = (request, response) => {
         return;
       }
         safeJson(response, { added: added });
+    });
+    return;
+  }
+
+  if (request.query['clearCache'] !== undefined) {
+    db.deleteArtistById(id, (err) => {
+      if (err) {
+        console.error('[artist-handler] clearCache db error', err);
+        safeStatusJson(response, 500, { error: 'db_error' });
+        return;
+      }
+      try {
+        if (fs.existsSync(IMAGES_DIR)) {
+          const files = fs.readdirSync(IMAGES_DIR);
+          const prefix = `${id}-`;
+          for (const file of files) {
+            if (file.startsWith(prefix)) {
+              try { fs.unlinkSync(path.join(IMAGES_DIR, file)); } catch (e) {}
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[artist-handler] clearCache file cleanup warning:', e.message);
+      }
+      safeJson(response, { result: true });
     });
     return;
   }
@@ -225,7 +248,6 @@ const doImage = (request, response) => {
         if (/^[a-zA-Z]:[/\\]/.test(url)) {
           normalizedUrl = url.replace(/\\/g, '/');
         }
-        console.log('[artist-handler] Local file check:', { url, normalizedUrl, exists: fs.existsSync(normalizedUrl) });
         if (fs.existsSync(normalizedUrl)) {
           if (forBackground && sharp) {
             sharp(normalizedUrl)
@@ -245,11 +267,9 @@ const doImage = (request, response) => {
             response.sendFile(normalizedUrl);
           }
           return true;
-        } else {
-          console.log('[artist-handler] Local file not found:', normalizedUrl);
         }
       } catch (e) {
-        console.log('[artist-handler] Local file error:', e.message);
+        console.warn('[artist-handler] Local file error:', e.message);
       }
       return false;
     }
@@ -279,9 +299,7 @@ const doImage = (request, response) => {
       return;
     }
     const imgs = artist.images || [];
-    console.log('[artist-handler] Looking for image:', { imageId, availableIds: imgs.map(i => i.id) });
     let image = imgs.find(i => i.id == imageId);
-    console.log('[artist-handler] Found image:', image ? { id: image.id, url: image.url } : null);
 
     if (!image) {
       try {
@@ -304,7 +322,6 @@ const doImage = (request, response) => {
     }
     
     const isLocalPath = !url.startsWith('http://') && !url.startsWith('https://') && (url.includes('\\') || url.includes('/') || url.includes(':'));
-    console.log('[artist-handler] Serving image:', { imageId, url, isLocalPath });
     if (!serveImage(url, isLocalPath)) {
       safeStatusJson(response, 404, { error: 'image_url_invalid' });
     }

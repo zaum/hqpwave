@@ -2,6 +2,7 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const querystring = require('querystring');
 const sharp = require('sharp');
 const db = require('./db');
@@ -12,31 +13,59 @@ db.init();
 
 const UA = 'HQPWV/0.1 (https://github.com/zaum/hqpwave)';
 
-const httpGetJson = (url, cb, redirects = 0) => {
+const isRetryableRequestError = (err) => {
+  const message = String((err && err.message) || err || '').toLowerCase();
+  return (
+    message.includes('timeout') ||
+    message.includes('socket hang up') ||
+    message.includes('econnreset') ||
+    message.includes('eai_again') ||
+    message.includes('temporary') ||
+    message.includes('http error 429') ||
+    message.includes('http error 500') ||
+    message.includes('http error 502') ||
+    message.includes('http error 503') ||
+    message.includes('http error 504')
+  );
+};
+
+const httpGetJson = (url, cb, redirects = 0, options = {}) => {
   if (redirects > 5) return cb(new Error('too_many_redirects'));
   try {
     const opts = new URL(url);
-    const req = https.request(opts, { method: 'GET', headers: { 'User-Agent': UA, 'Accept': 'application/json' }, timeout: 3500 }, (res) => {
+    const protocol = opts.protocol === 'http:' ? http : https;
+    const headers = Object.assign({ 'User-Agent': UA, 'Accept': 'application/json' }, options.headers || {});
+    const timeout = options.timeout || 10000;
+    let settled = false;
+    const finish = (err, result) => {
+      if (settled) return;
+      settled = true;
+      cb(err, result);
+    };
+    const req = protocol.request(opts, { method: 'GET', headers, timeout }, (res) => {
       // follow redirects
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         const next = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, url).toString();
         res.resume();
-        return httpGetJson(next, cb, redirects + 1);
+        return httpGetJson(next, finish, redirects + 1, options);
       }
       let data = '';
       res.on('data', (d) => data += d);
       res.on('end', () => {
         try {
           if (res.statusCode >= 400) {
-            cb(new Error(`HTTP error ${res.statusCode}`), null);
+            finish(new Error(`HTTP error ${res.statusCode}`), null);
             return;
           }
-          cb(null, JSON.parse(data));
-        } catch (e) { cb(e); }
+          finish(null, JSON.parse(data));
+        } catch (e) { finish(e); }
       });
     });
-    req.on('timeout', () => { req.destroy(); cb(new Error('timeout')); });
-    req.on('error', (e) => cb(e));
+    req.on('timeout', () => {
+      req.destroy();
+      finish(new Error('timeout'));
+    });
+    req.on('error', (e) => finish(e));
     req.end();
   } catch (e) {
     cb(e);
@@ -49,6 +78,10 @@ let musicbrainzProcessing = false;
 
 // Track import progress per artist name (or temporary key)
 const importStatus = new Map();
+const importInFlight = new Map();
+let importRunCounter = 0;
+const recentImportResults = new Map();
+const RECENT_IMPORT_TTL_MS = 15000;
 
 const setImportStatus = (key, statusObj) => {
   try {
@@ -60,6 +93,20 @@ const getImportStatus = (key) => {
   try {
     return importStatus.get(String(key)) || null;
   } catch (e) { return null; }
+};
+
+const getImportKey = (name) => String(name || '').trim().toLowerCase();
+const IMPORT_LOG_SEPARATOR = '[sources] ================================================================================';
+
+const isArtistRecordCompleteEnough = (artist) => {
+  if (!artist) return false;
+  const hasBio = !!(artist.bio && String(artist.bio).trim().length > 40);
+  const hasWiki = !!artist.wiki_url;
+  const hasDiscography = Array.isArray(artist.discography) && artist.discography.length > 0;
+  const artistImageCount = Array.isArray(artist.images)
+    ? artist.images.filter((img) => img && img.id && !String(img.id).includes('-rel-')).length
+    : 0;
+  return hasDiscography && (hasBio || hasWiki) && artistImageCount > 0;
 };
 
 const processMusicBrainzQueue = () => {
@@ -138,7 +185,7 @@ const fetchCoverArt = (releaseId, releaseGroupId, cb) => {
     if (!id) return cb2(null, null);
     // Use archive.org index.json for reliable access and thumbnail sizes
     const indexUrl = `https://archive.org/download/mbid-${id}/index.json`;
-    httpGetJson(indexUrl, (err, json) => {
+    httpGetJsonWithRetry(indexUrl, (err, json) => {
       if (err) return cb2(null, null);
       if (json && json.images && json.images[0]) {
         const img = json.images[0];
@@ -152,7 +199,7 @@ const fetchCoverArt = (releaseId, releaseGroupId, cb) => {
         return;
       }
       cb2(null, null);
-    });
+    }, { timeout: 12000, maxAttempts: 3, retryDelayMs: 500 });
   };
 
   // Try release first, then release-group
@@ -168,7 +215,7 @@ const fetchWikipediaSummary = (title, cb) => {
   const encoded = encodeURIComponent(title.replace(/ /g, '_'));
   // Use the query API to get a longer plaintext extract, fullurl, and the best available image.
   const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|pageimages|info&explaintext=1&piprop=original|thumbnail&pithumbsize=1600&inprop=url&titles=${encoded}&formatversion=2`;
-  httpGetJson(url, (err, json) => {
+  httpGetJsonWithRetry(url, (err, json) => {
     if (err) return cb(null, null);
     try {
       const page = json.query && json.query.pages && json.query.pages[0] ? json.query.pages[0] : null;
@@ -180,7 +227,7 @@ const fetchWikipediaSummary = (title, cb) => {
       const pageUrl = page.fullurl || (`https://en.wikipedia.org/wiki/${encoded}`);
       cb(null, { extract, thumbnail, url: pageUrl });
     } catch (e) { cb(null, null); }
-  });
+  }, { timeout: 9000, maxAttempts: 2, retryDelayMs: 400 });
 };
 
 const getHighResLastFmUrl = (url) => {
@@ -195,7 +242,7 @@ const getHighResLastFmUrl = (url) => {
 const searchWikipediaByName = (name, cb) => {
   const escapedName = String(name || '').replace(/"/g, '\\"').trim();
   const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(`intitle:"${escapedName}"`)}&format=json&srlimit=5`;
-  httpGetJson(url, (err, json) => {
+  httpGetJsonWithRetry(url, (err, json) => {
     if (err) return cb(null, null);
     try {
       const results = json.query && json.query.search ? json.query.search : [];
@@ -205,7 +252,7 @@ const searchWikipediaByName = (name, cb) => {
       if (first && first.title) return cb(null, first.title);
     } catch (e) {}
     cb(null, null);
-  });
+  }, { timeout: 9000, maxAttempts: 2, retryDelayMs: 400 });
 };
 
 // Spotify image fetch removed per user request.
@@ -244,28 +291,88 @@ const httpGetText = (url, cb, redirects = 0) => {
   try {
     const opts = new URL(url);
     const protocol = opts.protocol === 'http:' ? require('http') : https;
+    let settled = false;
+    const finish = (err, result) => {
+      if (settled) return;
+      settled = true;
+      cb(err, result);
+    };
     const req = protocol.request(opts, { method: 'GET', headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' }, timeout: 5000 }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         const next = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, url).toString();
         res.resume();
-        return httpGetText(next, cb, redirects + 1);
+        return httpGetText(next, finish, redirects + 1);
       }
       let data = '';
       res.on('data', (d) => data += d);
       res.on('end', () => {
         if (res.statusCode >= 400) {
-          cb(new Error(`HTTP error ${res.statusCode}`), null);
+          finish(new Error(`HTTP error ${res.statusCode}`), null);
           return;
         }
-        cb(null, data);
+        finish(null, data);
       });
     });
-    req.on('timeout', () => { req.destroy(); cb(new Error('timeout')); });
-    req.on('error', (e) => cb(e));
+    req.on('timeout', () => {
+      req.destroy();
+      finish(new Error('timeout'));
+    });
+    req.on('error', (e) => finish(e));
     req.end();
   } catch (e) {
     cb(e);
   }
+};
+
+const httpGetJsonWithRetry = (url, cb, options = {}, attempt = 0) => {
+  httpGetJson(url, (err, json) => {
+    if (!err) {
+      cb(null, json);
+      return;
+    }
+    const maxAttempts = options.maxAttempts || 1;
+    if (attempt + 1 >= maxAttempts || !isRetryableRequestError(err)) {
+      cb(err, null);
+      return;
+    }
+    const retryDelayMs = options.retryDelayMs || 350;
+    setTimeout(() => {
+      httpGetJsonWithRetry(url, cb, options, attempt + 1);
+    }, retryDelayMs * (attempt + 1));
+  }, 0, options);
+};
+
+const httpGetTextWithRetry = (url, cb, options = {}, attempt = 0) => {
+  httpGetText(url, (err, text) => {
+    if (!err) {
+      cb(null, text);
+      return;
+    }
+    const maxAttempts = options.maxAttempts || 1;
+    if (attempt + 1 >= maxAttempts || !isRetryableRequestError(err)) {
+      cb(err, null);
+      return;
+    }
+    const retryDelayMs = options.retryDelayMs || 350;
+    setTimeout(() => {
+      httpGetTextWithRetry(url, cb, options, attempt + 1);
+    }, retryDelayMs * (attempt + 1));
+  }, 0);
+};
+
+const runWithConcurrency = async (items, limit, worker) => {
+  const safeLimit = Math.max(1, Math.min(limit || 1, items.length || 1));
+  let currentIndex = 0;
+  const runners = Array.from({ length: safeLimit }, async () => {
+    while (true) {
+      const index = currentIndex++;
+      if (index >= items.length) {
+        break;
+      }
+      await worker(items[index], index);
+    }
+  });
+  await Promise.all(runners);
 };
 
 const ensurePuppeteerProfileDir = () => {
@@ -291,6 +398,18 @@ const buildLastFmImageUrlFromId = (id) => {
   if (!id) return null;
   return `https://lastfm.freetls.fastly.net/i/u/770x0/${id}.jpg`;
 };
+
+const extractLastFmImageToken = (value) => {
+  const match = String(value || '').match(/([a-f0-9]{32})/i);
+  return match ? match[1].toLowerCase() : null;
+};
+
+const shortHash = (value) => crypto.createHash('sha1').update(String(value || '')).digest('hex').slice(0, 12);
+
+const sanitizeImageKey = (value) => String(value || '')
+  .replace(/[^a-zA-Z0-9._-]+/g, '-')
+  .replace(/-+/g, '-')
+  .replace(/^-+|-+$/g, '');
 
 const parseLastFmImageCandidates = (html, artistName) => {
   const artistSlug = normalizeArtistSlug(artistName);
@@ -342,12 +461,13 @@ const parseLastFmImageCandidates = (html, artistName) => {
   return candidateUrls.slice(0, 5);
 };
 
-const downloadImage = (url, artistMbid, imageIndex) => {
+const downloadImage = (url, imageKey) => {
   return new Promise((resolve, reject) => {
     ensureImagesDir();
     
     const ext = path.extname(new URL(url).pathname) || '.jpg';
-    const filename = `${artistMbid}-artist-${imageIndex}${ext}`;
+    const safeKey = sanitizeImageKey(imageKey) || `img-${shortHash(url)}`;
+    const filename = `${safeKey}${ext}`;
     const localPath = path.join(IMAGES_DIR, filename);
     
     if (fs.existsSync(localPath)) {
@@ -361,9 +481,10 @@ const downloadImage = (url, artistMbid, imageIndex) => {
         const chunks = [];
         res.on('data', (chunk) => chunks.push(chunk));
         res.on('end', async () => {
+          let tempPath = null;
           try {
             const buffer = Buffer.concat(chunks);
-            const tempPath = localPath + '.tmp';
+            tempPath = `${localPath}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.tmp`;
             fs.writeFileSync(tempPath, buffer);
             
             const metadata = await sharp(tempPath).metadata();
@@ -382,7 +503,7 @@ const downloadImage = (url, artistMbid, imageIndex) => {
             
             resolve({ path: localPath, width: metadata.width, height: metadata.height });
           } catch (err) {
-            try { if (fs.existsSync(localPath + '.tmp')) fs.unlinkSync(localPath + '.tmp'); } catch (e) {}
+            try { if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (e) {}
             reject(err);
           }
         });
@@ -624,21 +745,34 @@ const scrapeArtistImages = (name, cb) => {
 const searchLastFmImages = (name, cb) => {
   const artistPath = encodeLastFmArtistPath(name);
   const galleryUrl = `https://www.last.fm/music/${artistPath}/+images`;
-  httpGetText(galleryUrl, (err, html) => {
+  let settled = false;
+  const finish = (err, result) => {
+    if (settled) {
+      console.warn('[sources] Ignoring duplicate Last.fm callback for artist:', name);
+      return;
+    }
+    settled = true;
+    cb(err, result);
+  };
+  httpGetTextWithRetry(galleryUrl, (err, html) => {
     if (err || !html) {
       console.warn('[sources] Last.fm HTML fetch error:', err ? err.message : 'empty_response');
-      return cb(null, []);
+      return finish(null, []);
     }
     try {
       const urls = parseLastFmImageCandidates(html, name);
-      const images = urls.map((url, i) => ({ url, source: 'lastfm', id: `${name}-lastfm-${i}` }));
+      const images = urls.map((url, i) => ({
+        url,
+        source: 'lastfm',
+        id: `lastfm-${extractLastFmImageToken(url) || shortHash(`${name}:${url}:${i}`)}`
+      }));
       console.log('[sources] Last.fm HTML parser found', images.length, 'images');
-      cb(null, images);
+      finish(null, images);
     } catch (parseErr) {
       console.warn('[sources] Last.fm HTML parse error:', parseErr.message);
-      cb(null, []);
+      finish(null, []);
     }
-  });
+  }, { maxAttempts: 3, retryDelayMs: 500 });
 };
 
 const searchCommonsImages = (name, cb) => {
@@ -659,7 +793,7 @@ const searchCommonsImages = (name, cb) => {
           
           const isCover = skipKeywords.some(kw => urlStr.includes(kw) || metadata.includes(kw));
           if (!isCover) {
-            images.push({ url: p.imageinfo[0].url, source: 'commons' });
+            images.push({ url: p.imageinfo[0].url, source: 'commons', id: `comm-${shortHash(p.imageinfo[0].url)}` });
           }
         }
       }
@@ -670,6 +804,57 @@ const searchCommonsImages = (name, cb) => {
 
 const fetchAndStoreArtistByName = (nameRaw, cb) => {
   const name = (nameRaw || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  const importKey = getImportKey(name);
+  if (importInFlight.has(importKey)) {
+    console.log('[sources] Joining in-flight import for artist:', name);
+    importInFlight.get(importKey).push(cb);
+    return;
+  }
+  const recent = recentImportResults.get(importKey);
+  if (recent && (Date.now() - recent.finishedAt) < RECENT_IMPORT_TTL_MS) {
+    db.getArtistById(recent.mbid, (recentErr, recentArtist) => {
+      if (!recentErr && isArtistRecordCompleteEnough(recentArtist)) {
+        console.log('[sources] Reusing recent complete import for artist:', name, '->', recent.mbid);
+        cb(null, recent.mbid);
+        return;
+      }
+      if (recentErr) {
+        console.warn('[sources] Recent import verification warning:', recentErr.message);
+      }
+      recentImportResults.delete(importKey);
+      fetchAndStoreArtistByName(name, cb);
+    });
+    return;
+  }
+  const runId = ++importRunCounter;
+  importInFlight.set(importKey, [cb]);
+
+  let finished = false;
+  const finishImport = (err, result) => {
+    if (finished) return;
+    finished = true;
+    const callbacks = importInFlight.get(importKey) || [];
+    importInFlight.delete(importKey);
+    if (!err && result) {
+      recentImportResults.set(importKey, { mbid: result, finishedAt: Date.now() });
+    } else {
+      recentImportResults.delete(importKey);
+    }
+    console.log(IMPORT_LOG_SEPARATOR);
+    if (err) {
+      console.log(`[sources] IMPORT #${runId} FAILED for "${name}":`, err.message || String(err));
+    } else {
+      console.log(`[sources] IMPORT #${runId} FINISHED for "${name}" -> ${result}`);
+    }
+    console.log(IMPORT_LOG_SEPARATOR);
+    for (const fn of callbacks) {
+      try { fn(err, result); } catch (e) {}
+    }
+  };
+
+  console.log(IMPORT_LOG_SEPARATOR);
+  console.log(`[sources] IMPORT #${runId} START for "${name}"`);
+  console.log(IMPORT_LOG_SEPARATOR);
   console.log('[sources] Starting fetch for artist:', name);
   // initialize import status for this name
   setImportStatus(name, { status: 'Starting import' });
@@ -678,7 +863,7 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
     if (err || !mbArtist) {
       console.log('[sources] MusicBrainz lookup failed for:', name, err);
       setImportStatus(name, { status: 'MusicBrainz lookup failed', error: err ? String(err) : 'not_found' });
-      return cb(err || new Error('mb_not_found'));
+      return finishImport(err || new Error('mb_not_found'));
     }
     setImportStatus(name, { status: 'Found MusicBrainz artist', mbid: mbArtist.id });
 
@@ -688,21 +873,41 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
     // Parallel fetch for Wiki and Releases
     let wikiData = null;
     let discography = [];
+    let wikiFinished = false;
+    let releasesFinished = false;
 
     const onWikiDone = (data) => {
+      if (wikiFinished) return;
+      wikiFinished = true;
       wikiData = data;
+      console.log('[sources] Wikipedia result:', {
+        artist: name,
+        hasData: !!data,
+        hasUrl: !!(data && data.url),
+        hasExtract: !!(data && data.extract),
+        hasThumbnail: !!(data && data.thumbnail)
+      });
       checkAllDone();
     };
 
     const onReleasesDone = (releases) => {
+      if (releasesFinished) return;
+      releasesFinished = true;
       discography = releases;
       checkAllDone();
     };
 
     let remaining = 2;
+    let finalizeStarted = false;
     const checkAllDone = () => {
       remaining--;
-      if (remaining === 0) finalize();
+      if (remaining === 0 && !finalizeStarted) {
+        finalizeStarted = true;
+        finalize().catch((err) => {
+          console.error('[sources] finalize error:', err);
+          finishImport(err);
+        });
+      }
     };
 
     // 1. Wikipedia fetch
@@ -723,7 +928,6 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
     setImportStatus(name, { status: 'Fetching releases from MusicBrainz', mbid });
     fetchReleasesForArtist(mbid, (errR, releases) => {
       const disc = [];
-      const coverPromises = [];
       // Limit to max 30 releases and only include primary-type 'Album'
       const rels = (releases || []).filter(r => {
         const rg = r['release-group'];
@@ -731,40 +935,27 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
       }).slice(0, 30);
       for (const r of rels) {
         const year = r.date ? (r.date.split('-')[0]) : null;
-        const entry = { id: r.id, title: r.title, year: year, cover_url: null };
-        disc.push(entry);
-        coverPromises.push(new Promise((res) => {
-          const rgid = (r['release-group'] && r['release-group'].id) ? r['release-group'].id : null;
-          fetchCoverArt(r.id, rgid, (errC, url) => { entry.cover_url = url; res(); });
-        }));
+        disc.push({ id: r.id, title: r.title, year: year, cover_url: null });
       }
-      Promise.all(coverPromises).then(() => onReleasesDone(disc));
+      runWithConcurrency(rels, 6, async (r, index) => {
+        const entry = disc[index];
+        if (!entry) return;
+        const rgid = (r['release-group'] && r['release-group'].id) ? r['release-group'].id : null;
+        await new Promise((res) => {
+          fetchCoverArt(r.id, rgid, (errC, url) => {
+            entry.cover_url = url || null;
+            res();
+          });
+        });
+      }).then(() => onReleasesDone(disc)).catch(() => onReleasesDone(disc));
     });
 
     const finalize = async () => {
       const existingArtist = await new Promise((res) => db.getArtistById(mbid, (e, r) => res(r)));
       const existingDefaultImageId = (existingArtist && existingArtist.default_image_id) ? existingArtist.default_image_id : null;
-      
-      const artistObj = {
-        id: mbid,
-        name: mbArtist.name,
-        disambiguation: disambiguation,
-        bio: (wikiData && wikiData.extract) ? wikiData.extract : '',
-        wiki_url: (wikiData && wikiData.url) ? wikiData.url : null,
-        discography: discography,
-        default_image_id: existingDefaultImageId
-      };
-
-      console.log('[sources] Finalizing and upserting artist to DB:', mbid, 'preserving default_image_id:', existingDefaultImageId);
-      await new Promise((res, rej) => db.upsertArtist(artistObj, (errU) => {
-        if (errU) { console.error('[sources] upsertArtist failed:', errU); return rej(errU); }
-        res();
-      }));
 
       const images = [];
       const seen = new Set();
-      let nextImageIndex = 0;
-      
       const isLikelyCover = (url) => {
         if (!url) return false;
         const u = url.toLowerCase();
@@ -776,13 +967,13 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
         const originalUrl = urlRaw;
         const highResUrl = (src === 'lastfm') ? getHighResLastFmUrl(urlRaw) : urlRaw;
 
-        if (!highResUrl || seen.has(highResUrl) || images.length >= 5) return false;
-        if (src === 'lastfm' && isLikelyCover(highResUrl)) return false;
+        if (!highResUrl || seen.has(highResUrl) || images.length >= 5) return null;
+        if (src === 'lastfm' && isLikelyCover(highResUrl)) return null;
 
         seen.add(highResUrl);
         let localPath = highResUrl;
         const isLastFm = src === 'lastfm';
-        const imgIndex = nextImageIndex++;
+        const localImageKey = id || `${mbid}-${src}-${shortHash(highResUrl)}`;
 
         try {
           if (highResUrl.startsWith('http')) {
@@ -790,43 +981,67 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
 
             if (isLastFm && highResUrl !== originalUrl) {
               try {
-                const result = await downloadImage(highResUrl, mbid, imgIndex);
+                const result = await downloadImage(highResUrl, localImageKey);
                 localPath = result.path;
                 // If the "original" Last.fm asset is tiny, fall back to the displayed variant.
                 if (result.width && result.width < 400) {
                   console.log('[sources] High-res too small (' + result.width + 'px), trying thumbnail...');
-                  localPath = await downloadImage(originalUrl, mbid, imgIndex);
+                  localPath = await downloadImage(originalUrl, localImageKey);
                   if (typeof localPath === 'object') localPath = localPath.path;
                 }
               } catch (highResErr) {
                 console.log('[sources] High-res failed, trying thumbnail...');
-                localPath = await downloadImage(originalUrl, mbid, imgIndex);
+                localPath = await downloadImage(originalUrl, localImageKey);
                 if (typeof localPath === 'object') localPath = localPath.path;
               }
             } else {
-              localPath = await downloadImage(highResUrl, mbid, imgIndex);
+              localPath = await downloadImage(highResUrl, localImageKey);
               if (typeof localPath === 'object') localPath = localPath.path;
             }
           }
         } catch (dlErr) {
           console.warn('[sources] Failed to download image:', dlErr.message);
-          return false;
+          return null;
         }
 
         if (typeof localPath === 'object') localPath = localPath.path;
-        images.push({ id: id, url: localPath, source: src, thumbnail_url: localPath });
-        return true;
+        return { id: id, url: localPath, source: src, thumbnail_url: localPath };
+      };
+
+      const appendImagesFromSource = async (items, src, buildId, concurrencyLimit = 1) => {
+        const remainingSlots = Math.max(0, 5 - images.length);
+        if (remainingSlots === 0) return;
+        const selected = (items || []).slice(0, remainingSlots);
+        if (selected.length === 0) return;
+        const downloaded = new Array(selected.length).fill(null);
+        await runWithConcurrency(selected, Math.min(concurrencyLimit, selected.length), async (item, index) => {
+          const url = item && item.url ? item.url : item;
+          const id = buildId(item, index);
+          downloaded[index] = await addImg(url, src, id);
+        });
+        for (const img of downloaded) {
+          if (img && images.length < 5) {
+            images.push(img);
+          }
+        }
       };
 
       if (wikiData && wikiData.thumbnail) {
-        await addImg(wikiData.thumbnail, 'wikipedia', `${mbid}-wiki`);
+        const wikiImg = await addImg(wikiData.thumbnail, 'wikipedia', `${mbid}-wiki`);
+        if (wikiImg) images.push(wikiImg);
       }
 
       const safeCallback = (err, result) => {
-        cb(err, result);
+        finishImport(err, result);
       };
 
+      let imagesReady = false;
       const onImagesReady = (imgs) => {
+        if (imagesReady) {
+          console.warn('[sources] onImagesReady called more than once for artist:', name);
+          return;
+        }
+        imagesReady = true;
         console.log('[sources] Adding images bulk, count:', imgs.length);
         setImportStatus(name, { status: `Storing ${imgs.length} images`, mbid });
         
@@ -848,8 +1063,27 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
         if (!defaultImg) {
           defaultImg = orderedImgs[0] || null;
         }
-        
-        db.addImagesBulk(mbid, orderedImgs, (errB) => {
+
+        const finalDefaultImageId = defaultImg ? defaultImg.id : existingDefaultImageId;
+        const artistObj = {
+          id: mbid,
+          name: mbArtist.name,
+          disambiguation: disambiguation,
+          bio: (wikiData && wikiData.extract) ? wikiData.extract : '',
+          wiki_url: (wikiData && wikiData.url) ? wikiData.url : null,
+          discography: discography,
+          default_image_id: finalDefaultImageId || null
+        };
+
+        console.log('[sources] Finalizing and upserting artist to DB:', mbid, 'preserving default_image_id:', existingDefaultImageId);
+        db.upsertArtist(artistObj, (errU) => {
+          if (errU) {
+            console.error('[sources] upsertArtist failed:', errU);
+            safeCallback(errU);
+            return;
+          }
+
+          db.addImagesBulk(mbid, orderedImgs, (errB) => {
           if (errB) console.error('[sources] addImagesBulk failed:', errB);
           const imgCount = orderedImgs.length;
           const srcCount = { wikipedia: 0, lastfm: 0, commons: 0 };
@@ -858,18 +1092,10 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
             else if (img.source === 'lastfm') srcCount.lastfm++;
             else if (img.source === 'commons') srcCount.commons++;
           });
-          if (defaultImg) {
-            db.setDefaultImage(mbid, defaultImg.id, (errD) => {
-              if (errD) console.warn('[sources] setDefaultImage failed:', errD);
-              setImportStatus(name, { status: 'Done', mbid });
-              console.log(`[sources] DONE: "${name}" - ${imgCount} images (Wikipedia: ${srcCount.wikipedia}, Last.fm: ${srcCount.lastfm}, Commons: ${srcCount.commons})`);
-              safeCallback(null, mbid);
-            });
-          } else {
             setImportStatus(name, { status: 'Done', mbid });
             console.log(`[sources] DONE: "${name}" - ${imgCount} images (Wikipedia: ${srcCount.wikipedia}, Last.fm: ${srcCount.lastfm}, Commons: ${srcCount.commons})`);
             safeCallback(null, mbid);
-          }
+          });
         });
       };
 
@@ -879,9 +1105,12 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
         const foundLast = (lastfmImgs || []).length;
         
         if (foundLast > 0) {
-          for (let i = 0; i < lastfmImgs.length && images.length < 5; i++) {
-            await addImg(lastfmImgs[i].url, 'lastfm', `${mbid}-lastfm-${i}`);
-          }
+          await appendImagesFromSource(
+            lastfmImgs,
+            'lastfm',
+            (item, i) => `${mbid}-${item.id || `lastfm-${i}`}`,
+            3
+          );
         }
         
         if (images.length > 0) {
@@ -894,9 +1123,12 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
             if (errC) console.warn('[sources] Commons image fetch warning:', errC);
             
             if ((commons || []).length > 0) {
-              for (let i = 0; i < commons.length && images.length < 5; i++) {
-                await addImg(commons[i].url, 'commons', `${mbid}-comm-${i}`);
-              }
+              await appendImagesFromSource(
+                commons,
+                'commons',
+                (item, i) => `${mbid}-${item.id || `comm-${i}`}`,
+                2
+              );
             }
             
             setImportStatus(name, { status: `${images.length} image(s) saved total`, mbid });
@@ -907,8 +1139,6 @@ const fetchAndStoreArtistByName = (nameRaw, cb) => {
         }
       });
     };
-    
-    finalize().catch((err) => { console.error('[sources] finalize error:', err); cb(err); });
   });
 };
 
@@ -940,18 +1170,16 @@ const fetchAndAppendMoreReleases = (mbid, cb) => {
         return cb(null, []);
       }
 
-      // For each new release, fetch cover art then append and persist
-      const coverPromises = [];
-      for (const entry of toAdd) {
-        coverPromises.push(new Promise((res) => {
-          // find release-group id by matching in releasesFull
-          const rf = releasesFull.find(x => String(x.id) === String(entry.id));
-          const rgid = (rf && rf['release-group'] && rf['release-group'].id) ? rf['release-group'].id : null;
-          fetchCoverArt(entry.id, rgid, (errC, url) => { entry.cover_url = url; res(); });
-        }));
-      }
-
-      Promise.all(coverPromises).then(() => {
+      runWithConcurrency(toAdd, 4, async (entry) => {
+        const rf = releasesFull.find(x => String(x.id) === String(entry.id));
+        const rgid = (rf && rf['release-group'] && rf['release-group'].id) ? rf['release-group'].id : null;
+        await new Promise((res) => {
+          fetchCoverArt(entry.id, rgid, (errC, url) => {
+            entry.cover_url = url || null;
+            res();
+          });
+        });
+      }).then(() => {
         // merge with existing discography and dedupe by release id
         const existing = (artistRow && artistRow.discography) ? artistRow.discography : [];
         const map = new Map();
@@ -1010,6 +1238,7 @@ module.exports = {
   fetchAndAppendMoreReleases,
   // exported for use by handlers that need to check available releases
   fetchReleasesForArtist,
-  fetchReleaseById
-  , getImportStatus
+  fetchReleaseById,
+  getImportStatus,
+  setImportStatus
 };

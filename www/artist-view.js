@@ -28,6 +28,10 @@ export default class ArtistView extends Subview {
     this.$nextImageButton = this.$el.find('#artistViewNextImageButton');
     this.$backButton = $('#backToLibraryButton');
     this._backgroundRequestToken = 0;
+    this._loadRequestToken = 0;
+    this._renderRequestToken = 0;
+    this._reloadOperationToken = 0;
+    this._stabilizePassToken = 0;
 
     this.artist = null;
     this.artistImageUrls = [];
@@ -116,29 +120,14 @@ export default class ArtistView extends Subview {
 
   show(artistId) {
     if (!artistId) {
-      artistId = localStorage.getItem('hqpwv:lastArtistId');
-    }
-
-    if (artistId && this.artist && this.artist.id === artistId) {
-      super.show();
       try {
-        // restore any session state (image index / scroll) that may have been saved
-        const raw = sessionStorage.getItem(`hqpwv:artistState:${artistId}`);
-        if (raw) {
-          const st = JSON.parse(raw);
-          if (st && typeof st.imageIndex === 'number' && this.artistImageUrls.length > 0) {
-            const idx = Math.max(0, Math.min(st.imageIndex, this.artistImageUrls.length - 1));
-            this.setArtistImageByIndex(idx);
-          }
-          if (st && typeof st.scrollTop === 'number') {
-            this.$el.scrollTop(st.scrollTop);
-          }
+        artistId = sessionStorage.getItem('hqpwv:reloadArtistId') || localStorage.getItem('hqpwv:lastArtistId');
+        if (sessionStorage.getItem('hqpwv:reloadArtistId')) {
+          sessionStorage.removeItem('hqpwv:reloadArtistId');
         }
       } catch (e) {
-        // ignore storage errors
+        artistId = localStorage.getItem('hqpwv:lastArtistId');
       }
-      $(document).trigger('enable-user-input');
-      return;
     }
 
     super.show();
@@ -191,14 +180,19 @@ export default class ArtistView extends Subview {
     const sourceName = currentImg.source ? (sourceMap[currentImg.source] || currentImg.source.charAt(0).toUpperCase() + currentImg.source.slice(1)) : 'Image';
     this.$picture.attr('src', url).attr('title', sourceName);
     this.$pictureBlur.attr('src', url);
-    this.updateBackgroundImage(url);
+    this.updateBackgroundImage(url, currentImg);
     this.updateImageNav();
   }
 
-  updateBackgroundImage(url) {
+  updateBackgroundImage(url, img = null) {
     const $bg = this.$el.find('#artistViewBgImage');
     if ($bg.length) {
-      const bgUrl = url.includes('/endpoints/artistImage?') ? url + '&background' : url;
+      let bgUrl = url;
+      if (img && this.artist && this.artist.id && img.id) {
+        bgUrl = `/endpoints/artistImage?artist_id=${encodeURIComponent(this.artist.id)}&image_id=${encodeURIComponent(img.id)}&background=1&_bgcb=${Date.now()}`;
+      } else if (url.includes('/endpoints/artistImage?')) {
+        bgUrl = `${url}&background=1&_bgcb=${Date.now()}`;
+      }
       const requestToken = ++this._backgroundRequestToken;
       const preloader = new Image();
       preloader.onload = () => {
@@ -255,6 +249,8 @@ export default class ArtistView extends Subview {
     this.$discography.prev('.artistDiscographyTitle').remove();
     this.$discography.before('<h3 class="artistDiscographyTitle">Discography</h3>');
     this.$discography.empty();
+    this.$el.find('.artist-bio-source').remove();
+    this.$el.find('.artist-fetch-more').remove();
     this.$el.find('.artist-error').remove();
     this.$prevImageButton.hide();
     this.$nextImageButton.hide();
@@ -279,13 +275,15 @@ export default class ArtistView extends Subview {
     this.$bio.find('#retryArtistSearchBtn').on('click', () => {
       // Re-trigger the artist fetch
       $(document).trigger('show-artist', artistId);
-      // If we are already on this view, App might not call show() again
-      // so manually call it here just in case.
-      this.show(artistId); 
     });
   }
 
   hide() {
+    this._backgroundRequestToken++;
+    this._loadRequestToken++;
+    this._renderRequestToken++;
+    this._reloadOperationToken++;
+    this._stabilizePassToken++;
     // persist current view state (image index, scroll position) so returning restores last state
     try {
       if (this.artist && this.artist.id) {
@@ -307,25 +305,208 @@ export default class ArtistView extends Subview {
     this.updateBackgroundImage(url);
   }
 
+  applyArtistData(artist, options = {}) {
+    const { stabilize = false, loadToken = this._loadRequestToken } = options;
+    if (!artist) return;
+    this.artist = artist;
+    this.moreAlbumsAvailable = !!(artist.discography && artist.discography.length > 0);
+    this.renderArtist(artist);
+
+    if (stabilize && artist.id) {
+      const stabilizeToken = ++this._stabilizePassToken;
+      const getArtistRichness = (candidate) => {
+        if (!candidate) return 0;
+        let score = 0;
+        if (candidate.wiki_url) score += 1000;
+        if (candidate.bio) score += Math.min(String(candidate.bio).length, 4000);
+        if (Array.isArray(candidate.discography)) score += candidate.discography.length * 50;
+        if (Array.isArray(candidate.images)) score += candidate.images.length * 10;
+        return score;
+      };
+      const isArtistFieldComplete = (candidate) => {
+        if (!candidate) return false;
+        const hasBio = !!(candidate.bio && String(candidate.bio).trim().length > 40);
+        const hasWiki = !!candidate.wiki_url;
+        const hasDiscography = Array.isArray(candidate.discography) && candidate.discography.length > 0;
+        return hasBio && hasWiki && hasDiscography;
+      };
+
+      let bestArtist = artist;
+      let bestScore = getArtistRichness(artist);
+
+      const runPass = async (attempt = 1) => {
+        if (loadToken !== this._loadRequestToken) return;
+        if (stabilizeToken !== this._stabilizePassToken) return;
+        try {
+          const res = await fetch(`/endpoints/artist?get&id=${encodeURIComponent(artist.id)}`);
+          if (!res.ok) return;
+          const json = await res.json();
+          if (loadToken !== this._loadRequestToken) return;
+          if (stabilizeToken !== this._stabilizePassToken) return;
+          if (json && json.artist && json.artist.id === artist.id) {
+            const candidate = json.artist;
+            const candidateScore = getArtistRichness(candidate);
+            if (candidateScore > bestScore) {
+              bestArtist = candidate;
+              bestScore = candidateScore;
+              this.artist = candidate;
+              this.moreAlbumsAvailable = !!(candidate.discography && candidate.discography.length > 0);
+              this.renderArtist(candidate);
+            }
+            if (isArtistFieldComplete(candidate)) {
+              return;
+            }
+          }
+        } catch (e) {
+          // ignore stabilization fetch failures
+        }
+
+        if (attempt >= 8) {
+          return;
+        }
+
+        const delayMs = attempt < 3 ? 120 : 300;
+        setTimeout(() => runPass(attempt + 1), delayMs);
+      };
+
+      setTimeout(() => runPass(1), 50);
+    }
+  }
+
+  getArtistRichness(candidate) {
+    if (!candidate) return 0;
+    let score = 0;
+    if (candidate.wiki_url) score += 1000;
+    if (candidate.bio) score += Math.min(String(candidate.bio).length, 4000);
+    if (Array.isArray(candidate.discography)) score += candidate.discography.length * 50;
+    if (Array.isArray(candidate.images)) score += candidate.images.length * 10;
+    return score;
+  }
+
+  isArtistFieldComplete(candidate) {
+    if (!candidate) return false;
+    const hasBio = !!(candidate.bio && String(candidate.bio).trim().length > 40);
+    const hasWiki = !!candidate.wiki_url;
+    const hasDiscography = Array.isArray(candidate.discography) && candidate.discography.length > 0;
+    return hasDiscography && (hasBio || hasWiki);
+  }
+
+  shouldRetryArtistData(candidate) {
+    if (!candidate) return false;
+    const hasBio = !!(candidate.bio && String(candidate.bio).trim().length > 40);
+    const hasWiki = !!candidate.wiki_url;
+    const hasDiscography = Array.isArray(candidate.discography) && candidate.discography.length > 0;
+    const artistImageCount = Array.isArray(candidate.images)
+      ? candidate.images.filter((img) => img && img.id && !String(img.id).includes('-rel-')).length
+      : 0;
+    return !hasDiscography || (!hasBio && !hasWiki) || artistImageCount === 0;
+  }
+
+  async waitForRenderableArtist(artist, options = {}) {
+    const {
+      loadToken = this._loadRequestToken,
+      maxAttempts = 8,
+      firstDelayMs = 100,
+      nextDelayMs = 250
+    } = options;
+
+    if (!artist || !artist.id) return artist;
+
+    let bestArtist = artist;
+    let bestScore = this.getArtistRichness(artist);
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (loadToken !== this._loadRequestToken) {
+        return bestArtist;
+      }
+
+      if (attempt > 0 || !this.isArtistFieldComplete(bestArtist)) {
+        const delayMs = attempt === 0 ? firstDelayMs : nextDelayMs;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+
+      if (loadToken !== this._loadRequestToken) {
+        return bestArtist;
+      }
+
+      try {
+        const res = await fetch(`/endpoints/artist?get&id=${encodeURIComponent(artist.id)}`);
+        if (!res.ok) continue;
+        const json = await res.json();
+        if (loadToken !== this._loadRequestToken) {
+          return bestArtist;
+        }
+        if (json && json.artist && json.artist.id === artist.id) {
+          const candidate = json.artist;
+          const candidateScore = this.getArtistRichness(candidate);
+          if (candidateScore > bestScore) {
+            bestArtist = candidate;
+            bestScore = candidateScore;
+          }
+          if (this.isArtistFieldComplete(candidate)) {
+            return candidate;
+          }
+        }
+      } catch (e) {
+        // ignore transient fetch failures while waiting for artist data to settle
+      }
+    }
+
+    return bestArtist;
+  }
+
+  async refreshIncompleteArtistData(artist, options = {}) {
+    const { loadToken = this._loadRequestToken } = options;
+
+    if (!artist || !artist.name) {
+      return artist;
+    }
+
+    try {
+      if (this.$loadingStatus) this.$loadingStatus.text('Refreshing artist data...');
+      const startRes = await fetch('/endpoints/artistImport?wait=1&source=refresh-helper&name=' + encodeURIComponent(artist.name), { method: 'POST' });
+      if (!startRes.ok) {
+        return artist;
+      }
+      const startJson = await startRes.json();
+      if (loadToken !== this._loadRequestToken) {
+        return artist;
+      }
+
+      if (startJson && startJson.id) {
+        const res = await fetch(`/endpoints/artist?get&id=${encodeURIComponent(startJson.id)}`);
+        if (!res.ok) return artist;
+        const json = await res.json();
+        if (json && json.artist) {
+          return await this.waitForRenderableArtist(json.artist, { loadToken, maxAttempts: 10 });
+        }
+        return artist;
+      }
+    } catch (e) {
+      // ignore refresh errors and fall back to the best currently known artist object
+    }
+
+    return artist;
+  }
+
+  async ensureArtistReadyForRender(artist, options = {}) {
+    const { loadToken = this._loadRequestToken } = options;
+    if (!artist) return artist;
+    return await this.waitForRenderableArtist(artist, { loadToken, maxAttempts: 3, firstDelayMs: 80, nextDelayMs: 160 });
+  }
+
   loadArtist(artistId) {
     if (!artistId) return;
+    this._reloadOperationToken++;
+    const requestToken = ++this._loadRequestToken;
+    const isCurrentRequest = () => requestToken === this._loadRequestToken;
     this.$loading.css('display', 'flex');
     this.$backButton.hide();
     // If the provided identifier is not a MusicBrainz UUID, treat it as a name
     const isMbUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(artistId);
     const fetchArtistJson = () => {
       return fetch(`/endpoints/artist?get&id=${encodeURIComponent(artistId)}`).then(res => {
-        if (res.status === 404) {
-          // try import by name
-          return fetch('/endpoints/artistImport?name=' + encodeURIComponent(artistId), { method: 'POST' })
-            .then(r => r.json())
-            .then(j => {
-              if (j && j.id) {
-                return fetch(`/endpoints/artist?get&id=${encodeURIComponent(j.id)}`).then(r2 => r2.json());
-              }
-              return null;
-            });
-        }
+        if (res.status === 404) return null;
         return res.json();
       });
     };
@@ -337,118 +518,81 @@ export default class ArtistView extends Subview {
           if (!res.ok) return null;
           return res.json();
         })
-        .then(data => {
+        .then(async data => {
+          if (!isCurrentRequest()) return;
           if (data && data.artist) {
             // Found in cache
+            const renderableArtist = await this.ensureArtistReadyForRender(data.artist, { loadToken: requestToken });
+            if (!isCurrentRequest()) return;
             this.$loading.hide();
             this.$backButton.show();
             if (this.$imageSpinner) this.$imageSpinner.hide();
-            this.artist = data.artist;
-            this.moreAlbumsAvailable = !!(data.artist.discography && data.artist.discography.length > 0);
-            this.renderArtist(data.artist);
+            this.applyArtistData(renderableArtist, { stabilize: true, loadToken: requestToken });
           } else {
             // Not in cache, import from external sources
-            this.importArtist(artistId);
+            this.importArtist(artistId, requestToken);
           }
         }).catch((e) => {
+          if (!isCurrentRequest()) return;
           console.error('Artist cache lookup error:', e);
-          this.importArtist(artistId);
+          this.importArtist(artistId, requestToken);
         });
       return;
     }
 
     // Try to load by id first; if not found, attempt import by name
     fetchArtistJson()
-      .then(json => {
-        this.$loading.hide();
-        this.$backButton.show();
+      .then(async json => {
+        if (!isCurrentRequest()) return;
         if (json && json.artist) {
-          this.artist = json.artist;
-          this.moreAlbumsAvailable = !!json.more_albums_available;
-          this.renderArtist(json.artist);
+          const renderableArtist = await this.ensureArtistReadyForRender(json.artist, { loadToken: requestToken });
+          if (!isCurrentRequest()) return;
+          this.$loading.hide();
+          this.$backButton.show();
+          this.applyArtistData(renderableArtist, { stabilize: true, loadToken: requestToken });
         } else {
+          this.$loading.hide();
+          this.$backButton.show();
           this.showError(artistId);
         }
       }).catch((e) => {
+        if (!isCurrentRequest()) return;
         console.error('Artist fetch error:', e);
         this.$loading.hide();
         this.showError(artistId);
       });
   }
 
-  importArtist(artistId) {
-    if (this.$loadingStatus) this.$loadingStatus.text('Import: starting...');
-    fetch('/endpoints/artistImport?name=' + encodeURIComponent(artistId), { method: 'POST' })
+  importArtist(artistId, requestToken = this._loadRequestToken) {
+    const isCurrentRequest = () => requestToken === this._loadRequestToken;
+    if (this.$loadingStatus) this.$loadingStatus.text('Importing artist data...');
+    fetch('/endpoints/artistImport?wait=1&source=artist-load&name=' + encodeURIComponent(artistId), { method: 'POST' })
       .then(r => r.ok ? r.json() : null)
-      .then(j => {
+      .then(async j => {
+        if (!isCurrentRequest()) return;
         if (!j) throw new Error('Import request failed');
-        // If server started background import, poll status endpoint
-        if (j.started) {
-          if (this.$loadingStatus) this.$loadingStatus.text('Import started');
-          const start = Date.now();
-          const pollInterval = 800; // ms
-          const timeoutMs = 120000; // 2 minutes
-          const poller = setInterval(async () => {
-            try {
-              const res = await fetch('/endpoints/artistImportStatus?name=' + encodeURIComponent(artistId));
-              if (!res.ok) throw new Error('status fetch failed');
-              const body = await res.json();
-              const st = body && body.status ? body.status : null;
-              if (st && st.status) {
-                if (this.$loadingStatus) this.$loadingStatus.text(st.status);
-                if (st.status === 'Done' && st.mbid) {
-                  clearInterval(poller);
-                  // fetch the newly-imported artist by mbid
-                  const artRes = await fetch('/endpoints/artist?get&id=' + encodeURIComponent(st.mbid));
-                  if (artRes.ok) {
-                    const artJson = await artRes.json();
-                    if (artJson && artJson.artist) {
-                      this.artist = artJson.artist;
-                      this.moreAlbumsAvailable = !!(artJson.artist.discography && artJson.artist.discography.length > 0);
-                      this.renderArtist(artJson.artist);
-                      this.$loading.hide();
-                      this.$backButton.show();
-                      if (this.$loadingStatus) this.$loadingStatus.text('');
-                      return;
-                    }
-                  }
-                  // if fetch failed, fall through to error
-                  this.$loading.hide();
-                  if (this.$loadingStatus) this.$loadingStatus.text('');
-                  this.showError(artistId);
-                }
-              }
-              if (Date.now() - start > timeoutMs) {
-                clearInterval(poller);
-                this.$loading.hide();
-                if (this.$loadingStatus) this.$loadingStatus.text('Import timed out');
-                this.showError(artistId);
-              }
-            } catch (e) {
-              clearInterval(poller);
-              console.error('Import status poll error:', e);
-              this.$loading.hide();
-              if (this.$loadingStatus) this.$loadingStatus.text('Import failed');
-              this.showError(artistId);
-            }
-          }, pollInterval);
-        } else if (j.id) {
-          // server returned completed id immediately
-          return fetch('/endpoints/artist?get&id=' + encodeURIComponent(j.id)).then(r2 => r2.json()).then(json => {
-            this.$loading.hide();
-            this.$backButton.show();
-            if (json && json.artist) {
-              this.artist = json.artist;
-              this.moreAlbumsAvailable = !!(json.artist.discography && json.artist.discography.length > 0);
-              this.renderArtist(json.artist);
-            } else {
-              this.showError(artistId);
-            }
-          });
-        } else {
+        if (!j.id) {
           throw new Error('Unexpected import response');
         }
+        if (this.$loadingStatus) this.$loadingStatus.text('Loading imported artist...');
+        if (!isCurrentRequest()) return;
+        const artistRes = await fetch('/endpoints/artist?get&id=' + encodeURIComponent(j.id));
+        if (!artistRes.ok) {
+          throw new Error('Imported artist fetch failed');
+        }
+        const artistJson = await artistRes.json();
+        if (!isCurrentRequest()) return;
+        if (!(artistJson && artistJson.artist)) {
+          throw new Error('Imported artist missing');
+        }
+        const renderableArtist = await this.ensureArtistReadyForRender(artistJson.artist, { loadToken: requestToken });
+        if (!isCurrentRequest()) return;
+        this.applyArtistData(renderableArtist, { stabilize: true, loadToken: requestToken });
+        this.$loading.hide();
+        this.$backButton.show();
+        if (this.$loadingStatus) this.$loadingStatus.text('');
       }).catch((e) => {
+        if (!isCurrentRequest()) return;
         console.error('Artist import error:', e);
         this.$loading.hide();
         if (this.$loadingStatus) this.$loadingStatus.text('Import failed');
@@ -533,6 +677,8 @@ export default class ArtistView extends Subview {
   }
 
   async renderArtist(artist) {
+    const renderToken = ++this._renderRequestToken;
+    const isCurrentRender = () => renderToken === this._renderRequestToken;
     this.$name.text(artist.name || '');
     this.$disambiguation.text(artist.disambiguation || '');
     
@@ -582,6 +728,7 @@ export default class ArtistView extends Subview {
           const res = await fetch(proxyUrl);
           if (!res.ok) return;
           const text = await res.text();
+          if (!isCurrentRender()) return;
           let url = null;
           const re = /href="(https?:\/\/www\.allmusic\.com\/[^"]+)"/gi;
           let match;
@@ -599,6 +746,7 @@ export default class ArtistView extends Subview {
           }
           if (!url && first) url = first;
           if (url) {
+            if (!isCurrentRender()) return;
             const $more = $(`<span class="sourceItem"><span class="metaCaption">More info</span> <span class="metaValue"><a href="${url}" target="_blank" rel="noopener">AllMusic</a></span></span>`);
             $sourceContainer.append($more);
           }
@@ -691,65 +839,51 @@ export default class ArtistView extends Subview {
         $controls.append($reloadBtn);
         $controlsContainer.append($controls);
 
-        // reload action - clear existing artist data first, then poll for import completion
-        $reloadBtn.on('click', () => {
+        // reload action - clear existing artist data first, then perform one full awaited import
+        $reloadBtn.on('click', async () => {
+          const reloadToken = ++this._reloadOperationToken;
+          const isCurrentReload = () => reloadToken === this._reloadOperationToken;
           $reloadBtn.prop('disabled', true).addClass('is-loading');
-          
-          // Clear artist images and bio immediately
-          this.$gallery.empty();
-          this.$bio.empty();
-          this.setDisplayedImage('/img/pixel-transparent.png');
-          this.artistImageUrls = [];
-          this.$el.find('#artistViewSetDefaultImage').hide();
-          
+
           if (this.$loadingStatus) this.$loadingStatus.text('Reloading: starting...');
-          
-          fetch('/endpoints/artistImport?name=' + encodeURIComponent(artist.name), { method: 'POST' })
-            .then(r => r.json())
-            .then(j => {
-              if (!j) throw new Error('Import request failed');
-              
-              // Poll for import completion like importArtist does
-              const start = Date.now();
-              const pollInterval = 800;
-              const timeoutMs = 120000;
-              
-              const poller = setInterval(async () => {
-                try {
-                  const res = await fetch('/endpoints/artistImportStatus?name=' + encodeURIComponent(artist.name));
-                  if (!res.ok) throw new Error('status fetch failed');
-                  const body = await res.json();
-                  const st = body && body.status ? body.status : null;
-                  
-                  if (st && st.status) {
-                    if (this.$loadingStatus) this.$loadingStatus.text('Reloading: ' + st.status);
-                    
-                    if (st.status === 'Done' && st.mbid) {
-                      clearInterval(poller);
-                      this.loadArtist(st.mbid);
-                      if (this.$loadingStatus) this.$loadingStatus.text('');
-                      $reloadBtn.prop('disabled', false).removeClass('is-loading');
-                      return;
-                    }
-                  }
-                  
-                  if (Date.now() - start > timeoutMs) {
-                    clearInterval(poller);
-                    if (this.$loadingStatus) this.$loadingStatus.text('Reload timed out');
-                    $reloadBtn.prop('disabled', false).removeClass('is-loading');
-                  }
-                } catch (e) {
-                  clearInterval(poller);
-                  console.error('Reload status poll error:', e);
-                  if (this.$loadingStatus) this.$loadingStatus.text('Reload failed');
-                  $reloadBtn.prop('disabled', false).removeClass('is-loading');
-                }
-              }, pollInterval);
-            }).catch(e => {
+
+          try {
+            const clearRes = await fetch(`/endpoints/artist?clearCache&id=${encodeURIComponent(artist.id)}`, { method: 'POST' });
+            if (!clearRes.ok) throw new Error('Cache clear failed');
+            if (!isCurrentReload()) throw new Error('Reload superseded');
+
+            if (this.$loadingStatus) this.$loadingStatus.text('Reloading artist data...');
+            const importRes = await fetch('/endpoints/artistImport?wait=1&source=reload-button&name=' + encodeURIComponent(artist.name), { method: 'POST' });
+            if (!importRes.ok) throw new Error('Import request failed');
+            const importJson = await importRes.json();
+            if (!isCurrentReload()) throw new Error('Reload superseded');
+            if (!(importJson && importJson.id)) throw new Error('Import response missing artist id');
+            if (!isCurrentReload()) throw new Error('Reload superseded');
+            if (this.$loadingStatus) this.$loadingStatus.text('Loading refreshed artist...');
+            const artistRes = await fetch(`/endpoints/artist?get&id=${encodeURIComponent(importJson.id)}`);
+            if (!artistRes.ok) throw new Error('Imported artist fetch failed');
+            const artistJson = await artistRes.json();
+            if (!isCurrentReload()) throw new Error('Reload superseded');
+            if (!(artistJson && artistJson.artist && artistJson.artist.id === importJson.id)) {
+              throw new Error('Imported artist not available');
+            }
+            const verifiedArtist = await this.ensureArtistReadyForRender(artistJson.artist, {
+              loadToken: this._loadRequestToken
+            });
+            if (!isCurrentReload()) throw new Error('Reload superseded');
+            this.applyArtistData(verifiedArtist, { stabilize: true, loadToken: this._loadRequestToken });
+            if (this.$loadingStatus) this.$loadingStatus.text('');
+            this.$backButton.show();
+          } catch (e) {
+            if (String(e && e.message) !== 'Reload superseded') {
               console.error('Reload error:', e);
               if (this.$loadingStatus) this.$loadingStatus.text('Reload failed');
+            }
+          } finally {
+            if (isCurrentReload()) {
               $reloadBtn.prop('disabled', false).removeClass('is-loading');
-            });
+            }
+          }
         });
 
         // mode cycling
@@ -830,52 +964,124 @@ export default class ArtistView extends Subview {
     // remove unknown releases from initial list to allow rendering what we HAVE
     remoteReleases = remoteReleases.filter(r => r.title && r.title !== '');
 
-    // Merge local and remote releases, preferring local when titles and years match
-    const normalize = (s) => (String(s || '').trim().toLowerCase().replace(/[\s\u00A0]+/g,' '));
-    const localTitles = new Set();
-    const localMap = new Map();
-    for (const a of localAlbums) {
-      const title = normalize(a['@_album']);
-      localTitles.add(title);
-      const key = `${title}|${String(a['@_year']||'')}`;
-      localMap.set(key, { type: 'local', album: a });
-    }
-
-    // Map remote titles to their earliest year for potential override
-    const remoteYearMap = new Map();
-    const buildRemoteYearMap = () => {
-      remoteYearMap.clear();
-      for (const r of remoteReleases) {
-        const title = normalize(r.title);
-        const yearStr = String(r.year || '');
-        const year = parseInt(yearStr);
-        if (title && !isNaN(year)) {
-          if (!remoteYearMap.has(title) || year < parseInt(remoteYearMap.get(title))) {
-            remoteYearMap.set(title, yearStr);
-          }
+    // Merge local and remote releases with fuzzy matching so small title differences
+    // still collapse to one item. When both sides have a year, the remote year wins.
+    const normalize = (s) => String(s || '')
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/&/g, ' and ')
+      .replace(/\b(deluxe|edition|expanded|remaster(?:ed)?|mono|stereo|anniversary|bonus track?s?)\b/g, ' ')
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/[\s\u00A0]+/g, ' ')
+      .trim();
+    const toYearString = (value) => {
+      const match = String(value || '').match(/\b(19|20)\d{2}\b/);
+      return match ? match[0] : '';
+    };
+    const tokenize = (s) => normalize(s).split(' ').filter(Boolean);
+    const getLocalYear = (album) => toYearString(album['@_year'] || album['year'] || (album['@_date'] ? album['@_date'].substring(0, 4) : ''));
+    const levenshtein = (a, b) => {
+      const aa = String(a || '');
+      const bb = String(b || '');
+      if (!aa) return bb.length;
+      if (!bb) return aa.length;
+      const dp = Array.from({ length: aa.length + 1 }, () => new Array(bb.length + 1).fill(0));
+      for (let i = 0; i <= aa.length; i++) dp[i][0] = i;
+      for (let j = 0; j <= bb.length; j++) dp[0][j] = j;
+      for (let i = 1; i <= aa.length; i++) {
+        for (let j = 1; j <= bb.length; j++) {
+          const cost = aa[i - 1] === bb[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + cost
+          );
         }
       }
+      return dp[aa.length][bb.length];
     };
-    buildRemoteYearMap();
+    const getTitleSimilarity = (aTitle, bTitle) => {
+      const aNorm = normalize(aTitle);
+      const bNorm = normalize(bTitle);
+      if (!aNorm || !bNorm) return 0;
+      if (aNorm === bNorm) return 1;
+      const aTokens = tokenize(aTitle);
+      const bTokens = tokenize(bTitle);
+      const aSet = new Set(aTokens);
+      const bSet = new Set(bTokens);
+      let intersection = 0;
+      for (const token of aSet) {
+        if (bSet.has(token)) intersection++;
+      }
+      const tokenScore = intersection / Math.max(aSet.size || 1, bSet.size || 1);
+      const distance = levenshtein(aNorm, bNorm);
+      const lengthScore = 1 - (distance / Math.max(aNorm.length, bNorm.length, 1));
+      return Math.max(tokenScore, lengthScore);
+    };
+    const getYearDistance = (aYear, bYear) => {
+      const ay = parseInt(toYearString(aYear), 10);
+      const by = parseInt(toYearString(bYear), 10);
+      if (!ay || !by) return null;
+      return Math.abs(ay - by);
+    };
+    const isLikelySameRelease = (localAlbum, remoteRelease) => {
+      const similarity = getTitleSimilarity(localAlbum['@_album'], remoteRelease.title);
+      if (similarity >= 0.97) return true;
+      const yearDistance = getYearDistance(getLocalYear(localAlbum), remoteRelease.year);
+      if (similarity >= 0.9 && (yearDistance === null || yearDistance <= 1)) return true;
+      if (similarity >= 0.82) {
+        const localNorm = normalize(localAlbum['@_album']);
+        const remoteNorm = normalize(remoteRelease.title);
+        if (localNorm.includes(remoteNorm) || remoteNorm.includes(localNorm)) return true;
+      }
+      return false;
+    };
+    const localEntries = localAlbums.map((album) => ({
+      type: 'local',
+      album,
+      displayYear: null,
+      matchedRelease: null
+    }));
+    const matchedRemoteIndexes = new Set();
+    for (const localEntry of localEntries) {
+      let bestMatch = null;
+      for (let i = 0; i < remoteReleases.length; i++) {
+        if (matchedRemoteIndexes.has(i)) continue;
+        const remoteRelease = remoteReleases[i];
+        if (!remoteRelease || !remoteRelease.title) continue;
+        if (!isLikelySameRelease(localEntry.album, remoteRelease)) continue;
+        const similarity = getTitleSimilarity(localEntry.album['@_album'], remoteRelease.title);
+        const yearDistance = getYearDistance(getLocalYear(localEntry.album), remoteRelease.year);
+        const score = similarity - ((yearDistance !== null ? Math.min(yearDistance, 5) : 1) * 0.015);
+        if (!bestMatch || score > bestMatch.score) {
+          bestMatch = { index: i, release: remoteRelease, score };
+        }
+      }
+      if (bestMatch) {
+        matchedRemoteIndexes.add(bestMatch.index);
+        localEntry.matchedRelease = bestMatch.release;
+        localEntry.displayYear = toYearString(bestMatch.release.year) || getLocalYear(localEntry.album) || null;
+      }
+    }
 
     const renderAll = () => {
       this.$discography.empty();
       const merged = [];
       const seenRemote = new Set();
-      // add remote entries if not matched to a local album by title
-      for (const r of remoteReleases) {
-        if (localTitles.has(normalize(r.title))) continue;
+      // add remote entries that were not matched to a local album
+      for (let i = 0; i < remoteReleases.length; i++) {
+        if (matchedRemoteIndexes.has(i)) continue;
+        const r = remoteReleases[i];
         // Deduplicate remote releases by title and year
         const key = `${normalize(r.title)}|${String(r.year||'')}`;
         if (seenRemote.has(key)) continue;
         seenRemote.add(key);
         merged.push({ type: 'remote', release: r });
       }
-      // add all local albums, overriding year from remote if available
-      for (const [k, v] of localMap.entries()) {
-        const title = normalize(v.album['@_album']);
-        v.displayYear = remoteYearMap.get(title) || null;
-        merged.push(v);
+      // add all local albums, using matched remote year when available
+      for (const localEntry of localEntries) {
+        merged.push(localEntry);
       }
       // Sort merged list by year ascending (unknown years last), then title
       merged.sort((a, b) => {
@@ -906,15 +1112,18 @@ export default class ArtistView extends Subview {
     if (toFetch.length > 0) {
       (async () => {
         for (const rSynth of toFetch) {
+          if (!isCurrentRender()) return;
           try {
             const res = await fetch(`/endpoints/artist?getRelease&release_id=${encodeURIComponent(rSynth.id)}`);
             if (res.ok) {
               const json = await res.json();
+              if (!isCurrentRender()) return;
               if (json && json.release) {
                 const r = json.release;
                 rSynth.title = r.title || r['title'] || '';
                 rSynth.year = r.date ? String(r.date).slice(0,4) : (r.year || '');
                 if (rSynth.title) {
+                   if (!isCurrentRender()) return;
                    remoteReleases.push({...rSynth});
                    buildRemoteYearMap();
                    renderAll(); 

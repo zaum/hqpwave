@@ -14,6 +14,8 @@ let upsertArtistStmt;
 let updateDefaultImageStmt;
 let insertImageStmt;
 let selectImagesByArtistStmt;
+let deleteArtistByIdStmt;
+let deleteImagesByArtistStmt;
 
 const ensureDir = (dir) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -80,6 +82,8 @@ const init = () => {
   insertImageStmt = db.prepare(`INSERT OR REPLACE INTO images(id, artist_id, url, source, width, height, thumbnail_url, license)
       VALUES(?,?,?,?,?,?,?,?)`);
   selectImagesByArtistStmt = db.prepare('SELECT * FROM images WHERE artist_id = ?');
+  deleteArtistByIdStmt = db.prepare('DELETE FROM artists WHERE id = ?');
+  deleteImagesByArtistStmt = db.prepare('DELETE FROM images WHERE artist_id = ?');
 };
 
 const close = (cb) => {
@@ -169,4 +173,16 @@ const addImagesBulk = (artistId, images, cb) => {
   } catch (err) { cb(err); }
 };
 
-module.exports = { init, close, getArtistById, getArtistByName, upsertArtist, setDefaultImage, addImage, addImagesBulk };
+const deleteArtistById = (artistId, cb) => {
+  if (!db) return cb(new Error('db_not_initialized'));
+  try {
+    const tx = db.transaction((id) => {
+      deleteImagesByArtistStmt.run(id);
+      deleteArtistByIdStmt.run(id);
+    });
+    tx(artistId);
+    cb(null);
+  } catch (err) { cb(err); }
+};
+
+module.exports = { init, close, getArtistById, getArtistByName, upsertArtist, setDefaultImage, addImage, addImagesBulk, deleteArtistById };
