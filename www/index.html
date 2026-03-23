@@ -781,6 +781,25 @@
                   <input type="text" id="artistReleaseLimitInput" class="settingsNumberInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="99">
                 </div>
               </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Artist Image Limit</div>
+                  <div class="row-desc">Maximum number of artist images downloaded per artist. Higher values may slow loading.</div>
+                </div>
+                <div class="row-right">
+                  <input type="text" id="artistImageLimitInput" class="settingsNumberInput" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="5">
+                </div>
+              </div>
+              <div class="settings-card-row column-stack">
+                <div id="artistBatchImportLabel" class="row-label">Download Metadata For All Artists</div>
+                <div class="row-desc">Runs in the background for all artists in your library. Artists that already have metadata will be skipped.</div>
+                <div class="row-between">
+                  <div id="artistBatchImportStatusText" class="row-desc settingsStatusText">Idle.</div>
+                  <div class="row-right">
+                    <button id="artistBatchImportButton" class="textButton">Start</button>
+                  </div>
+                </div>
+              </div>
               <div class="settings-card-row column-stack artistImageSourcesSummary">
                 <div class="row-label">Artist image sources from web</div>
                 <div class="row-desc">Album covers, artist images, bios</div>

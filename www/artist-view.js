@@ -384,7 +384,7 @@ export default class ArtistView extends Subview {
   importArtist(artistId, requestToken = this._loadRequestToken) {
     const isCurrentRequest = () => requestToken === this._loadRequestToken;
     if (this.$loadingStatus) this.$loadingStatus.text('Importing artist data...');
-    fetch('/endpoints/artistImport?wait=1&source=artist-load&releaseLimit=' + encodeURIComponent(Settings.artistReleaseLimit) + '&name=' + encodeURIComponent(artistId), { method: 'POST' })
+    fetch('/endpoints/artistImport?wait=1&source=artist-load&releaseLimit=' + encodeURIComponent(Settings.artistReleaseLimit) + '&imageLimit=' + encodeURIComponent(Settings.artistImageLimit) + '&name=' + encodeURIComponent(artistId), { method: 'POST' })
       .then(r => r.ok ? r.json() : null)
       .then(async j => {
         if (!isCurrentRequest()) return;
@@ -671,7 +671,7 @@ export default class ArtistView extends Subview {
             if (!isCurrentReload()) throw new Error('Reload superseded');
 
             if (this.$loadingStatus) this.$loadingStatus.text('Reloading artist data...');
-            const importRes = await fetch('/endpoints/artistImport?wait=1&source=reload-button&releaseLimit=' + encodeURIComponent(Settings.artistReleaseLimit) + '&name=' + encodeURIComponent(artist.name), { method: 'POST' });
+            const importRes = await fetch('/endpoints/artistImport?wait=1&source=reload-button&releaseLimit=' + encodeURIComponent(Settings.artistReleaseLimit) + '&imageLimit=' + encodeURIComponent(Settings.artistImageLimit) + '&name=' + encodeURIComponent(artist.name), { method: 'POST' });
             if (!importRes.ok) throw new Error('Import request failed');
             const importJson = await importRes.json();
             if (!isCurrentReload()) throw new Error('Reload superseded');

@@ -190,6 +190,15 @@
   color: var(--accent);
 }
 
+@keyframes pulse-accent-text {
+  0%, 100% { color: var(--text-2); }
+  50% { color: var(--accent); }
+}
+
+.settings-card-row .row-label.pulse {
+  animation: pulse-accent-text 2s ease-in-out infinite;
+}
+
 .settingsNumberInput {
   width: 4.8em;
   min-width: 4.8em;
@@ -213,6 +222,12 @@
 
 .artistImageSourcesSummary .row-desc {
   margin-top: 0;
+}
+
+.settingsStatusText {
+  margin-top: 0 !important;
+  padding-right: 16px;
+  flex: 1;
 }
 
 .imageSourcesSection {

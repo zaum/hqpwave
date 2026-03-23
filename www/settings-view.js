@@ -22,9 +22,14 @@ export default class SettingsView extends Subview {
   $showFormatOverlayCheckbox;
   $showLogoAnimationCheckbox;
   $artistReleaseLimitInput;
+  $artistImageLimitInput;
+  $artistBatchImportButton;
+  $artistBatchImportStatusText;
   $highlightColorPicker;
   $playerBackgroundColorPicker;
   infoView;
+  _artistBatchImportPollTimer = null;
+  _artistBatchWasRunning = false;
 
   constructor() {
     super($("#settingsView"));
@@ -45,6 +50,12 @@ export default class SettingsView extends Subview {
     this.$artistReleaseLimitInput = this.$el.find('#artistReleaseLimitInput');
     this.$artistReleaseLimitInput.on('change', this.onArtistReleaseLimitChange);
     this.$artistReleaseLimitInput.on('blur', this.onArtistReleaseLimitChange);
+    this.$artistImageLimitInput = this.$el.find('#artistImageLimitInput');
+    this.$artistImageLimitInput.on('change', this.onArtistImageLimitChange);
+    this.$artistImageLimitInput.on('blur', this.onArtistImageLimitChange);
+    this.$artistBatchImportButton = this.$el.find('#artistBatchImportButton');
+    this.$artistBatchImportButton.on('click', () => this.onArtistBatchImportClick());
+    this.$artistBatchImportStatusText = this.$el.find('#artistBatchImportStatusText');
     this.$highlightColorPicker = this.$el.find('#highlightColorPicker');
     this.$highlightColorPicker.on('change', this.onHighlightColorChange);
     this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
@@ -99,15 +110,25 @@ export default class SettingsView extends Subview {
     }
     this.$clearArtistDbBtn.text('Clearing...').prop('disabled', true);
     fetch('/endpoints/artistDbClear', { method: 'POST' })
-      .then(res => res.ok ? res.json() : null)
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw (data || { error: 'server_error' });
+        }
+        return data;
+      })
       .then(data => {
         if (data && data.success) {
           this.loadArtistDbStats();
+          this.loadArtistBatchImportStatus();
         } else if (data && data.error) {
           alert('Error clearing data: ' + data.error);
         }
       })
-      .catch(e => console.error('Error clearing artist DB', e))
+      .catch(e => {
+        console.error('Error clearing artist DB', e);
+        alert('Error clearing data: ' + ((e && e.error) || 'server_error'));
+      })
       .finally(() => {
         this.$clearArtistDbBtn.text('Clear').prop('disabled', false);
       });
@@ -252,6 +273,7 @@ export default class SettingsView extends Subview {
     this.updateShowLogoAnimationCheckbox();
 
     this.updateArtistReleaseLimitInput();
+    this.updateArtistImageLimitInput();
 
     this.updateHighlightColorPicker();
 
@@ -263,12 +285,15 @@ export default class SettingsView extends Subview {
 
     this.loadArtistDbStats();
     this.loadImageSources();
+    this.loadArtistBatchImportStatus();
+    this.startArtistBatchImportPolling();
 
     $(document).trigger('enable-user-input');
   }
 
   hide() {
     super.hide();
+    this.stopArtistBatchImportPolling();
     $(document).trigger('enable-user-input');
   }
 
@@ -385,5 +410,175 @@ export default class SettingsView extends Subview {
   onArtistReleaseLimitChange = () => {
     Settings.artistReleaseLimit = this.$artistReleaseLimitInput.val();
     this.updateArtistReleaseLimitInput();
+  }
+
+  updateArtistImageLimitInput() {
+    this.$artistImageLimitInput.val(String(Settings.artistImageLimit));
+  }
+
+  onArtistImageLimitChange = () => {
+    Settings.artistImageLimit = this.$artistImageLimitInput.val();
+    this.updateArtistImageLimitInput();
+  }
+
+  getLibraryArtistNames() {
+    const albums = (Model.library && Array.isArray(Model.library.albums)) ? Model.library.albums : [];
+    const artistNames = [];
+    const seen = new Set();
+
+    for (const album of albums) {
+      const rawArtist = String((album && (album['@_artist'] || album['@_performer'])) || '').replace(/\s+/g, ' ').trim();
+      if (!rawArtist) continue;
+      const key = rawArtist.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      artistNames.push(rawArtist);
+    }
+
+    return artistNames;
+  }
+
+  startArtistBatchImportPolling() {
+    this.stopArtistBatchImportPolling();
+    this._artistBatchImportPollTimer = window.setInterval(() => {
+      this.loadArtistBatchImportStatus();
+    }, 2000);
+  }
+
+  stopArtistBatchImportPolling() {
+    if (this._artistBatchImportPollTimer) {
+      window.clearInterval(this._artistBatchImportPollTimer);
+      this._artistBatchImportPollTimer = null;
+    }
+  }
+
+  startArtistBatchImport() {
+    const artistNames = this.getLibraryArtistNames();
+    if (artistNames.length === 0) {
+      alert('No artists found in the library yet.');
+      return;
+    }
+
+    this.$artistBatchImportButton.prop('disabled', true).text('Starting...');
+
+    fetch('/endpoints/artistBatchImport', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        artistNames,
+        releaseLimit: Settings.artistReleaseLimit,
+        imageLimit: Settings.artistImageLimit
+      })
+    })
+      .then(res => res.ok ? res.json() : res.json().then(data => Promise.reject(data)))
+      .then(() => this.loadArtistBatchImportStatus())
+      .catch(e => {
+        const message = e && e.error ? e.error : 'Unable to start artist metadata download.';
+        alert(message);
+        this.$artistBatchImportButton.prop('disabled', false).text('Start');
+      });
+  }
+
+  onArtistBatchImportClick() {
+    const currentText = this.$artistBatchImportButton.text();
+    if (currentText === 'Stop') {
+      this.stopArtistBatchImport();
+    } else {
+      this.startArtistBatchImport();
+    }
+  }
+
+  stopArtistBatchImport() {
+    this.$artistBatchImportButton.prop('disabled', true).text('Stopping...');
+    fetch('/endpoints/artistBatchImportStop', { method: 'POST' })
+      .then(res => res.ok ? res.json() : null)
+      .catch(() => {});
+  }
+
+  formatArtistBatchImportStatus(status) {
+    if (!status || !status.status || status.status === 'idle') {
+      return 'Idle.';
+    }
+
+    if (status.status === 'running') {
+      const lines = [
+        `${status.remaining || 0} artists remaining`,
+        `Imported: ${status.imported || 0}`,
+        `Skipped: ${status.skipped || 0}`,
+        `Failed: ${status.failed || 0}`
+      ];
+      if (status.currentArtist) {
+        lines.push(`Current: ${status.currentArtist}`);
+      }
+      return lines.join('<br>');
+    }
+
+    if (status.status === 'done') {
+      if (!status.total) {
+        return 'No artists found in the library.';
+      }
+      const lines = [
+        `Imported: ${status.imported || 0}`,
+        `Skipped: ${status.skipped || 0}`,
+        `Failed: ${status.failed || 0}`
+      ];
+      if (status.lastError) {
+        lines.push(`Last error: ${status.lastError}`);
+      }
+      return lines.join('<br>');
+    }
+
+    if (status.status === 'stopped') {
+      const lines = [
+        `Processed: ${status.checked || 0}`,
+        `Imported: ${status.imported || 0}`,
+        `Skipped: ${status.skipped || 0}`,
+        `Failed: ${status.failed || 0}`
+      ];
+      return lines.join('<br>');
+    }
+
+    return 'Idle.';
+  }
+
+  updateArtistBatchImportUi(status) {
+    const isRunning = !!(status && status.status === 'running');
+    const isStopped = !!(status && status.status === 'stopped');
+    this.$artistBatchImportStatusText.html(this.formatArtistBatchImportStatus(status));
+    this.$artistBatchImportButton.prop('disabled', false);
+    this.$artistBatchImportButton.text(isRunning ? 'Stop' : 'Start');
+
+    const $settingsButton = $('#settingsButton');
+    const $rowLabel = $('#artistBatchImportLabel');
+
+    if (isRunning) {
+      this._artistBatchWasRunning = true;
+      this.loadArtistDbStats();
+      $settingsButton.addClass('pulse');
+      $rowLabel.addClass('pulse');
+    } else if (isStopped) {
+      this._artistBatchWasRunning = true;
+      this.loadArtistDbStats();
+      $settingsButton.removeClass('pulse');
+      $rowLabel.removeClass('pulse');
+    } else {
+      $settingsButton.removeClass('pulse');
+      $rowLabel.removeClass('pulse');
+    }
+
+    if (this._artistBatchWasRunning && !isRunning && !isStopped) {
+      this._artistBatchWasRunning = false;
+    }
+  }
+
+  loadArtistBatchImportStatus() {
+    fetch('/endpoints/artistBatchImportStatus')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        this.updateArtistBatchImportUi(data ? data.status : null);
+      })
+      .catch(() => {
+        this.updateArtistBatchImportUi(null);
+      });
   }
 }

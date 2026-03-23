@@ -563,6 +563,15 @@
   opacity: 1 !important;
 }
 
+@keyframes pulse-accent {
+  0%, 100% { background-color: var(--text-2); opacity: 0.7; }
+  50% { background-color: var(--accent); opacity: 1; }
+}
+
+#settingsButton.pulse:before {
+  animation: pulse-accent 2s ease-in-out infinite;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════
    SIDEBAR

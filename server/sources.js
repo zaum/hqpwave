@@ -83,6 +83,8 @@ const recentImportResults = new Map();
 const RECENT_IMPORT_TTL_MS = 15000;
 const DEFAULT_RELEASE_LIMIT = 99;
 const MAX_RELEASE_LIMIT = 9999;
+const DEFAULT_IMAGE_LIMIT = 5;
+const MAX_IMAGE_LIMIT = 99;
 const MUSICBRAINZ_RELEASE_PAGE_LIMIT = 100;
 
 const setImportStatus = (key, statusObj) => {
@@ -105,7 +107,17 @@ const sanitizeReleaseLimit = (value) => {
   return Math.min(parsed, MAX_RELEASE_LIMIT);
 };
 
-const getImportKey = (name, releaseLimit = DEFAULT_RELEASE_LIMIT) => `${String(name || '').trim().toLowerCase()}::${sanitizeReleaseLimit(releaseLimit)}`;
+const sanitizeImageLimit = (value) => {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_IMAGE_LIMIT;
+  }
+  return Math.min(parsed, MAX_IMAGE_LIMIT);
+};
+
+const getImportKey = (name, releaseLimit = DEFAULT_RELEASE_LIMIT, imageLimit = DEFAULT_IMAGE_LIMIT) => {
+  return `${String(name || '').trim().toLowerCase()}::releases=${sanitizeReleaseLimit(releaseLimit)}::images=${sanitizeImageLimit(imageLimit)}`;
+};
 const IMPORT_LOG_SEPARATOR = '[sources] ================================================================================';
 
 const isArtistRecordCompleteEnough = (artist) => {
@@ -442,7 +454,7 @@ const parseLastFmImageCandidates = (html, artistName) => {
   }
 
   for (const id of candidateIds) addUrl(buildLastFmImageUrlFromId(id));
-  return candidateUrls.slice(0, 5);
+  return candidateUrls.slice(0, MAX_IMAGE_LIMIT);
 };
 
 const downloadImage = (url, imageKey) => {
@@ -538,7 +550,7 @@ const searchLastFmImages = (name, cb) => {
 };
 
 const searchCommonsImages = (name, cb) => {
-  const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=10&prop=imageinfo&iiprop=url|mime|extmetadata`;
+  const url = `https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=50&prop=imageinfo&iiprop=url|mime|extmetadata`;
   httpGetJson(url, (err, json) => {
     if (err) {
       console.warn('[sources] Commons fetch error:', err.message);
@@ -560,7 +572,7 @@ const searchCommonsImages = (name, cb) => {
         }
       }
     } catch (e) { return cb(null, []); }
-    cb(null, images.slice(0, 10)); // return filtered
+    cb(null, images.slice(0, MAX_IMAGE_LIMIT)); // return filtered
   });
 };
 
@@ -569,7 +581,8 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
   const cb = (typeof optionsOrCb === 'function') ? optionsOrCb : maybeCb;
   const name = (nameRaw || '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
   const releaseLimit = sanitizeReleaseLimit(options.releaseLimit);
-  const importKey = getImportKey(name, releaseLimit);
+  const imageLimit = sanitizeImageLimit(options.imageLimit);
+  const importKey = getImportKey(name, releaseLimit, imageLimit);
   if (importInFlight.has(importKey)) {
     console.log('[sources] Joining in-flight import for artist:', name);
     importInFlight.get(importKey).push(cb);
@@ -587,7 +600,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
         console.warn('[sources] Recent import verification warning:', recentErr.message);
       }
       recentImportResults.delete(importKey);
-      fetchAndStoreArtistByName(name, { releaseLimit }, cb);
+      fetchAndStoreArtistByName(name, { releaseLimit, imageLimit }, cb);
     });
     return;
   }
@@ -618,7 +631,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
   };
 
   console.log(IMPORT_LOG_SEPARATOR);
-  console.log(`[sources] IMPORT #${runId} START for "${name}" (releaseLimit=${releaseLimit})`);
+  console.log(`[sources] IMPORT #${runId} START for "${name}" (releaseLimit=${releaseLimit}, imageLimit=${imageLimit})`);
   console.log(IMPORT_LOG_SEPARATOR);
   console.log('[sources] Starting fetch for artist:', name);
   // initialize import status for this name
@@ -728,7 +741,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
         const originalUrl = urlRaw;
         const highResUrl = (src === 'lastfm') ? getHighResLastFmUrl(urlRaw) : urlRaw;
 
-        if (!highResUrl || seen.has(highResUrl) || images.length >= 5) return null;
+        if (!highResUrl || seen.has(highResUrl) || images.length >= imageLimit) return null;
         if (src === 'lastfm' && isLikelyCover(highResUrl)) return null;
 
         seen.add(highResUrl);
@@ -738,7 +751,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
 
         try {
           if (highResUrl.startsWith('http')) {
-            setImportStatus(name, { status: `Downloading image ${Math.min(images.length + 1, 5)}/5...`, mbid });
+            setImportStatus(name, { status: `Downloading image ${Math.min(images.length + 1, imageLimit)}/${imageLimit}...`, mbid });
 
             if (isLastFm && highResUrl !== originalUrl) {
               try {
@@ -770,7 +783,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
       };
 
       const appendImagesFromSource = async (items, src, buildId, concurrencyLimit = 1) => {
-        const remainingSlots = Math.max(0, 5 - images.length);
+        const remainingSlots = Math.max(0, imageLimit - images.length);
         if (remainingSlots === 0) return;
         const selected = (items || []).slice(0, remainingSlots);
         if (selected.length === 0) return;
@@ -781,7 +794,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
           downloaded[index] = await addImg(url, src, id);
         });
         for (const img of downloaded) {
-          if (img && images.length < 5) {
+          if (img && images.length < imageLimit) {
             images.push(img);
           }
         }
@@ -811,7 +824,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
         const lastfm = imgs.filter(i => i.source === 'lastfm');
         const commons = imgs.filter(i => i.source === 'commons');
         const others = imgs.filter(i => !['wikipedia', 'wiki', 'lastfm', 'commons'].some(s => i.source && i.source.includes(s)));
-        const orderedImgs = [...wikipedia, ...lastfm, ...commons, ...others].slice(0, 5);
+        const orderedImgs = [...wikipedia, ...lastfm, ...commons, ...others].slice(0, imageLimit);
         
         // Select default: preserve an existing valid choice, otherwise prefer wikipedia.
         let defaultImg = null;
@@ -879,7 +892,7 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
           setImportStatus(name, { status: `${images.length} image(s) saved from Last.fm`, mbid });
         }
 
-        if (images.length < 5) {
+        if (images.length < imageLimit) {
           setImportStatus(name, { status: 'Fetching images from Commons', mbid });
           searchCommonsImages(name, async (errC, commons) => {
             if (errC) console.warn('[sources] Commons image fetch warning:', errC);

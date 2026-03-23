@@ -233,6 +233,12 @@
   opacity: 0.6;
 }
 
+.textButton[disabled] {
+  pointer-events: none;
+  color: var(--text-3);
+  opacity: 0.6;
+}
+
 /* Primary Button */
 .btn-primary {
   display: inline-flex;

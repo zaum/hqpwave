@@ -33,6 +33,167 @@ const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bm
 let port;
 let server;
 let hqpIp;
+const DEFAULT_ARTIST_RELEASE_LIMIT = 99;
+const MAX_ARTIST_RELEASE_LIMIT = 9999;
+const DEFAULT_ARTIST_IMAGE_LIMIT = 5;
+const MAX_ARTIST_IMAGE_LIMIT = 99;
+
+let artistBatchImportState = {
+  status: 'idle',
+  total: 0,
+  checked: 0,
+  remaining: 0,
+  imported: 0,
+  skipped: 0,
+  failed: 0,
+  currentArtist: null,
+  startedAt: null,
+  finishedAt: null,
+  releaseLimit: DEFAULT_ARTIST_RELEASE_LIMIT,
+  imageLimit: DEFAULT_ARTIST_IMAGE_LIMIT,
+  lastError: null,
+  shouldStop: false
+};
+
+const sanitizeArtistReleaseLimit = (value) => {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_ARTIST_RELEASE_LIMIT;
+  }
+  return Math.min(parsed, MAX_ARTIST_RELEASE_LIMIT);
+};
+
+const sanitizeArtistImageLimit = (value) => {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_ARTIST_IMAGE_LIMIT;
+  }
+  return Math.min(parsed, MAX_ARTIST_IMAGE_LIMIT);
+};
+
+const sanitizeArtistNames = (artistNames) => {
+  if (!Array.isArray(artistNames)) {
+    return [];
+  }
+  const result = [];
+  const seen = new Set();
+  for (const rawName of artistNames) {
+    const name = String(rawName || '').replace(/\s+/g, ' ').trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(name);
+  }
+  return result;
+};
+
+const getArtistByNameAsync = (name) => new Promise((resolve, reject) => {
+  db.getArtistByName(name, (err, artist) => {
+    if (err) {
+      reject(err);
+      return;
+    }
+    resolve(artist || null);
+  });
+});
+
+const importArtistByNameAsync = (name, options) => new Promise((resolve, reject) => {
+  sources.fetchAndStoreArtistByName(name, options, (err, mbid) => {
+    if (err) {
+      reject(err);
+      return;
+    }
+    resolve(mbid);
+  });
+});
+
+const isArtistBatchImportRunning = () => artistBatchImportState.status === 'running';
+
+const updateArtistBatchImportState = (patch) => {
+  artistBatchImportState = Object.assign({}, artistBatchImportState, patch);
+};
+
+const startArtistBatchImport = (artistNames, options = {}) => {
+  const sanitizedNames = sanitizeArtistNames(artistNames);
+  const releaseLimit = sanitizeArtistReleaseLimit(options.releaseLimit);
+  const imageLimit = sanitizeArtistImageLimit(options.imageLimit);
+
+  updateArtistBatchImportState({
+    status: sanitizedNames.length > 0 ? 'running' : 'done',
+    total: sanitizedNames.length,
+    checked: 0,
+    remaining: sanitizedNames.length,
+    imported: 0,
+    skipped: 0,
+    failed: 0,
+    currentArtist: null,
+    startedAt: Date.now(),
+    finishedAt: sanitizedNames.length > 0 ? null : Date.now(),
+    releaseLimit,
+    imageLimit,
+    lastError: null
+  });
+
+  if (sanitizedNames.length === 0) {
+    return;
+  }
+
+  setImmediate(async () => {
+    for (const artistName of sanitizedNames) {
+      if (artistBatchImportState.shouldStop) {
+        console.log(`[server] artistBatchImport stopped by user at artist ${artistBatchImportState.checked + 1} of ${artistBatchImportState.total}`);
+        updateArtistBatchImportState({
+          status: 'stopped',
+          remaining: 0,
+          currentArtist: null,
+          finishedAt: Date.now()
+        });
+        return;
+      }
+
+      updateArtistBatchImportState({ currentArtist: artistName });
+
+      try {
+        const existingArtist = await getArtistByNameAsync(artistName);
+        if (existingArtist) {
+          updateArtistBatchImportState({
+            checked: artistBatchImportState.checked + 1,
+            skipped: artistBatchImportState.skipped + 1,
+            remaining: Math.max(0, artistBatchImportState.total - (artistBatchImportState.checked + 1))
+          });
+          continue;
+        }
+      } catch (lookupErr) {
+        console.warn(`[server] artistBatchImport lookup warning for "${artistName}":`, lookupErr.message);
+      }
+
+      try {
+        await importArtistByNameAsync(artistName, { releaseLimit, imageLimit });
+        updateArtistBatchImportState({
+          checked: artistBatchImportState.checked + 1,
+          imported: artistBatchImportState.imported + 1,
+          remaining: Math.max(0, artistBatchImportState.total - (artistBatchImportState.checked + 1))
+        });
+      } catch (importErr) {
+        console.error(`[server] artistBatchImport item error for "${artistName}":`, importErr);
+        updateArtistBatchImportState({
+          checked: artistBatchImportState.checked + 1,
+          failed: artistBatchImportState.failed + 1,
+          remaining: Math.max(0, artistBatchImportState.total - (artistBatchImportState.checked + 1)),
+          lastError: importErr.message || String(importErr)
+        });
+      }
+    }
+
+    updateArtistBatchImportState({
+      status: 'done',
+      remaining: 0,
+      currentArtist: null,
+      finishedAt: Date.now()
+    });
+  });
+};
 
 const getServerIp = () => {
   try {
@@ -318,23 +479,20 @@ app.post('/endpoints/artistImport', (request, response) => {
   const name = request.query['name'] || (request.body && request.body.name);
   const waitForCompletion = request.query['wait'] !== undefined || (request.body && request.body.wait);
   const source = request.query['source'] || (request.body && request.body.source) || 'unknown';
-  const releaseLimitRaw = request.query['releaseLimit'] || (request.body && request.body.releaseLimit);
-  const parsedReleaseLimit = parseInt(releaseLimitRaw, 10);
-  const releaseLimit = (!Number.isFinite(parsedReleaseLimit) || parsedReleaseLimit <= 0)
-    ? 99
-    : Math.min(parsedReleaseLimit, 9999);
+  const releaseLimit = sanitizeArtistReleaseLimit(request.query['releaseLimit'] || (request.body && request.body.releaseLimit));
+  const imageLimit = sanitizeArtistImageLimit(request.query['imageLimit'] || (request.body && request.body.imageLimit));
   if (!name) {
     safeStatusJson(response, 400, { error: 'missing_required_param' });
     return;
   }
   try {
-    console.log(`[server] artistImport request: name="${name}" source="${source}" wait=${waitForCompletion ? '1' : '0'} releaseLimit=${releaseLimit}`);
+    console.log(`[server] artistImport request: name="${name}" source="${source}" wait=${waitForCompletion ? '1' : '0'} releaseLimit=${releaseLimit} imageLimit=${imageLimit}`);
     if (sources.setImportStatus) {
       sources.setImportStatus(name, { status: 'Starting import' });
     }
 
     if (waitForCompletion) {
-      sources.fetchAndStoreArtistByName(name, { releaseLimit }, (err, mbid) => {
+      sources.fetchAndStoreArtistByName(name, { releaseLimit, imageLimit }, (err, mbid) => {
         if (err) {
           console.error('[server] artistImport sync error:', err);
           safeStatusJson(response, 500, { error: 'import_failed', message: err.message || String(err) });
@@ -347,7 +505,7 @@ app.post('/endpoints/artistImport', (request, response) => {
 
     // Start import in background and return immediately. Client will poll status.
     setImmediate(() => {
-      sources.fetchAndStoreArtistByName(name, { releaseLimit }, (err, mbid) => {
+      sources.fetchAndStoreArtistByName(name, { releaseLimit, imageLimit }, (err, mbid) => {
         if (err) console.error('[server] artistImport background error:', err);
       });
     });
@@ -356,6 +514,39 @@ app.post('/endpoints/artistImport', (request, response) => {
     console.error('[server] artistImport start error:', e);
     safeStatusJson(response, 500, { error: 'start_failed' });
   }
+});
+
+app.post('/endpoints/artistBatchImport', (request, response) => {
+  const artistNames = sanitizeArtistNames((request.body && request.body.artistNames) || []);
+  const releaseLimit = sanitizeArtistReleaseLimit(request.query['releaseLimit'] || (request.body && request.body.releaseLimit));
+  const imageLimit = sanitizeArtistImageLimit(request.query['imageLimit'] || (request.body && request.body.imageLimit));
+
+  if (artistNames.length === 0) {
+    safeStatusJson(response, 400, { error: 'missing_artist_names' });
+    return;
+  }
+
+  if (isArtistBatchImportRunning()) {
+    safeJson(response, { result: true, already_running: true, status: artistBatchImportState });
+    return;
+  }
+
+  console.log(`[server] artistBatchImport request: total=${artistNames.length} releaseLimit=${releaseLimit} imageLimit=${imageLimit}`);
+  startArtistBatchImport(artistNames, { releaseLimit, imageLimit });
+  safeJson(response, { result: true, started: true, status: artistBatchImportState });
+});
+
+app.get('/endpoints/artistBatchImportStatus', (request, response) => {
+  safeJson(response, { status: artistBatchImportState });
+});
+
+app.post('/endpoints/artistBatchImportStop', (request, response) => {
+  if (artistBatchImportState.status !== 'running') {
+    safeJson(response, { result: true, was_running: false });
+    return;
+  }
+  updateArtistBatchImportState({ shouldStop: true });
+  safeJson(response, { result: true, was_running: true });
 });
 
 // Return import progress for a given artist name
@@ -418,33 +609,86 @@ app.post('/endpoints/artistDbClear', (req, res) => {
   const dbPath = path.join(__dirname, 'data', 'artists.db');
   const imagesPath = path.join(__dirname, 'data', 'images');
   let errors = [];
+
+  if (isArtistBatchImportRunning()) {
+    res.status(409).json({ success: false, error: 'Artist metadata download is running in the background. Wait for it to finish before clearing the cache.' });
+    return;
+  }
   
   try {
-    if (fs.existsSync(dbPath)) {
-      db.close();
-      fs.unlinkSync(dbPath);
-      db.init();
+    db.close();
+    for (const candidatePath of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`, `${dbPath}-journal`]) {
+      try {
+        if (fs.existsSync(candidatePath)) {
+          fs.unlinkSync(candidatePath);
+        }
+      } catch (e) {
+        errors.push(`DB file ${path.basename(candidatePath)}: ${e.message}`);
+      }
     }
+    db.init();
   } catch (e) {
     errors.push('DB: ' + e.message);
   }
-  
+
+  let imagesCleared = false;
   try {
     if (fs.existsSync(imagesPath)) {
-      const files = fs.readdirSync(imagesPath);
-      for (const file of files) {
-        try {
-          fs.unlinkSync(path.join(imagesPath, file));
-        } catch (e) {}
+      const deleteFolderRecursive = (dirPath) => {
+        if (fs.existsSync(dirPath)) {
+          fs.readdirSync(dirPath).forEach((file) => {
+            const curPath = path.join(dirPath, file);
+            try {
+              if (fs.lstatSync(curPath).isDirectory()) {
+                deleteFolderRecursive(curPath);
+              } else {
+                fs.unlinkSync(curPath);
+              }
+            } catch (e) {
+              // Skip locked files
+            }
+          });
+          try {
+            fs.rmdirSync(dirPath);
+          } catch (e) {
+            // Skip if directory can't be removed
+          }
+        }
+      };
+      deleteFolderRecursive(imagesPath);
+    }
+    fs.mkdirSync(imagesPath, { recursive: true });
+    imagesCleared = true;
+  } catch (e) {
+    if (!fs.existsSync(imagesPath)) {
+      try {
+        fs.mkdirSync(imagesPath, { recursive: true });
+        imagesCleared = true;
+      } catch (mkdirErr) {
+        // Non-fatal, continue
       }
     }
-  } catch (e) {
-    errors.push('Images: ' + e.message);
   }
   
   if (errors.length > 0) {
-    res.status(500).json({ success: false, error: errors.join(', ') });
+    res.json({ success: true, warning: errors.join(', ') + (imagesCleared ? '' : '. Images folder may not be fully cleared.') });
   } else {
+    artistBatchImportState = {
+      status: 'idle',
+      total: 0,
+      checked: 0,
+      remaining: 0,
+      imported: 0,
+      skipped: 0,
+      failed: 0,
+      currentArtist: null,
+      startedAt: null,
+      finishedAt: null,
+      releaseLimit: DEFAULT_ARTIST_RELEASE_LIMIT,
+      imageLimit: DEFAULT_ARTIST_IMAGE_LIMIT,
+      lastError: null,
+      shouldStop: false
+    };
     res.json({ success: true });
   }
 });

@@ -19,6 +19,7 @@ class Settings {
   _showFormatOverlay;
   _showLogoAnimation;
   _artistReleaseLimit;
+  _artistImageLimit;
   _presetsArray;
   _currentRule;
   _thresholdRule;
@@ -54,6 +55,7 @@ class Settings {
     this._highlightColor = this.storage.getItem('highlightColor') || '#e8c88a';
     this._playerBackgroundColor = this.storage.getItem('playerBackgroundColor') || '#111112';
     this._artistReleaseLimit = this._sanitizeArtistReleaseLimit(this.storage.getItem('artistReleaseLimit'));
+    this._artistImageLimit = this._sanitizeArtistImageLimit(this.storage.getItem('artistImageLimit'));
 
     s = this.storage.getItem('presetsArray');
     try {
@@ -248,6 +250,24 @@ class Settings {
     const sanitized = this._sanitizeArtistReleaseLimit(value);
     this._artistReleaseLimit = sanitized;
     this.storage.setItem('artistReleaseLimit', String(sanitized));
+  }
+
+  _sanitizeArtistImageLimit(value) {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 5;
+    }
+    return Math.min(parsed, 99);
+  }
+
+  get artistImageLimit() {
+    return this._artistImageLimit;
+  }
+
+  set artistImageLimit(value) {
+    const sanitized = this._sanitizeArtistImageLimit(value);
+    this._artistImageLimit = sanitized;
+    this.storage.setItem('artistImageLimit', String(sanitized));
   }
 
   get presetsArray() {
