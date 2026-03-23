@@ -764,7 +764,9 @@ export default class ArtistView extends Subview {
     const localAlbums = [];
     if (Model.hasLibrary) {
       for (const album of Model.library.albums) {
-        const isArtistMatch = (album['@_artist'] === artist.name || album['@_performer'] === artist.name);
+        const localArtistName = (album['@_artist'] || album['@_performer'] || '').toLowerCase();
+        const searchArtistName = artist.name.toLowerCase();
+        const isArtistMatch = localArtistName.includes(searchArtistName) || searchArtistName.includes(localArtistName);
         if (isArtistMatch) {
           localAlbums.push(album);
         }
@@ -862,13 +864,10 @@ export default class ArtistView extends Subview {
     const matchedRemoteIndexes = new Set();
     const matchedLocalIndexes = new Set();
 
-    console.log(`[artist-view] localAlbums: ${localAlbums.length}, remoteReleases: ${remoteReleases.length}`);
-
     for (let li = 0; li < localEntries.length; li++) {
       const localEntry = localEntries[li];
       const localTitle = localEntry.album['@_album'];
       const localNorm = normalize(localTitle);
-      console.log(`[artist-view] Local: "${localTitle}"`);
       let bestMatch = null;
       
       // Find all matching remote releases (same normalized title)
@@ -877,7 +876,6 @@ export default class ArtistView extends Subview {
         if (!remoteRelease || !remoteRelease.title) continue;
         const remoteNorm = normalize(remoteRelease.title);
         if (localNorm === remoteNorm) {
-          console.log(`  -> matched to remote: "${remoteRelease.title}"`);
           matchedRemoteIndexes.add(i);
           if (!bestMatch || (bestMatch.score && bestMatch.score < 1)) {
             bestMatch = { index: i, release: remoteRelease, score: 1 };
@@ -913,14 +911,6 @@ export default class ArtistView extends Subview {
         if (seenRemote.has(key)) continue;
         seenRemote.add(key);
         merged.push({ type: 'remote', release: r });
-      }
-
-      console.log(`[artist-view] Render: ${merged.length} items`);
-      for (let i = 0; i < merged.length; i++) {
-        const m = merged[i];
-        const type = m.type || 'local';
-        const title = type === 'local' ? m.album['@_album'] : m.release.title;
-        console.log(`  ${i}: ${type} - ${title} (${type === 'local' ? m.album['@_year'] : m.release.year})`);
       }
 
       merged.sort((a, b) => {
