@@ -10,7 +10,6 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
-  padding: 0 0 0 24px;
   height: 100%;
   overflow-y: visible; /* disable internal scrolling */
   overflow-x: hidden;
@@ -56,7 +55,7 @@
 @media (min-width: 768px) {
   #artistView {
     grid-template-columns: 1fr 2fr;
-    padding: 32px 0 0 36px;
+    padding: 32px 0 0 0;
   }
   .artistViewPictureColumn {
     grid-column: 1;
@@ -81,6 +80,46 @@
   #artistViewRightColumn {
     grid-column: 2;
     grid-row: 1;
+  }
+
+  /* Desktop overrides to restore absolute/sticky hero layout */
+  .artistViewPictureColumn {
+    width: 480px;
+    height: auto;
+    position: sticky;
+    top: 0;
+    overflow: visible;
+  }
+
+  .artistViewPictureOuter {
+    /* larger hero height on desktop */
+    min-height: 400px;
+  }
+
+  .artistPictureFrame {
+    position: absolute;
+    right: 32px;
+    top: 32px;
+    z-index: 10;
+    width: 250px;
+    height: 250px;
+  }
+
+  #artistViewPictureBlur {
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    right: -50px;
+    bottom: -50px;
+    transform: scale(1.3);
+  }
+
+  .artist-image-controls {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(32px + 250px + 12px);
+    width: 250px;
   }
 }
 
@@ -155,7 +194,7 @@
 
 @media (min-width: 1024px) {
   .artistViewPictureColumn {
-    width: 480px;
+    width: 320px;
     height: auto;
     position: sticky;
     top: 0;
@@ -167,22 +206,19 @@
   position: relative;
   width: 100%;
   max-width: 314px;
-  min-height: 400px;
+  /* mobile-first: smaller minimum height on narrow screens */
+  min-height: 350px;
   overflow: visible;
   z-index: 10;
   margin: 0 auto;
 }
 
-@media (max-width: 1023px) {
-  .artistViewPictureOuter {
-    min-height: 350px;
-  }
-}
-
 .artistPictureFrame {
-  position: absolute;
-  right: 32px;
-  top: 32px;
+  /* mobile-first: stack the picture within flow */
+  position: relative;
+  right: auto;
+  top: auto;
+  margin: 24px auto;
   z-index: 10;
   width: 250px;
   height: 250px;
@@ -191,7 +227,6 @@
   padding: 20px;
   box-sizing: border-box;
   overflow: hidden;
-  background: var(--bg);
   transition: border-color 0.6s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.6s ease;
 }
 
@@ -202,34 +237,19 @@
 }
 
 #artistViewPictureBlur {
+  /* mobile-first: simpler positioning */
   position: absolute;
-  top: -50px;
-  left: -50px;
-  right: -50px;
-  bottom: -50px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   filter: blur(60px) saturate(1.5);
   opacity: 0.25;
   z-index: 1;
   object-fit: cover;
   pointer-events: none;
   border-radius: 50%;
-  transform: scale(1.3);
-}
-
-@media (max-width: 1023px) {
-  .artistPictureFrame {
-    position: relative;
-    right: auto;
-    top: auto;
-    margin: 24px auto;
-  }
-  #artistViewPictureBlur {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    transform: scale(1.2);
-  }
+  transform: scale(1.2);
 }
 
 #artistViewPicture {
@@ -240,18 +260,19 @@
   display: block;
 }
 
-/* Wrapper for nav and controls - centered under picture frame */
+/* Wrapper for nav and controls - mobile-first: in-flow */
 .artist-image-controls {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: calc(32px + 250px + 12px);
+  position: relative;
+  left: auto;
+  transform: none;
+  top: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   z-index: 20;
   width: 250px;
+  margin: 12px auto 0;
 }
 
 /* Image nav buttons - centered within wrapper */
@@ -261,6 +282,7 @@
   column-gap: 12px;
   justify-content: center;
   align-items: center;
+  /* mobile-first default: full width */
   width: 100%;
 }
 
@@ -418,7 +440,7 @@
   font-weight: 400;
   line-height: 1.1;
   letter-spacing: -0.01em;
-  color: var(--text);
+  color: var(--text2);
   margin-bottom: 8px;
 }
 
@@ -773,51 +795,6 @@
 
 .artist-bio-source a:hover {
   color: var(--accent);
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   TOGGLE SWITCH (Shared with Settings)
-   ═══════════════════════════════════════════════════════════════ */
-
-.toggle-switch {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  cursor: pointer;
-}
-
-.toggle-switch input {
-  display: none;
-}
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-md);
-  border-radius: 11px;
-  transition: all 0.25s;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 14px;
-  height: 14px;
-  background: var(--text-2);
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.toggle-switch input:checked~.toggle-track {
-  background: var(--accent-bg);
-  border-color: var(--accent);
-}
-
-.toggle-switch input:checked~.toggle-thumb {
-  transform: translateX(18px);
-  background: var(--accent);
 }
 
 .artist-bio-source a::after {

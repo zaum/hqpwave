@@ -4,6 +4,7 @@
   --player-bg: #111112;
   --surface: #171718;
   --surface2: #1d1d1f;
+  --surface3: #141415;
   --raised: #222224;
   --border: rgba(255,255,255,0.07);
   --border-md: rgba(255,255,255,0.11);
@@ -40,6 +41,7 @@
   --bg: #f8f7f5;
   --surface: #efeeec;
   --surface2: #e5e4e2;
+  --surface3: #d9d8d6;
   --raised: #dbdada;
   --border: rgba(0,0,0,0.08);
   --border-md: rgba(0,0,0,0.12);
