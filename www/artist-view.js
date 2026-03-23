@@ -573,10 +573,6 @@ export default class ArtistView extends Subview {
     }
 
     // images
-    console.log('[artist-view] renderArtist called for', artist && artist.name ? artist.name : artist, 'images count:', (artist && artist.images && artist.images.length) || 0);
-    if (artist && artist.images && artist.images.length) {
-      console.log('[artist-view] artist.images sample:', artist.images.slice(0,10).map(i => ({ id: i.id, url: i.url, thumbnail: i.thumbnail_url, source: i.source })));
-    }
     this.artistImageUrls = [];
     this.$gallery.empty();
     if (artist.images && artist.images.length) {
@@ -817,13 +813,24 @@ export default class ArtistView extends Subview {
       }
       return dp[aa.length][bb.length];
     };
-    const getTitleSimilarity = (aTitle, bTitle) => {
-      const aNorm = normalize(aTitle);
+    const getTitleSimilarity = (aTitle, bTitle, artistName = '') => {
+      let aNorm = normalize(aTitle);
       const bNorm = normalize(bTitle);
+      
+      // Remove artist name from local album title if present
+      if (artistName && artistName.trim()) {
+        const artistNorm = normalize(artistName);
+        const artistWords = artistNorm.split(/\s+/).filter(w => w.length > 2);
+        for (const word of artistWords) {
+          const regex = new RegExp(`(?:^|\\s)${word}(?:\\s|$)`, 'gi');
+          aNorm = aNorm.replace(regex, ' ').replace(/\s+/g, ' ').trim();
+        }
+      }
+      
       if (!aNorm || !bNorm) return 0;
       if (aNorm === bNorm) return 1;
-      const aTokens = tokenize(aTitle);
-      const bTokens = tokenize(bTitle);
+      const aTokens = tokenize(aNorm);
+      const bTokens = tokenize(bNorm);
       const aSet = new Set(aTokens);
       const bSet = new Set(bTokens);
       let intersection = 0;
@@ -831,21 +838,14 @@ export default class ArtistView extends Subview {
         if (bSet.has(token)) intersection++;
       }
       const tokenScore = intersection / Math.max(aSet.size || 1, bSet.size || 1);
-      const distance = levenshtein(aNorm, bNorm);
+      const distance = levenshtein(aNorm, normalize(bTitle));
       const lengthScore = 1 - (distance / Math.max(aNorm.length, bNorm.length, 1));
       return Math.max(tokenScore, lengthScore);
     };
-    const getYearDistance = (aYear, bYear) => {
-      const ay = parseInt(toYearString(aYear), 10);
-      const by = parseInt(toYearString(bYear), 10);
-      if (!ay || !by) return null;
-      return Math.abs(ay - by);
-    };
     const isLikelySameRelease = (localAlbum, remoteRelease) => {
-      const similarity = getTitleSimilarity(localAlbum['@_album'], remoteRelease.title);
+      const similarity = getTitleSimilarity(localAlbum['@_album'], remoteRelease.title, artist.name);
       if (similarity >= 0.97) return true;
-      const yearDistance = getYearDistance(getLocalYear(localAlbum), remoteRelease.year);
-      if (similarity >= 0.9 && (yearDistance === null || yearDistance <= 1)) return true;
+      if (similarity >= 0.9) return true;
       if (similarity >= 0.82) {
         const localNorm = normalize(localAlbum['@_album']);
         const remoteNorm = normalize(remoteRelease.title);
@@ -860,46 +860,69 @@ export default class ArtistView extends Subview {
       matchedRelease: null
     }));
     const matchedRemoteIndexes = new Set();
-    for (const localEntry of localEntries) {
+    const matchedLocalIndexes = new Set();
+
+    console.log(`[artist-view] localAlbums: ${localAlbums.length}, remoteReleases: ${remoteReleases.length}`);
+
+    for (let li = 0; li < localEntries.length; li++) {
+      const localEntry = localEntries[li];
+      const localTitle = localEntry.album['@_album'];
+      const localNorm = normalize(localTitle);
+      console.log(`[artist-view] Local: "${localTitle}"`);
       let bestMatch = null;
+      
+      // Find all matching remote releases (same normalized title)
       for (let i = 0; i < remoteReleases.length; i++) {
-        if (matchedRemoteIndexes.has(i)) continue;
         const remoteRelease = remoteReleases[i];
         if (!remoteRelease || !remoteRelease.title) continue;
-        if (!isLikelySameRelease(localEntry.album, remoteRelease)) continue;
-        const similarity = getTitleSimilarity(localEntry.album['@_album'], remoteRelease.title);
-        const yearDistance = getYearDistance(getLocalYear(localEntry.album), remoteRelease.year);
-        const score = similarity - ((yearDistance !== null ? Math.min(yearDistance, 5) : 1) * 0.015);
-        if (!bestMatch || score > bestMatch.score) {
-          bestMatch = { index: i, release: remoteRelease, score };
+        const remoteNorm = normalize(remoteRelease.title);
+        if (localNorm === remoteNorm) {
+          console.log(`  -> matched to remote: "${remoteRelease.title}"`);
+          matchedRemoteIndexes.add(i);
+          if (!bestMatch || (bestMatch.score && bestMatch.score < 1)) {
+            bestMatch = { index: i, release: remoteRelease, score: 1 };
+          }
         }
       }
       if (bestMatch) {
-        matchedRemoteIndexes.add(bestMatch.index);
+        matchedLocalIndexes.add(li);
         localEntry.matchedRelease = bestMatch.release;
-        localEntry.displayYear = toYearString(bestMatch.release.year) || getLocalYear(localEntry.album) || null;
+        localEntry.displayYear = toYearString(bestMatch.release.year) || null;
       }
     }
 
     const renderAll = () => {
       this.$discography.empty();
       const merged = [];
+      const seenLocal = new Set();
       const seenRemote = new Set();
-      // add remote entries that were not matched to a local album
+
+      for (let li = 0; li < localEntries.length; li++) {
+        const localEntry = localEntries[li];
+        const key = `${normalize(localEntry.album['@_album'])}|${localEntry.album['@_year']||''}`;
+        if (seenLocal.has(key)) continue;
+        seenLocal.add(key);
+        merged.push(localEntry);
+      }
+
       for (let i = 0; i < remoteReleases.length; i++) {
         if (matchedRemoteIndexes.has(i)) continue;
         const r = remoteReleases[i];
-        // Deduplicate remote releases by title and year
         const key = `${normalize(r.title)}|${String(r.year||'')}`;
+        if (seenLocal.has(key)) continue;
         if (seenRemote.has(key)) continue;
         seenRemote.add(key);
         merged.push({ type: 'remote', release: r });
       }
-      // add all local albums, using matched remote year when available
-      for (const localEntry of localEntries) {
-        merged.push(localEntry);
+
+      console.log(`[artist-view] Render: ${merged.length} items`);
+      for (let i = 0; i < merged.length; i++) {
+        const m = merged[i];
+        const type = m.type || 'local';
+        const title = type === 'local' ? m.album['@_album'] : m.release.title;
+        console.log(`  ${i}: ${type} - ${title} (${type === 'local' ? m.album['@_year'] : m.release.year})`);
       }
-      // Sort merged list by year ascending (unknown years last), then title
+
       merged.sort((a, b) => {
         const getYear = (x) => {
           if (x.displayYear) return parseInt(x.displayYear) || 0;

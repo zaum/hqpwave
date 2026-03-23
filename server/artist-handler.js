@@ -18,7 +18,6 @@ const IMAGES_DIR = path.join(__dirname, 'data', 'images');
 
 // Domains that support CORS - use redirect for faster loading
 const CORS_FRIENDLY_DOMAINS = [
-  'coverartarchive.org',
   'upload.wikimedia.org',
   'commons.wikimedia.org'
 ];
