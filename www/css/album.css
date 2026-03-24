@@ -441,8 +441,10 @@
   color: var(--text);
 }
 
+/* Alias: hero-title -> title-xl */
 #albumViewTitle,
-.hero-title {
+.hero-title,
+.title-xl {
   font-family: 'Playfair Display', serif;
   font-size: 28px;
   font-weight: 400;
@@ -454,7 +456,8 @@
 @media (min-width: 768px) {
 
   #albumViewTitle,
-  .hero-title {
+  .hero-title,
+  .title-xl {
     font-size: 42px;
   }
 }
@@ -807,16 +810,7 @@
   color: var(--text);
 }
 
-#albumFavoriteButton {
-  border: none;
-  width: auto;
-  height: auto;
-}
-
-#albumFavoriteButton .favoriteIcon {
-  width: 22px;
-  height: 22px;
-}
+/* Use default favorite button styles from buttons.css */
 
 #albumCloseButton {
   position: absolute;
@@ -1033,7 +1027,9 @@
   min-width: 0;
 }
 
-.track-title {
+/* Alias: track-title -> title-md */
+.track-title,
+.title-md {
   font-size: 13.5px;
   font-weight: 400;
   color: var(--text);
@@ -1043,7 +1039,9 @@
   letter-spacing: 0.005em;
 }
 
-.track-composer {
+/* Alias: track-composer -> subtitle */
+.track-composer,
+.subtitle {
   font-size: 11px;
   font-weight: 300;
   color: var(--text-3);
@@ -1065,7 +1063,9 @@
   color: var(--text-2);
 }
 
-.track-duration {
+/* Alias: track-duration -> caption-lg */
+.track-duration,
+.caption-lg {
   font-family: 'Geist Mono', monospace;
   font-size: 12px;
   font-weight: 300;
@@ -1273,7 +1273,6 @@
 .albumItemMain .extraLine .extraValue {
   color: var(--text-2);
   font-size: 1em;
-  margin-left: 0.33em;
 }
 
 /* Preserve double-space separators inside extra values and allow wrapping */

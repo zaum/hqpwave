@@ -262,6 +262,10 @@
   min-height: calc(100% + 8px);
 }
 
+#historyList .extra {
+  display: none;
+}
+
 /* Empty playlist / informational row */
 .playHisNonItem {
   color: var(--text-3);
@@ -326,7 +330,7 @@
   top: 0;
   bottom: 0;
   left: var(--history-spine-x);
-  width: 2px;
+  width: 1px;
   background: var(--border-md);
   pointer-events: none;
   z-index: 0;
@@ -636,7 +640,9 @@
   min-width: 0;
 }
 
-.playlistItemTitle {
+/* Alias: playlistItemTitle -> title-md */
+.playlistItemTitle,
+.title-md {
   font-size: 13px;
   font-weight: 400;
   color: var(--text);
@@ -645,7 +651,9 @@
   text-overflow: ellipsis;
 }
 
-.playlistItemArtist {
+/* Alias: playlistItemArtist -> subtitle */
+.playlistItemArtist,
+.subtitle {
   font-size: 11px;
   color: var(--text-3);
   margin-top: 1px;
@@ -740,7 +748,9 @@
   min-width: 0;
 }
 
-.historyItemTitle {
+/* Alias: historyItemTitle -> title-md */
+.historyItemTitle,
+.title-md {
   font-size: 13px;
   font-weight: 400;
   color: var(--text);
@@ -749,19 +759,22 @@
   text-overflow: ellipsis;
 }
 
-.historyItemArtist {
+/* Alias: historyItemArtist -> subtitle */
+.historyItemArtist,
+.subtitle {
   font-size: 11px;
   color: var(--text-3);
   margin-top: 1px;
 }
 
-.historyItemTime {
+/* Alias: historyItemTime -> caption */
+.historyItemTime,
+.caption {
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
   color: var(--text-2);
   flex-shrink: 0;
   text-align: center;
-  justify-content: center;
   display: flex;
   align-items: center;
 }

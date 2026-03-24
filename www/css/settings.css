@@ -647,7 +647,7 @@
 
 .image-source-item .source-url-input::selection {
   background: var(--accent);
-  color: white;
+  color: var(--text);
 }
 
 .image-source-item .delete-source-btn {
@@ -697,7 +697,7 @@
 
 .iconButton:hover {
   background: var(--accent);
-  color: white;
+  color: var(--text);
   border-color: var(--accent);
 }
 

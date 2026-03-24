@@ -5,7 +5,6 @@
 
 @import url('./variables.css');
 @import url('./base.css');
-@import url('./buttons.css');
 @import url('./components.css');
 @import url('./layout.css');
 @import url('./library.css');
@@ -13,3 +12,4 @@
 @import url('./artist.css');
 @import url('./playlist.css');
 @import url('./settings.css');
+@import url('./buttons.css');

@@ -1028,6 +1028,8 @@ export default class ArtistView extends Subview {
 
       if (isLocal) {
         $item.on('click', () => { $(document).trigger('library-item-click', [item.album, $item]); });
+        // Prevent text area from triggering album view - only cover should be clickable
+        $item.find('.releaseTitle, .releaseYear').on('click tap', (e) => { e.stopPropagation(); });
         $item.find('.libraryItemPlayBtn').on('click tap', (e) => { e.stopPropagation(); const commands = Commands.playlistAddUsingAlbumAndIndices(item.album, 0, -1); AppUtil.doPlaylistAdds(commands, true, true); });
       } else if (hasCover) {
         $item.find('.coverWrap').on('click tap', (e) => {

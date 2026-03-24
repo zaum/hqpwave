@@ -353,6 +353,11 @@ export default class LibraryContentList {
       $item.removeClass('show-format-overlay');
     }
 
+    // Prevent text area from triggering album view - only cover should be clickable
+    $item.find('.libraryItemTexts').on('click tap', (e) => {
+      e.stopPropagation();
+    });
+
     // Make the favorite icon actionable.
     $item.find('.libraryItemFavorite').on('click tap', (e) => {
       e.stopPropagation();

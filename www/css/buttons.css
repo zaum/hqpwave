@@ -451,3 +451,274 @@
 .album-card:hover .play-circle {
   transform: scale(1);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   BACK TO LIBRARY BUTTON (index.html:61)
+   ═══════════════════════════════════════════════════════════════ */
+
+.backToLibraryButton {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ALBUM VIEW IMAGE NAV BUTTON (album.css:299)
+   ═══════════════════════════════════════════════════════════════ */
+
+.albumViewImageNavButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 140ms ease, background 140ms ease;
+}
+
+.albumViewImageNavButton.isGhost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.albumViewImageNavButton:hover {
+  opacity: 1;
+  background: var(--raised);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ALBUM STATS FOLDER (album.css:556)
+   ═══════════════════════════════════════════════════════════════ */
+
+.albumStatsFolder {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 0;
+  margin: 0 0 0 10px;
+  font-size: 1.4em;
+  vertical-align: middle;
+  transition: color 0.1s;
+}
+
+@media (max-width: 1023px) {
+  .albumStatsFolder {
+    display: none;
+  }
+}
+
+.albumStatsFolder:hover {
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ALBUM ITEM QUEUE BUTTON (album.css:1319)
+   ═══════════════════════════════════════════════════════════════ */
+
+.albumItemQueueButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-right: 6px;
+  border: none;
+  background: transparent;
+  opacity: 0.55;
+}
+
+.albumItemQueueButton .iconPlus {
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  background-color: currentColor;
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg>');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.albumItem:hover .albumItemQueueButton,
+.albumItemQueueButton:hover {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DELETE SOURCE BUTTON (settings.css:653)
+   ═══════════════════════════════════════════════════════════════ */
+
+.delete-source-btn {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.delete-source-btn:hover {
+  color: var(--red);
+  background: rgba(255, 59, 48, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR TOGGLE (layout.css:685)
+   ═══════════════════════════════════════════════════════════════ */
+
+#sidebarToggle {
+  position: absolute;
+  right: calc(-1 * var(--sidebar-toggle-w) + 1px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--sidebar-toggle-w);
+  height: var(--sidebar-toggle-h);
+  border-radius: 0 6px 6px 0;
+  border: 1px solid var(--border-md);
+  border-left: 0;
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+  user-select: none;
+  z-index: 160;
+}
+
+#sidebarToggle::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: var(--surface);
+}
+
+#sidebarToggle .sidebar-toggle-icon {
+  /* icon styles */
+}
+
+#sidebarToggle.isCollapsed .sidebar-toggle-icon {
+  /* collapsed state */
+}
+
+#sidebarToggle:hover {
+  color: var(--text);
+}
+
+#sidebarToggle.hasActiveFilters,
+.hasSidebarFilters #sidebarToggle {
+  color: var(--accent);
+}
+
+#sidebarToggle.hasActiveFilters:hover,
+.hasSidebarFilters #sidebarToggle:hover {
+  color: var(--accent);
+}
+
+#sidebarToggle.hasActiveFilters::before,
+.hasSidebarFilters #sidebarToggle::before {
+  background: var(--accent-bg);
+}
+
+.lightTheme #sidebarToggle {
+  background: var(--surface);
+}
+
+.lightTheme #sidebarToggle:hover {
+  background: var(--raised);
+}
+
+.lightTheme #sidebarToggle.hasActiveFilters,
+.lightTheme .hasSidebarFilters #sidebarToggle {
+  color: var(--accent);
+}
+
+.lightTheme #sidebarToggle.hasActiveFilters:hover,
+.lightTheme .hasSidebarFilters #sidebarToggle:hover {
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS ICON BUTTON OVERRIDE (settings.css:683)
+   ═══════════════════════════════════════════════════════════════ */
+
+.settings-view .iconButton,
+.iconButton.settings-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.settings-view .iconButton:hover,
+.iconButton.settings-icon:hover {
+  background: var(--accent);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOP BAR ICONS (layout.css:149)
+   ═══════════════════════════════════════════════════════════════ */
+
+#topBarButtons .iconButton {
+  border: none;
+  background: transparent;
+}
+
+#topBarButtons .iconButton:hover {
+  background: var(--raised);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRANSPORT BUTTONS (layout.css:1532)
+   ═══════════════════════════════════════════════════════════════ */
+
+#transportButtons .iconButton {
+  border-color: transparent;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+#transportButtons .iconButton:hover {
+  background: var(--raised);
+  transform: scale(1.05);
+}
+
+#transportButtons .iconButton:hover:before {
+  opacity: 1 !important;
+  filter: brightness(1.2);
+}

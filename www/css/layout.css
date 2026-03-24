@@ -2400,7 +2400,7 @@
   padding: 8px 28px;
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: 26px;
-  color: #fff;
+  color: var(--text);
   text-align: center;
   line-height: 68px;
   text-overflow: ellipsis;
@@ -2489,7 +2489,7 @@
 #snack #snackInner #snackLine1 {
   margin-left: 64px;
   margin-right: 64px;
-  color: #fff;
+  color: var(--text);
   font-weight: 400;
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: 32px;
@@ -2502,7 +2502,7 @@
   margin-right: 64px;
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: 28px;
-  color: #fff;
+  color: var(--text);
   line-height: 1.25;
 }
 
