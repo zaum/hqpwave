@@ -48,6 +48,7 @@
   position: relative;
   padding-bottom: 32px;
   animation: heroIn 0.3s ease-out;
+  overflow: hidden;
 }
 
 @keyframes heroIn {
@@ -679,7 +680,7 @@
   padding: 4px 10px;
   border: 1px solid var(--border-md);
   border-radius: 4px;
-  color: var(--text-3);
+  color: var(--text-2);
   cursor: pointer;
   transition: all 0.15s;
   letter-spacing: 0.08em;
@@ -1432,6 +1433,9 @@
   background: var(--surface2);
   padding: 40px 24px 36px 24px; /* increased top padding */
   margin-top: 28px;
+  position: relative;
+  z-index: 300;
+  isolation: isolate;
 }
 
 .relatedAlbumsInner {
@@ -1446,12 +1450,10 @@
   color: var(--text-2);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin: 0 0 16px 8px; /* slightly larger gap below title */
+  margin: 0 0 32px 8px; 
 }
 
-/* Reuse library album grid styles via libraryAlbumGroup class; tweak spacing here */
+/* Reuse library album grid styles via libraryAlbumGroup class */
 .relatedAlbums .libraryAlbumGroup {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  /* Library view styles will be applied automatically */
 }

@@ -432,8 +432,7 @@ hide() {
 
       // Show related albums block and set title to '<Artist> Other Albums'
       ViewUtil.setDisplayed(this.$el.find('#relatedAlbums'), true);
-      const artistName = (artists && artists[0]) ? artists[0] : '';
-      const titleText = artistName ? `Other albums by ${artistName}` : 'Other albums';
+      const titleText = 'Related albums';
       if (this.$relatedTitle && this.$relatedTitle.length) {
         this.$relatedTitle.text(titleText);
       }
