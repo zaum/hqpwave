@@ -441,10 +441,8 @@
   color: var(--text);
 }
 
-/* Alias: hero-title -> title-xl */
-#albumViewTitle,
-.hero-title,
-.title-xl {
+/* Album hero title - uses shared .title-xl from base.css */
+#albumViewTitle {
   font-family: 'Playfair Display', serif;
   font-size: 28px;
   font-weight: 400;
@@ -455,9 +453,7 @@
 
 @media (min-width: 768px) {
 
-  #albumViewTitle,
-  .hero-title,
-  .title-xl {
+  #albumViewTitle {
     font-size: 42px;
   }
 }
@@ -1027,8 +1023,7 @@
   min-width: 0;
 }
 
-/* Alias: track-title -> title-md */
-.track-title,
+/* Track title - uses shared .title-md from base.css */
 .title-md {
   font-size: 13.5px;
   font-weight: 400;
@@ -1039,8 +1034,7 @@
   letter-spacing: 0.005em;
 }
 
-/* Alias: track-composer -> subtitle */
-.track-composer,
+/* Track composer - uses shared .subtitle from base.css */
 .subtitle {
   font-size: 11px;
   font-weight: 300;
@@ -1063,8 +1057,7 @@
   color: var(--text-2);
 }
 
-/* Alias: track-duration -> caption-lg */
-.track-duration,
+/* Track duration - uses shared .caption-lg from base.css */
 .caption-lg {
   font-family: 'Geist Mono', monospace;
   font-size: 12px;

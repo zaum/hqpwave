@@ -656,16 +656,25 @@
   color: var(--text-2);
   cursor: pointer;
   padding: 4px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: color 0.15s, background-color 0.15s;
+  -webkit-mask-image: var(--icon-delete);
+  mask-image: var(--icon-delete);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: 16px 16px;
+  mask-size: 16px 16px;
+  background-color: var(--text-2);
+  width: 24px;
+  height: 24px;
 }
 
 .image-source-item .delete-source-btn:hover {
-  color: var(--red);
-  background: rgba(255, 59, 48, 0.1);
+  background-color: var(--accent);
 }
 
 .image-source-item .source-enabled-indicator {

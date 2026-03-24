@@ -185,7 +185,7 @@ export default class SettingsView extends Subview {
         $urlInput.select();
       });
       
-      const $deleteBtn = $('<button class="delete-source-btn" title="Remove source"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"></path></svg></button>');
+      const $deleteBtn = $('<button class="delete-source-btn deleteButton" title="Remove source"></button>');
       
       $deleteBtn.on('click', () => {
         this.imageSources.splice(i, 1);

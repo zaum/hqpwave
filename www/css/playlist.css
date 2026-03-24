@@ -186,7 +186,13 @@
 }
 
 #playlistClearButton::before {
-  background-image: url("./../img/icons/delete_white_24dp.svg");
+  -webkit-mask-image: var(--icon-delete);
+  mask-image: var(--icon-delete);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background-color: currentColor;
 }
 
 #playlistLoadButton::before {
@@ -640,8 +646,7 @@
   min-width: 0;
 }
 
-/* Alias: playlistItemTitle -> title-md */
-.playlistItemTitle,
+/* Playlist item title - uses shared .title-md from base.css */
 .title-md {
   font-size: 13px;
   font-weight: 400;
@@ -651,8 +656,7 @@
   text-overflow: ellipsis;
 }
 
-/* Alias: playlistItemArtist -> subtitle */
-.playlistItemArtist,
+/* Playlist item artist - uses shared .subtitle from base.css */
 .subtitle {
   font-size: 11px;
   color: var(--text-3);
@@ -748,9 +752,8 @@
   min-width: 0;
 }
 
-/* Alias: historyItemTitle -> title-md */
-.historyItemTitle,
-.title-md {
+/* History item title - uses shared .title-md from base.css */
+.historyItemTitle {
   font-size: 13px;
   font-weight: 400;
   color: var(--text);
@@ -759,17 +762,15 @@
   text-overflow: ellipsis;
 }
 
-/* Alias: historyItemArtist -> subtitle */
-.historyItemArtist,
-.subtitle {
+/* History item artist - uses shared .subtitle from base.css */
+.historyItemArtist {
   font-size: 11px;
   color: var(--text-3);
   margin-top: 1px;
 }
 
-/* Alias: historyItemTime -> caption */
-.historyItemTime,
-.caption {
+/* History item time - has specific styling (different from shared .caption) */
+.historyItemTime {
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
   color: var(--text-2);

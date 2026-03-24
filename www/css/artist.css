@@ -426,6 +426,7 @@
   padding: 32px 32px 80px 0;
   z-index: 10;
   position: relative;
+  overflow: visible;
 }
 
 @media (max-width: 1023px) {
@@ -871,8 +872,10 @@
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 24px;
   margin-top: 32px;
+  margin-bottom: 80px;
   position: relative;
   z-index: 10;
+  overflow: visible;
 }
 
 .artistDiscItem {
@@ -940,9 +943,8 @@
   transition: filter 0.3s ease;
 }
 
-/* Alias: releaseYear -> caption-lg */
-.releaseYear,
-.caption-lg {
+/* Release year - specialized styling (not same as shared .caption-lg) */
+.releaseYear {
   font-family: 'Geist Mono', monospace;
   font-size: 12px;
   color: var(--text);
@@ -954,9 +956,8 @@
   cursor: default;
 }
 
-/* Alias: releaseTitle -> subtitle-lg */
-.releaseTitle,
-.subtitle-lg {
+/* Release title - specialized styling (not same as shared .subtitle-lg) */
+.releaseTitle {
   font-size: 12px;
   font-weight: 400;
   color: var(--text-2);

@@ -34,6 +34,9 @@
   --col-accent: var(--accent);
   --col-highlight: var(--accent);
   --icon-brightness: 100%;
+
+  /* Shared icon masks - outline style */
+  --icon-delete: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23fff' d='M5 6h14l-1 13a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6z'/><path fill='%23fff' d='M9 6V4h6v2'/><rect x='10' y='11' width='1' height='6' fill='%23fff'/><rect x='13' y='11' width='1' height='6' fill='%23fff'/></svg>");
 }
 
 :root.lightTheme {
@@ -71,4 +74,7 @@
   --col-accent: var(--accent);
   --col-highlight: var(--accent);
   --icon-brightness: 0%;
+
+  /* Shared icon masks - outline style */
+  --icon-delete: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23fff' d='M5 6h14l-1 13a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6z'/><path fill='%23fff' d='M9 6V4h6v2'/><rect x='10' y='11' width='1' height='6' fill='%23fff'/><rect x='13' y='11' width='1' height='6' fill='%23fff'/></svg>");
 }
