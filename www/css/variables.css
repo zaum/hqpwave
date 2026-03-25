@@ -21,6 +21,13 @@
   /* User customizable colors */
   --player-bg-color: #111112;
   
+  /* Scrollbar */
+  --scrollbar-width: 6px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: var(--border-md);
+  --scrollbar-thumb-hover: var(--border-hi);
+  --scrollbar-radius: 3px;
+  
   /* Legacy mappings for compatibility */
   --col-bg: var(--bg);
   --col-listitem-less: var(--surface);

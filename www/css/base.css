@@ -122,17 +122,21 @@ textarea,
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-md);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--scrollbar-radius);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Remove :hover on pseudo-element for broader compatibility; keep base thumb style above */
@@ -316,6 +320,29 @@ label {
 /* ============================================
    SHARED TEXT STYLE CLASSES
    ============================================ */
+
+/* Title medium */
+.title-md {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.005em;
+}
+
+/* Subtitle */
+.subtitle {
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text-3);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
 
 /* Caption / meta text */
 .caption {

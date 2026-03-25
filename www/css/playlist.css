@@ -647,24 +647,8 @@
 }
 
 /* Playlist item title - uses shared .title-md from base.css */
-.title-md {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 /* Playlist item artist - uses shared .subtitle from base.css */
-.subtitle {
-  font-size: 11px;
-  color: var(--text-3);
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .playlistItemDuration {
   font-family: 'Geist Mono', monospace;

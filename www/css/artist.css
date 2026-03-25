@@ -989,7 +989,7 @@
    Ensure no CSS filter or backdrop-filter applies inside #artistView
    ------------------------------------------------------------------ */
 #artistView,
-#artistView *:not(#artistViewBgImage):not(.artistDiscItem.not-local .coverWrap img):not(.coverWrap.bw img) {
+#artistView *:not(#artistViewBgImage):not(.artistDiscItem.not-local .coverWrap):not(.coverWrap.bw):not(.artistDiscItem.not-local .coverWrap img):not(.coverWrap.bw img) {
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;

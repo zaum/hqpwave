@@ -35,12 +35,12 @@
 }
 
 .library-main::-webkit-scrollbar-thumb {
-  background: var(--border-md);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
-.library-main::-webkit-scrollbar-thumb {
-  background: var(--border-hi);
+.library-main::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 @media (min-width: 768px) {
@@ -762,25 +762,8 @@
 }
 
 /* Use shared .subtitle from base.css for artist names */
-.subtitle {
-  font-size: 11px;
-  font-weight: 300;
-  color: var(--text-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-  letter-spacing: 0.01em;
-}
 
 /* Use shared .caption from base.css for years */
-.caption {
-  font-family: 'Geist Mono', monospace;
-  font-size: 10px;
-  color: var(--text-3);
-  margin-top: 1px;
-  letter-spacing: 0.04em;
-}
 
 /* None Item */
 #libraryNoneItem {
