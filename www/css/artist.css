@@ -128,7 +128,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 #artistViewBg {
-  position: sticky;
+  position: absolute;
   top: 0;
   left: 0;
   width: 70%;
@@ -481,16 +481,24 @@
   max-width: 950px; /* increased by another 50px as requested */
   margin-bottom: 40px;
   font-weight: 300;
+  overflow: visible;
+  display: block;
 }
 
 .artistBio p {
-  margin-bottom: 1.6em; /* larger spacing after paragraphs as requested */
+  margin: 0 0 16px 0;
+  padding: 0;
+  display: block;
+}
+
+.artistBio p + p {
+  margin-top: 16px;
 }
 
 .artistBio a {
-  color: var(--accent);
+  color: var(--text);
   text-decoration: none;
-  border-bottom: 1px solid transparent;
+  border-bottom: 1px solid var(--text-3);
   transition: border-color 0.15s;
   cursor: pointer;
 }
@@ -500,8 +508,8 @@
 }
 
 /* Remove unwanted color inheritance in bio */
-.artistBio * {
-  color: inherit !important;
+.artistBio *:not(.artist-link) {
+  color: inherit;
 }
 
 /* ═══════════════════════════════════════════════════════════════

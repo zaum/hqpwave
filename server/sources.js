@@ -235,7 +235,7 @@ const fetchReleaseById = (releaseId, cb) => {
 const fetchWikipediaSummary = (title, cb) => {
   const encoded = encodeURIComponent(title.replace(/ /g, '_'));
   // Use the query API to get a longer plaintext extract, fullurl, and the best available image.
-  const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|pageimages|info&explaintext=1&piprop=original|thumbnail&pithumbsize=1600&inprop=url&titles=${encoded}&formatversion=2`;
+  const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|pageimages|info&explaintext=1&piprop=original|thumbnail&pithumbsize=1600&inprop=url&titles=${encoded}&redirects=1&formatversion=2`;
   httpGetJsonWithRetry(url, (err, json) => {
     if (err) return cb(null, null);
     try {
@@ -843,6 +843,8 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
           id: mbid,
           name: mbArtist.name,
           disambiguation: disambiguation,
+          // Persist MusicBrainz life-span so frontend can display reliable years
+          life_span: (mbArtist && mbArtist['life-span']) ? mbArtist['life-span'] : null,
           bio: (wikiData && wikiData.extract) ? wikiData.extract : '',
           wiki_url: (wikiData && wikiData.url) ? wikiData.url : null,
           discography: discography,

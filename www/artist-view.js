@@ -7,6 +7,7 @@ import AlbumUtil from './album-util.js';
 import AppUtil from './app-util.js';
 import Commands from './commands.js';
 import Settings from './settings.js';
+import Values from './values.js';
 
 export default class ArtistView extends Subview {
 
@@ -425,7 +426,8 @@ export default class ArtistView extends Subview {
       if (album['@_artist']) artists.add(album['@_artist']);
       if (album['@_performer']) artists.add(album['@_performer']);
     }
-    return Array.from(artists);
+    const excluded = new Set(Values.EXCLUDED_ARTISTS);
+    return Array.from(artists).filter(a => !excluded.has(a.toLowerCase()));
   }
 
   linkifyBio(bio, $el) {
@@ -447,17 +449,27 @@ export default class ArtistView extends Subview {
     }
 
       // split into paragraphs and clean up section-like headings
-      const paragraphs = processedBio.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+      let paragraphs = processedBio.split(/\n+/).map(p => p.trim()).filter(Boolean);
+      
+      // If we got only one paragraph, try to split it by sentences if it's long
+      if (paragraphs.length === 1 && paragraphs[0].length > 300) {
+        const sentences = paragraphs[0].split(/(?<=[.])\s+(?=[A-Z])/);
+        if (sentences.length > 1) {
+          paragraphs = sentences.map(s => s.trim()).filter(Boolean);
+        }
+      }
       const filtered = paragraphs.filter(p => {
-        // drop explicit section heading markers like '== Heading' (wiki style)
         if (/^={2,}/.test(p) || /^={2,}.*={2,}$/.test(p)) return false;
-        // drop short section headings (e.g., "Biography", "Discography:")
         const words = p.split(/\s+/).filter(Boolean);
         const isShortHeading = (words.length <= 3 && /^[A-Z\-:\s]+$/.test(p)) || /:\s*$/.test(p);
         const isSingleWordCommon = /^(Biography|Discography|Life|Overview|Works)$/i.test(p);
         return !(isShortHeading || isSingleWordCommon);
       });
-      const htmlBio = filtered.map(p => `<p>${Util.formatMetaHtml(p)}</p>`).join('');
+      const htmlBio = filtered.length > 0 
+        ? filtered.map(p => `<p>${Util.formatMetaHtml(p)}</p>`).join('')
+        : paragraphs.length > 0 
+          ? paragraphs.map(p => `<p>${Util.formatMetaHtml(p)}</p>`).join('')
+          : `<p>${Util.formatMetaHtml(processedBio)}</p>`;
 
     const artists = this.getKnownArtists();
     // Sort by length longest first to avoid partial matching issues
@@ -501,24 +513,15 @@ export default class ArtistView extends Subview {
     this.$disambiguation.text(artist.disambiguation || '');
     
     let years = '';
-    if (artist.life_span && (artist.life_span.begin || artist.life_span.ended)) {
+    if (artist.life_span && (artist.life_span.begin || artist.life_span.end || (typeof artist.life_span.ended !== 'undefined'))) {
       const begin = artist.life_span.begin ? artist.life_span.begin.substring(0, 4) : '';
-      const end = artist.life_span.ended ? (artist.life_span.ended === true ? 'Present' : artist.life_span.ended.substring(0, 4)) : '';
-      years = begin ? `${begin} – ${end || '?'}` : '';
-    } else {
-      // Extract years from bio if present: (1678–1741), (b. 1678), born 1678, or 1678–1741
-      const searchString = ((artist.bio || '') + ' ' + (artist.disambiguation || '')).trim();
-      if (searchString) {
-        let m;
-        m = searchString.match(/\((\d{4})\s*[–-]\s*(\d{4})?\)/);
-        if (m) {
-          years = m[1] + (m[2] ? '–' + m[2] : '');
-        } else if ((m = searchString.match(/\(b\.\s*(\d{4})\)/i)) || (m = searchString.match(/born\s+(\d{4})/i))) {
-          years = 'b. ' + m[1];
-        } else if ((m = searchString.match(/(\d{4})\s*[–-]\s*(\d{4})/))) {
-          years = m[1] + (m[2] ? '–' + m[2] : '');
-        }
+      let end = '';
+      if (artist.life_span.end) {
+        end = artist.life_span.end.substring(0, 4);
+      } else if (artist.life_span.ended === false) {
+        end = 'Present';
       }
+      years = begin ? `${begin}${end ? ' – ' + end : ''}` : '';
     }
     this.$years.text(years);
     this.linkifyBio(artist.bio, this.$bio);

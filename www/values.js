@@ -5,6 +5,8 @@ import Util from './util.js';
  */
 class Values {
 
+  EXCLUDED_ARTISTS = ['various', 'various artists', 'va', 'v.a.', 'unknown', 'multiple artists', 'multiple', 'miscellaneous', 'misc', 'compilation'];
+
   PROJECT_URL = 'http://https://github.com/zaum/hqpwave';
   TROUBLESHOOTING_HREF = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
 

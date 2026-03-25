@@ -65,6 +65,20 @@ img {
   display: block;
 }
 
+a,
+.text-link {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+  cursor: pointer;
+}
+
+a:hover,
+.text-link:hover {
+  border-bottom-color: var(--accent);
+}
+
 li:before {
   content: "​";
   position: absolute;

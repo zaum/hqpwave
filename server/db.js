@@ -38,6 +38,7 @@ const init = () => {
     id TEXT PRIMARY KEY,
     name TEXT,
     disambiguation TEXT,
+    life_span TEXT,
     bio TEXT,
     wiki_url TEXT,
     discography TEXT,
@@ -50,6 +51,7 @@ const init = () => {
   tryAlter(`ALTER TABLE artists ADD COLUMN disambiguation TEXT`);
   tryAlter(`ALTER TABLE artists ADD COLUMN bio TEXT`);
   tryAlter(`ALTER TABLE artists ADD COLUMN wiki_url TEXT`);
+  tryAlter(`ALTER TABLE artists ADD COLUMN life_span TEXT`);
   tryAlter(`ALTER TABLE artists ADD COLUMN discography TEXT`);
   tryAlter(`ALTER TABLE artists ADD COLUMN default_image_id TEXT`);
   tryAlter(`ALTER TABLE artists ADD COLUMN updated_at INTEGER`);
@@ -76,8 +78,8 @@ const init = () => {
   // Prepare & cache statements
   selectArtistByIdStmt = db.prepare('SELECT * FROM artists WHERE id = ?');
   selectArtistByNameStmt = db.prepare('SELECT * FROM artists WHERE name = ?');
-  upsertArtistStmt = db.prepare(`INSERT OR REPLACE INTO artists(id, name, disambiguation, bio, wiki_url, discography, default_image_id, updated_at)
-      VALUES(?,?,?,?,?,?,?,?)`);
+    upsertArtistStmt = db.prepare(`INSERT OR REPLACE INTO artists(id, name, disambiguation, life_span, bio, wiki_url, discography, default_image_id, updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?)`);
   updateDefaultImageStmt = db.prepare('UPDATE artists SET default_image_id = ?, updated_at = ? WHERE id = ?');
   insertImageStmt = db.prepare(`INSERT OR REPLACE INTO images(id, artist_id, url, source, width, height, thumbnail_url, license)
       VALUES(?,?,?,?,?,?,?,?)`);
@@ -99,6 +101,7 @@ const getArtistById = (id, cb) => {
     const row = selectArtistByIdStmt.get(id);
     if (!row) return cb(null, null);
     try { row.discography = row.discography ? JSON.parse(row.discography) : []; } catch (e) { row.discography = []; }
+    try { row.life_span = row.life_span ? JSON.parse(row.life_span) : null; } catch (e) { row.life_span = null; }
     row.images = selectImagesByArtistStmt.all(id);
     cb(null, row);
   } catch (err) { cb(err); }
@@ -110,6 +113,7 @@ const getArtistByName = (name, cb) => {
     const row = selectArtistByNameStmt.get(name);
     if (!row) return cb(null, null);
     try { row.discography = row.discography ? JSON.parse(row.discography) : []; } catch (e) { row.discography = []; }
+    try { row.life_span = row.life_span ? JSON.parse(row.life_span) : null; } catch (e) { row.life_span = null; }
     row.images = selectImagesByArtistStmt.all(row.id);
     cb(null, row);
   } catch (err) { cb(err); }
@@ -120,8 +124,9 @@ const upsertArtist = (artist, cb) => {
   try {
     const now = Date.now();
     const discog = JSON.stringify(artist.discography || []);
-    upsertArtistStmt.run(artist.id, artist.name || '', artist.disambiguation || '', artist.bio || '',
-           artist.wiki_url || null, discog, artist.default_image_id || null, artist.updated_at || now);
+    const lifeSpanJson = artist.life_span ? JSON.stringify(artist.life_span) : null;
+    upsertArtistStmt.run(artist.id, artist.name || '', artist.disambiguation || '', lifeSpanJson,
+           artist.bio || '', artist.wiki_url || null, discog, artist.default_image_id || null, artist.updated_at || now);
     cb(null);
   } catch (err) {
     console.error('[db] upsertArtist error:', err);
