@@ -458,11 +458,21 @@
   letter-spacing: 0.05em;
 }
 
+.artistViewLine {
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--border-hi);
+  align-self: center;
+  margin: 0;
+  min-width: 0;
+}
+
 .artistViewMetaLine {
   display: flex;
   align-items: center;
-  gap: 12px;
   margin-bottom: 24px;
+  white-space: nowrap;
+  max-width: 950px;
 }
 
 #artistViewDisambiguation {
@@ -471,6 +481,13 @@
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  margin-right: 12px;
+}
+
+/* Hide the disambiguation element when empty to avoid a leading gap
+   before the years text (flex gap applies even if the first child is empty) */
+#artistViewDisambiguation:empty {
+  display: none;
 }
 
 
@@ -478,17 +495,29 @@
   font-size: 14.5px;
   line-height: 1.6;
   color: var(--text-2);
-  max-width: 950px; /* increased by another 50px as requested */
+  max-width: 950px;
   margin-bottom: 40px;
   font-weight: 300;
   overflow: visible;
   display: block;
 }
 
+
 .artistBio p {
   margin: 0 0 16px 0;
   padding: 0;
   display: block;
+  color: var(--text-2);
+  letter-spacing: 0.03em;
+}
+
+.artistBio p:first-of-type {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.artistBio p:first-of-type a {
+  color: var(--text2);
 }
 
 .artistBio p + p {
@@ -498,7 +527,6 @@
 .artistBio a {
   color: var(--text);
   text-decoration: none;
-  border-bottom: 1px solid var(--text-3);
   transition: border-color 0.15s;
   cursor: pointer;
 }
@@ -507,10 +535,10 @@
   border-bottom-color: var(--accent);
 }
 
-/* Remove unwanted color inheritance in bio */
+/* Remove unwanted color inheritance in bio 
 .artistBio *:not(.artist-link) {
   color: inherit;
-}
+}*/
 
 /* ═══════════════════════════════════════════════════════════════
    IMAGE GALLERY / SELECTION
@@ -669,13 +697,14 @@
   letter-spacing: 0.06em;
   padding: 4px 6px;
   border-radius: 4px;
-  background: rgba(17, 17, 18, 0.78);
+  background: #111112;
   backdrop-filter: blur(4px);
-  color: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--textInv);
   opacity: 0;
   transition: opacity 0.12s;
-  white-space: normal; /* allow wrapping */
-  max-width: 72px; /* compact width so it wraps into two lines on small covers */
+  white-space: normal;
+  max-width: 72px;
   text-align: left;
 }
 

@@ -1,6 +1,7 @@
 :root {
   /* Dark theme (default) */
   --bg: #111112;
+  --textInv: #f0efed;
   --player-bg: #111112;
   --surface: #171718;
   --surface2: #1d1d1f;
@@ -49,6 +50,7 @@
 :root.lightTheme {
   /* Light theme */
   --bg: #f8f7f5;
+  --textInv: #f0efed;
   --surface: #efeeec;
   --surface2: #e5e4e2;
   --surface3: #d9d8d6;

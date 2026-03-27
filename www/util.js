@@ -255,13 +255,18 @@ Util.escapeHtml = (str) => {
  * Parenthetical parts are removed from parentheses and wrapped in <em>..</em>.
  * Example: "John Doe (piano)" -> "John Doe <em>piano</em>"
  */
-Util.formatMetaHtml = (str) => {
+Util.formatMetaHtml = (str, enableParenthesisEmphasis = true) => {
   if (str === null || str === undefined) return '';
   const escaped = Util.escapeHtml(str);
-  // Replace commas with two spaces, then convert parenthetical groups
-  // into italicized text (remove parentheses). Example:
+  // Replace commas with two spaces, then optionally convert parenthetical groups
+  // into italicized text (remove parentheses). Example when enabled:
   // "John Doe, (piano)" -> "John Doe  <em>piano</em>"
   let s = escaped.replace(/,\s*/g, '  ');
-  s = s.replace(/\s*\(([^)]+)\)/g, ' <em>$1</em>');
+  if (enableParenthesisEmphasis) {
+    s = s.replace(/\s*\(([^)]+)\)/g, ' <em>$1</em>');
+  } else {
+    // Keep the parenthetical text intact (preserve parentheses)
+    s = s.replace(/\s*\(([^)]+)\)/g, ' ($1)');
+  }
   return s;
 };

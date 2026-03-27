@@ -23,6 +23,7 @@ export default class SettingsView extends Subview {
   $showLogoAnimationCheckbox;
   $artistReleaseLimitInput;
   $artistImageLimitInput;
+  $artistBioLimitInput;
   $artistBatchImportButton;
   $artistBatchImportStatusText;
   $highlightColorPicker;
@@ -53,6 +54,9 @@ export default class SettingsView extends Subview {
     this.$artistImageLimitInput = this.$el.find('#artistImageLimitInput');
     this.$artistImageLimitInput.on('change', this.onArtistImageLimitChange);
     this.$artistImageLimitInput.on('blur', this.onArtistImageLimitChange);
+    this.$artistBioLimitInput = this.$el.find('#artistBioLimitInput');
+    this.$artistBioLimitInput.on('change', this.onArtistBioLimitChange);
+    this.$artistBioLimitInput.on('blur', this.onArtistBioLimitChange);
     this.$artistBatchImportButton = this.$el.find('#artistBatchImportButton');
     this.$artistBatchImportButton.on('click', () => this.onArtistBatchImportClick());
     this.$artistBatchImportStatusText = this.$el.find('#artistBatchImportStatusText');
@@ -274,6 +278,7 @@ export default class SettingsView extends Subview {
 
     this.updateArtistReleaseLimitInput();
     this.updateArtistImageLimitInput();
+    this.updateArtistBioLimitInput();
 
     this.updateHighlightColorPicker();
 
@@ -419,6 +424,15 @@ export default class SettingsView extends Subview {
   onArtistImageLimitChange = () => {
     Settings.artistImageLimit = this.$artistImageLimitInput.val();
     this.updateArtistImageLimitInput();
+  }
+
+  updateArtistBioLimitInput() {
+    this.$artistBioLimitInput.val(String(Settings.artistBioLimit));
+  }
+
+  onArtistBioLimitChange = () => {
+    Settings.artistBioLimit = this.$artistBioLimitInput.val();
+    this.updateArtistBioLimitInput();
   }
 
   getLibraryArtistNames() {

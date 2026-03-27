@@ -452,6 +452,7 @@
                 <div id="artistViewName"></div>
                 <div class="artistViewMetaLine">
                   <div id="artistViewDisambiguation"></div>
+                  <div class="artistViewLine"></div>
                   <div id="artistViewYears" class="metaCaption"></div>
                 </div>
                 <div id="artistViewBio" class="artistBio"></div>
@@ -788,6 +789,15 @@
                 </div>
                 <div class="row-right">
                   <input type="text" id="artistImageLimitInput" class="settingsNumberInput" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="5">
+                </div>
+              </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Artist Bio Length Limit</div>
+                  <div class="row-desc">Maximum characters displayed in artist biography. If the biography is longer, it will be trimmed at discography/awards sections or to first two paragraphs.</div>
+                </div>
+                <div class="row-right">
+                  <input type="text" id="artistBioLimitInput" class="settingsNumberInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="4000">
                 </div>
               </div>
               <div class="settings-card-row column-stack">

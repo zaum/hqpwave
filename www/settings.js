@@ -20,6 +20,7 @@ class Settings {
   _showLogoAnimation;
   _artistReleaseLimit;
   _artistImageLimit;
+  _artistBioLimit;
   _presetsArray;
   _currentRule;
   _thresholdRule;
@@ -56,6 +57,7 @@ class Settings {
     this._playerBackgroundColor = this.storage.getItem('playerBackgroundColor') || '#111112';
     this._artistReleaseLimit = this._sanitizeArtistReleaseLimit(this.storage.getItem('artistReleaseLimit'));
     this._artistImageLimit = this._sanitizeArtistImageLimit(this.storage.getItem('artistImageLimit'));
+    this._artistBioLimit = this._sanitizeArtistBioLimit(this.storage.getItem('artistBioLimit'));
 
     s = this.storage.getItem('presetsArray');
     try {
@@ -268,6 +270,28 @@ class Settings {
     const sanitized = this._sanitizeArtistImageLimit(value);
     this._artistImageLimit = sanitized;
     this.storage.setItem('artistImageLimit', String(sanitized));
+  }
+
+  _sanitizeArtistBioLimit(value) {
+    if (value === null || value === undefined) {
+      return 4000;
+    }
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed) || parsed < 1) {
+      return 4000;
+    }
+    return Math.min(parsed, 99999);
+  }
+
+  get artistBioLimit() {
+    return this._artistBioLimit;
+  }
+
+  set artistBioLimit(value) {
+    const sanitized = this._sanitizeArtistBioLimit(value);
+    this._artistBioLimit = sanitized;
+    this.storage.setItem('artistBioLimit', String(sanitized));
+    $(document).trigger('settings-artist-bio-limit-changed');
   }
 
   get presetsArray() {

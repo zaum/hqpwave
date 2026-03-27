@@ -101,6 +101,7 @@ export default class App {
 
     Util.addAppListener(this, 'library-item-click', this.showAlbumView);
     Util.addAppListener(this, 'show-artist', this.showArtistView);
+    Util.addAppListener(this, 'show-album', this.onShowAlbumEvent);
     Util.addAppListener(this, 'album-view-close-button', this.hideAlbumView);
     Util.addAppListener(this, 'album-genre-button', this.onAlbumGenreButton);
     Util.addAppListener(this, 'album-artist-button', this.onAlbumArtistButton);
@@ -560,6 +561,14 @@ export default class App {
     }
 
     this.showSubview(this.albumView, album, $libraryItem);
+  }
+
+  onShowAlbumEvent(albumHash) {
+    if (!Model.hasLibrary) return;
+    const album = Model.library.getAlbumByAlbumHash(albumHash);
+    if (album) {
+      this.showAlbumView(album);
+    }
   }
 
   showArtistView(artistId) {

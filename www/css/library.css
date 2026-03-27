@@ -339,7 +339,7 @@
   align-items: center;
   gap: 14px;
   margin: 32px 0 14px;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 400;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -678,10 +678,10 @@
   letter-spacing: 0.08em;
   padding: 3px 7px;
   border-radius: 4px;
-  background: rgba(17, 17, 18, 0.78);
+  background: #111112;
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--accent);
+  color: var(--textInv);
   opacity: 0;
   transition: opacity 0.12s;
 }

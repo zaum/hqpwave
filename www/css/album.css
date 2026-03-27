@@ -675,7 +675,7 @@
 #albumViewGenreButtons .genre-tag,
 .tag {
   font-family: 'Geist Mono', monospace;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 300;
   padding: 4px 10px;
   border: 1px solid var(--border-md);

@@ -430,21 +430,58 @@ export default class ArtistView extends Subview {
     return Array.from(artists).filter(a => !excluded.has(a.toLowerCase()));
   }
 
+  getKnownAlbums(artistName) {
+    if (!Model.hasLibrary || !artistName) return [];
+    const albums = [];
+    const normArtist = artistName.toLowerCase();
+    for (const album of Model.library.albums) {
+      const albumArtist = album['@_artist'] || album['@_performer'] || '';
+      if (albumArtist.toLowerCase() === normArtist && album['@_album']) {
+        albums.push(album['@_album']);
+      }
+    }
+    return albums;
+  }
+
   linkifyBio(bio, $el) {
     if (!bio) {
       $el.empty();
       return;
     }
 
-    // Limit Wikipedia bio to first paragraph(s) if it contains the summary marker
-    let processedBio = bio;
-    if (processedBio.includes('__SUMMARY_END__')) {
-      processedBio = processedBio.split('__SUMMARY_END__')[0];
+    const cutoffPatterns = [
+      /\n\n+Discography\s*[:|\n]/i,
+      /\n\n+Selected\s+discography/i,
+      /\n\n+Studio\s+albums/i,
+      /\n\n+Awards?\s*[:|\n]/i,
+      /\n\n+Bibliography/i,
+      /\n\n+Filmography/i,
+      /\n\n+==\s*(Discography|Awards?|Bibliography|Filmography)\s*==/i
+    ];
+
+    let cutoffIndex = -1;
+    for (const pattern of cutoffPatterns) {
+      const match = bio.match(pattern);
+      if (match && (cutoffIndex === -1 || match.index < cutoffIndex)) {
+        cutoffIndex = match.index;
+      }
+    }
+
+    let processedBio;
+    const bioWithoutCutoff = cutoffIndex === -1 ? bio : bio.substring(0, cutoffIndex);
+    const bioLimit = Settings.artistBioLimit || 4000;
+
+    if (bioWithoutCutoff.length < bioLimit) {
+      processedBio = bioWithoutCutoff;
     } else {
-      // Fallback: take first two paragraphs if long
-      const origParagraphs = processedBio.split(/\n\n+/);
-      if (origParagraphs.length > 2) {
-        processedBio = origParagraphs.slice(0, 2).join('\n\n');
+      processedBio = bio;
+      if (processedBio.includes('__SUMMARY_END__')) {
+        processedBio = processedBio.split('__SUMMARY_END__')[0];
+      } else {
+        const origParagraphs = processedBio.split(/\n\n+/);
+        if (origParagraphs.length > 2) {
+          processedBio = origParagraphs.slice(0, 2).join('\n\n');
+        }
       }
     }
 
@@ -466,12 +503,13 @@ export default class ArtistView extends Subview {
         return !(isShortHeading || isSingleWordCommon);
       });
       const htmlBio = filtered.length > 0 
-        ? filtered.map(p => `<p>${Util.formatMetaHtml(p)}</p>`).join('')
-        : paragraphs.length > 0 
-          ? paragraphs.map(p => `<p>${Util.formatMetaHtml(p)}</p>`).join('')
-          : `<p>${Util.formatMetaHtml(processedBio)}</p>`;
+          ? filtered.map(p => `<p>${Util.formatMetaHtml(p, false)}</p>`).join('')
+          : paragraphs.length > 0 
+            ? paragraphs.map(p => `<p>${Util.formatMetaHtml(p, false)}</p>`).join('')
+            : `<p>${Util.formatMetaHtml(processedBio, false)}</p>`;
 
     const artists = this.getKnownArtists();
+    const artistNamesLower = new Set(artists.map(a => a.toLowerCase()));
     // Sort by length longest first to avoid partial matching issues
     artists.sort((a, b) => b.length - a.length);
 
@@ -497,6 +535,33 @@ export default class ArtistView extends Subview {
       linkedHtml = linkedHtml.replace(new RegExp(item.placeholder, 'g'), `<a class="artist-link" data-artist-name="${Util.escapeHtml(item.name)}">${Util.escapeHtml(item.name)}</a>`);
     }
 
+    // Album linking - only albums from the current artist
+    const albums = this.getKnownAlbums(this.artist.name);
+    albums.sort((a, b) => b.length - a.length);
+
+    for (const title of albums) {
+      if (title.length < 3) continue;
+      // Skip if this album title is already an artist name (avoid double-linking)
+      if (artistNamesLower.has(title.toLowerCase())) continue;
+      
+      const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedTitle}\\b`, 'gi');
+      
+      if (regex.test(linkedHtml)) {
+        const placeholder = `__ALBUM_${placeholders.length}__`;
+        placeholders.push({ placeholder, title });
+        linkedHtml = linkedHtml.replace(regex, placeholder);
+      }
+    }
+
+    // Replace album placeholders with links
+    for (const item of placeholders) {
+      if (item.title) {
+        const displayTitle = item.title.replace(/\s+/g, '\u00A0'); // non-breaking spaces
+        linkedHtml = linkedHtml.replace(new RegExp(item.placeholder, 'g'), `<a class="album-link" data-album-title="${Util.escapeHtml(item.title)}">${displayTitle}</a>`);
+      }
+    }
+
     $el.html(linkedHtml);
     $el.find('.artist-link').on('click', (e) => {
       const artistName = $(e.currentTarget).data('artist-name');
@@ -504,6 +569,17 @@ export default class ArtistView extends Subview {
       if (artistName === this.artist.name) return;
       $(document).trigger('show-artist', artistName);
     });
+
+    $el.find('.album-link').on('click', (e) => {
+      const albumTitle = $(e.currentTarget).data('album-title');
+      if (!albumTitle || !Model.hasLibrary) return;
+      const album = Model.library.getAlbumByTitleAndArtist(albumTitle, this.artist.name);
+      if (album) {
+        $(document).trigger('show-album', album['@_hash']);
+      }
+    });
+
+    return bioWithoutCutoff.length >= bioLimit;
   }
 
   async renderArtist(artist) {
@@ -524,10 +600,11 @@ export default class ArtistView extends Subview {
       years = begin ? `${begin}${end ? ' – ' + end : ''}` : '';
     }
     this.$years.text(years);
-    this.linkifyBio(artist.bio, this.$bio);
+    const isBioTruncated = this.linkifyBio(artist.bio, this.$bio);
 
     // show biography source in faint text and link to original when available
     this.$el.find('.artist-bio-source').remove();
+    this.$el.find('.artist-bio-readmore').remove();
     const sources = [];
     if (artist.wiki_url) {
       sources.push(`<span class="sourceItem"><span class="metaCaption">Biography</span> <span class="metaValue"><a href="${artist.wiki_url}" target="_blank" rel="noopener">Wikipedia</a></span></span>`);
@@ -539,6 +616,11 @@ export default class ArtistView extends Subview {
 
     // create container now; we'll append extra 'more info' result async if found
     if (sources.length) {
+      if (isBioTruncated && artist.wiki_url) {
+        const $readMore = $(`<div class="artist-bio-readmore text-2">Read full biography on <a class="artist-link" href="${artist.wiki_url}" target="_blank" rel="noopener">Wikipedia</a> <span class="readMoreArrow">↗</span></div>`);
+        this.$bio.after($readMore);
+      }
+
       const $sourceContainer = $(`<div class="artist-bio-source text-3">${sources.join(' ')}</div>`);
       this.$bio.after($sourceContainer);
 
