@@ -875,7 +875,7 @@
 }
 
 .sidebar-label {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 400;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -924,7 +924,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 6px 20px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 300;
   color: var(--text-2);
   cursor: pointer;
@@ -992,7 +992,7 @@
 
 .fchip {
   font-family: 'Geist Mono', monospace;
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: 0.08em;
   padding: 4px 12px;
   border-radius: 4px;
@@ -1025,7 +1025,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 6px 20px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 300;
   color: var(--text-2);
   cursor: pointer;
@@ -1070,7 +1070,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 20px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 300;
   color: var(--text-2);
   cursor: pointer;
@@ -1359,7 +1359,7 @@
 }
 
 #playingText .playingArtist {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -1368,7 +1368,7 @@
 }
 
 #playingText .playingTitle {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 300;
   color: var(--text-3);
   white-space: nowrap;
@@ -2315,6 +2315,7 @@
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: inherit;
   line-height: inherit;
+  color: var(--text);
 }
 
 #snack {

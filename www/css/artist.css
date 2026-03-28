@@ -38,7 +38,7 @@
 
 .artist-loading-status {
   color: var(--text-3);
-  font-size: 13px;
+  font-size: 12px;
   margin-top: 18px;
   text-align: center;
   max-width: 90%;
@@ -92,7 +92,6 @@
   }
 
   .artistViewPictureOuter {
-    /* larger hero height on desktop */
     min-height: 400px;
   }
 
@@ -206,11 +205,11 @@
   position: relative;
   width: 100%;
   max-width: 314px;
-  /* mobile-first: smaller minimum height on narrow screens */
   min-height: 350px;
   overflow: visible;
   z-index: 10;
   margin: 0 auto;
+  padding: 0 32px;
 }
 
 .artistPictureFrame {
@@ -396,7 +395,7 @@
 
 .artistViewSetDefaultBtn {
   padding: 8px 16px;
-  font-size: 13px;
+  font-size: 12px;
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(8px);
   border-radius: 20px;
@@ -452,7 +451,7 @@
 }
 
 #artistViewYears {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-3);
   font-weight: 300;
   letter-spacing: 0.05em;
@@ -463,7 +462,7 @@
   height: 1px;
   background: var(--border-hi);
   align-self: center;
-  margin: 0;
+  margin: 0 12px;
   min-width: 0;
 }
 
@@ -476,7 +475,7 @@
 }
 
 #artistViewDisambiguation {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-2);
   font-weight: 400;
   text-transform: uppercase;
@@ -492,7 +491,7 @@
 
 
 .artistBio {
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--text-2);
   max-width: 950px;
@@ -519,6 +518,33 @@
 .artistBio p:first-of-type a {
   color: var(--text2);
 }
+
+/* Source links moved to the left hero area: vertical list with separators */
+.artistViewPictureOuter .artist-bio-source {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+  z-index: 15;
+}
+
+.artistViewPictureOuter .artist-bio-source .sourceItemRow {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 0px 8px 0px;
+  color: var(--text-2);
+  border-top: 1px solid var(--text-3);
+}
+
+.artistViewPictureOuter .artist-bio-source .sourceItemRow .sourceItem {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+# (removed unified .metaCaption comment)
 
 .artistBio p + p {
   margin-top: 16px;
@@ -693,7 +719,7 @@
   bottom: auto;
   top: 10px;
   font-family: 'Geist Mono', monospace;
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: 0.06em;
   padding: 4px 6px;
   border-radius: 4px;
@@ -812,16 +838,10 @@
   gap: 8px;
 }
 
-.artist-bio-source .metaCaption {
-  font-size: 13px;
-  color: var(--text-3);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
+# (removed unified .metaCaption comment)
 
 .artist-bio-source .metaValue {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-2);
   font-weight: 400;
 }

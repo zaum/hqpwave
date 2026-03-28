@@ -621,8 +621,19 @@ export default class ArtistView extends Subview {
         this.$bio.after($readMore);
       }
 
-      const $sourceContainer = $(`<div class="artist-bio-source text-3">${sources.join(' ')}</div>`);
-      this.$bio.after($sourceContainer);
+      const $sourceContainer = $(`<div class="artist-bio-source text-3"></div>`);
+      // Each source on its own line for vertical stacking
+      for (const s of sources) {
+        $sourceContainer.append(`<div class="sourceItemRow">${s}</div>`);
+      }
+      // Place the source container into the left hero block at the bottom
+      const $pictureOuter = this.$el.find('.artistViewPictureOuter');
+      if ($pictureOuter.length) {
+        $pictureOuter.append($sourceContainer);
+      } else {
+        // fallback: keep it near the bio if picture outer isn't found
+        this.$bio.after($sourceContainer);
+      }
 
       (async () => {
         try {
@@ -650,7 +661,7 @@ export default class ArtistView extends Subview {
           if (!url && first) url = first;
           if (url) {
             if (!isCurrentRender()) return;
-            const $more = $(`<span class="sourceItem"><span class="metaCaption">More info</span> <span class="metaValue"><a href="${url}" target="_blank" rel="noopener">AllMusic</a></span></span>`);
+            const $more = $(`<div class="sourceItemRow"><span class="sourceItem"><span class="metaCaption">More info</span> <span class="metaValue"><a href="${url}" target="_blank" rel="noopener">AllMusic</a></span></span></div>`);
             $sourceContainer.append($more);
           }
         } catch (e) {}

@@ -9,7 +9,7 @@
   padding: 0;
   box-sizing: border-box;
   font-family: 'Geist', "Noto Sans TC", sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text);
   scrollbar-color: var(--text-3) var(--surface);
   -webkit-tap-highlight-color: transparent;
@@ -149,7 +149,7 @@ textarea,
 label {
   display: block;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 400;
   letter-spacing: 0.12em;
   color: var(--text-3);
@@ -323,7 +323,7 @@ label {
 
 /* Title medium */
 .title-md {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -334,7 +334,7 @@ label {
 
 /* Subtitle */
 .subtitle {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 300;
   color: var(--text-3);
   margin-top: 1px;
@@ -357,4 +357,14 @@ label {
   font-size: 12px;
   color: var(--text);
   letter-spacing: 0.05em;
+}
+
+.metaCaption {
+  font-size: 10px;
+  line-height: inherit;
+  color: var(--text-3);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin: 0;
 }
