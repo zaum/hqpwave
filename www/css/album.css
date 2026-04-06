@@ -6,12 +6,11 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 48px;
-  padding: 32px 0 0 52px;
+  padding: 32px 0 0 10px;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   align-items: start;
-  /* Keep main views layered on top of each other inside #mainArea. */
   position: absolute;
   top: 0;
   left: 0;
@@ -67,7 +66,7 @@
 #albumView {
   grid-template-columns: 1fr;
   gap: 24px;
-  padding: 32px 0 0 24px;
+  padding: 32px 0 0 12px;
 }
 
 #albumViewPicture,
@@ -275,7 +274,7 @@
   height: 100%;
   filter: blur(40px) saturate(9);
   opacity: 0.25;
-  z-index: 1;
+  z-index: -1;
   object-fit: cover;
   pointer-events: none;
   border-radius: 40px;
@@ -1075,7 +1074,7 @@
 .albumItem {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 0;
   min-height: 48px;
   border-top: 1px solid var(--border);
   cursor: pointer;
@@ -1202,7 +1201,6 @@
 }
 
 .albumItemDurationCol {
-  width: 56px;
   text-align: right;
   flex-shrink: 0;
 }

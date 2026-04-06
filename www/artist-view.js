@@ -746,8 +746,9 @@ export default class ArtistView extends Subview {
         
         $controls.append($modeLabel);
         $controls.append($modeToggle);
-        $controls.append($reloadBtn);
         $controlsContainer.append($controls);
+
+        this.$name.after($reloadBtn);
 
         // reload action - clear existing artist data first, then perform one full awaited import
         $reloadBtn.on('click', async () => {

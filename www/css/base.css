@@ -368,3 +368,22 @@ label {
   letter-spacing: 0.09em;
   margin: 0;
 }
+
+.settings-label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-label::after {
+  content: ''; 
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
