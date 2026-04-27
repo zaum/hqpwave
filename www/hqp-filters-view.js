@@ -176,32 +176,20 @@ export default class HqpFiltersView {
     // which is what's used for the 'Set' XML's "value" attribute (!)
     const value = select.value;
     if (value == undefined) {
-      cl('warning no value on select', $select);
+      cl('warning no value on select', select);
       return;
     }
 
     let command;
-    let responseKey;
     let label;
-    switch (select) {
-      case this.$modeSelect[0]:
-        command = Commands.setMode(value);
-        responseKey = 'SetMode';
-        label = 'mode';
-        break;
-      case this.$filterSelect[0]:
-        command = Commands.setFilter(value);
-        responseKey = 'SetFilter';
-        label = 'filter';
-        break;
-      case this.$shaperSelect[0]:
-        command = Commands.setShaping(value);
-        responseKey = 'SetShaping';
-        label = 'shaper';
-        break;
-      default:
-        break;
+    if (select === this.$filterSelect[0]) {
+      command = Commands.setFilter(value);
+      label = 'filter';
+    } else if (select === this.$shaperSelect[0]) {
+      command = Commands.setShaping(value);
+      label = 'shaper';
     }
+
     if (command == undefined) {
       cl('warning no command');
       return;

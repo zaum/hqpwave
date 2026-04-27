@@ -5,6 +5,14 @@ import Service from './service.js'
  */
 export default class Util {}
 
+const XML_ENTITY_MAP = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'"
+};
+
 /** 
  * Hooks up custom events off of document.
  * Doesn't support removing listener.
@@ -225,6 +233,110 @@ Util.downloadFile = (filename, mimeType, content) => {
   a.click();
 };
 
+Util.decodeXmlEntities = (value) => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return String(value).replace(/&(amp|lt|gt|quot|apos);/g, (match, name) => XML_ENTITY_MAP[name] || match);
+};
+
+Util.safeDecodeUriComponent = (value) => {
+  if (typeof value !== 'string' || !/%[0-9A-Fa-f]{2}/.test(value)) {
+    return value;
+  }
+  try {
+    return decodeURIComponent(value);
+  } catch (e) {
+    return value;
+  }
+};
+
+/**
+ * Converts either a local path or a file:// URI into a comparable local path
+ * using forward slashes and decoded XML/URI escapes when safe.
+ */
+Util.toComparableLocalPath = (value) => {
+  let result = Util.decodeXmlEntities(value).trim();
+  if (!result) {
+    return '';
+  }
+
+  if (/^file:/i.test(result)) {
+    result = result.replace(/^file:/i, '');
+    result = Util.safeDecodeUriComponent(result);
+
+    if (/^\/\/\/[a-zA-Z]:/.test(result)) {
+      result = result.slice(3);
+    } else if (/^\/\/[a-zA-Z]:/.test(result)) {
+      result = result.slice(2);
+    } else if (result.startsWith('///')) {
+      result = result.slice(2);
+    } else if (/^\/[a-zA-Z]:/.test(result)) {
+      result = result.slice(1);
+    }
+
+    if (/^[a-zA-Z]\|/.test(result)) {
+      result = result.replace(/^([a-zA-Z])\|/, '$1:');
+    } else if (/^\/[a-zA-Z]\|/.test(result)) {
+      result = result.replace(/^\/([a-zA-Z])\|/, '$1:');
+    }
+  }
+
+  return result.replace(/\\/g, '/');
+};
+
+Util.encodeLocalPathForFileUri = (value) => {
+  const path = Util.toComparableLocalPath(value);
+  if (!path) {
+    return '';
+  }
+
+  const isUnc = path.startsWith('//');
+  const segments = path.split('/');
+  return segments.map((segment, index) => {
+    if (!segment) {
+      return '';
+    }
+    if (/^[a-zA-Z]:$/.test(segment)) {
+      return segment;
+    }
+    if (isUnc && index === 2) {
+      return segment;
+    }
+    return encodeURIComponent(segment);
+  }).join('/');
+};
+
+Util.makeFileUri = (value) => {
+  const path = Util.toComparableLocalPath(value);
+  if (!path) {
+    return '';
+  }
+
+  const encodedPath = Util.encodeLocalPathForFileUri(path);
+  if (path.startsWith('//')) {
+    return `file:${encodedPath}`;
+  }
+  if (/^[a-zA-Z]:\//.test(path)) {
+    // HQPlayer on Windows expects the legacy two-slash form:
+    // file://I:/Music/Track.flac
+    return `file://${encodedPath}`;
+  }
+  if (path.startsWith('/')) {
+    return `file://${encodedPath}`;
+  }
+  return `file:///${encodedPath.replace(/^\/+/, '')}`;
+};
+
+Util.makeFileUriFromParts = (folderPath, filename) => {
+  const folder = Util.toComparableLocalPath(folderPath).replace(/[\/]+$/, '');
+  const file = Util.decodeXmlEntities(filename || '').replace(/^[\/\\]+/, '');
+  if (!folder || !file) {
+    return '';
+  }
+  return Util.makeFileUri(`${folder}/${file}`);
+};
+
 Util.areUriAndPathEquivalent = (uri, path) => {
   if (!uri && !path) {
     return true;
@@ -232,8 +344,7 @@ Util.areUriAndPathEquivalent = (uri, path) => {
   if (!uri || !path) {
     return false;
   }
-  path = path.replace('file://', '');
-  return (uri == path);
+  return (Util.toComparableLocalPath(uri) == Util.toComparableLocalPath(path));
 };
 
 // Pretty good test for touch devices

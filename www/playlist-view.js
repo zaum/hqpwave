@@ -171,7 +171,7 @@ export default class PlaylistView extends Subview {
 
   onItemClick = (event) => {
 		const index = parseInt($(event.currentTarget).attr("data-index"));
-		Service.queueCommandFrontAndGetStatus(
+		$(document).trigger('playbar-track-change-command',
         Commands.selectTrack(index + 1)); // rem, 1-indexed
 	};
 

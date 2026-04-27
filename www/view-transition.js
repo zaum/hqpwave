@@ -27,9 +27,13 @@ const ViewTransition = {
   },
 
   run(swapFn, durationMs) {
-    const duration = (typeof durationMs === 'number' && durationMs > 0) ? durationMs : this._defaultDuration;
+    const duration = typeof durationMs === 'number' ? durationMs : this._defaultDuration;
     if (this._busy) {
       this._queue = { swapFn, duration };
+      return Promise.resolve();
+    }
+    if (duration <= 0) {
+      this.instant(swapFn);
       return Promise.resolve();
     }
     return this._execute(swapFn, duration);
@@ -88,6 +92,16 @@ const ViewTransition = {
 
   async _execute(swapFn, duration) {
     this._busy = true;
+    if (duration <= 0) {
+      try {
+        swapFn();
+      } finally {
+        this._busy = false;
+        this._processQueue();
+      }
+      return;
+    }
+
     const overlay = this._getOverlay();
     if (!overlay) {
       swapFn();

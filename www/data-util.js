@@ -3,6 +3,7 @@
  */
 import Values from './values.js';
 import Model from './model.js';
+import Util from './util.js';
 
 
 class DataUtil {
@@ -72,8 +73,12 @@ class DataUtil {
 
   /** Where track is assumed to be from album. */
   static makeUriUsingAlbumAndTrack(album, track) {
-    const uri = `file://${album['@_path']}/${track['@_name']}`; // todo system directory separator char
-    return uri;
+    const folder = Util.decodeXmlEntities(album['@_path'] || '').replace(/[\/\\]+$/, '');
+    const filename = Util.decodeXmlEntities(track['@_name'] || '').replace(/^[\/\\]+/, '');
+    if (!folder || !filename) {
+      return '';
+    }
+    return `${folder}/${filename}`;
   }
 
   static doesAlbumContainPlayingSong(album) {
@@ -90,25 +95,24 @@ class DataUtil {
       return false;
     }
     const meta = Model.status.metadata;
-    const a = meta['@_uri'];
-    const b = album['@_path'];
+    const a = Util.toComparableLocalPath(meta['@_uri']);
+    const b = Util.toComparableLocalPath(album['@_path']);
     if (!a || !b) {
       return false;
     }
-    return a.includes(b);
+    return (a === b || a.startsWith(`${b}/`));
   }
 
   static doesAlbumSongEqualPlayingSong(album, track) {
     if (!DataUtil.doesAlbumContainPlayingSong(album)) {
       return false;
     }
-    const meta = Model.status.metadata;
-    const metaUri = meta['@_uri'];
-    const trackName = track['@_name']; // ie, filename
-    if (!metaUri || !trackName) {
+    const metaUri = Util.toComparableLocalPath(Model.status.metadata['@_uri']);
+    const trackUri = Util.toComparableLocalPath(DataUtil.makeUriUsingAlbumAndTrack(album, track));
+    if (!metaUri || !trackUri) {
       return false;
     }
-    return metaUri.endsWith(trackName);
+    return metaUri === trackUri;
   }
 }
 

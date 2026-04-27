@@ -96,7 +96,8 @@
 
   .albumViewPictureOuter,
   .cover-wrap {
-    position: relative;
+    position: sticky;
+    top: 32px;
     margin: 0 auto;
   }
 
@@ -111,6 +112,33 @@
   #albumViewInfo,
   .album-hero {
     padding-bottom: 16px;
+  }
+
+  #albumViewTitle {
+    font-size: 42px;
+  }
+
+  #albumViewPictureBlur {
+    transform: scale(1.6);
+  }
+
+  .track-list-header {
+    grid-template-columns: 36px 1fr 160px 80px 52px;
+  }
+
+  .track-list-header>*:nth-child(3),
+  .track-list-header>*:nth-child(4) {
+    display: block;
+  }
+
+  .track-item,
+  .albumTrackItem {
+    grid-template-columns: 36px 1fr 160px 80px 52px;
+  }
+
+  .track-item>*:nth-child(3),
+  .track-item>*:nth-child(4) {
+    display: block;
   }
 }
 
@@ -170,8 +198,8 @@
 
 .albumViewPictureOuter,
 .cover-wrap {
-  position: sticky;
-  top: 32px;
+  position: relative;
+  top: auto;
   z-index: 200;
   overflow: visible;
 }
@@ -192,8 +220,8 @@
 
 .albumViewPictureOuter,
 .cover-wrap {
-  position: sticky;
-  top: 32px;
+  position: relative;
+  top: auto;
   z-index: 200;
   overflow: visible;
   width: 100%;
@@ -252,21 +280,8 @@
   }
 }
 
-@media (min-width: 768px) {
-
-  #albumViewPicture,
-  .cover {
-    width: auto;
-    /* Don't size from 100vh: topbar height varies (2-row at 768-1024px),
-       and a 100vh-based height can force the main grid row to overflow,
-       clipping the playbar. Size relative to the album view container. */
-    height: calc(100% - 80px);
-    max-height: 560px;
-    aspect-ratio: 1 / 1;
-  }
-}
-
 #albumViewPictureBlur {
+  display: none;
   position: absolute;
   top: 0;
   left: 0;
@@ -279,12 +294,6 @@
   pointer-events: none;
   border-radius: 40px;
   transform: scale(1.4);
-}
-
-@media (min-width: 768px) {
-  #albumViewPictureBlur {
-    transform: scale(1.6);
-  }
 }
 
 #albumViewImageNav {
@@ -449,13 +458,6 @@
   line-height: 1.1;
   letter-spacing: -0.01em;
   color: var(--text);
-}
-
-@media (min-width: 768px) {
-
-  #albumViewTitle {
-    font-size: 42px;
-  }
 }
 
 #albumViewStats,
@@ -813,7 +815,7 @@
 
 #albumList,
 .track-section {
-  padding: 0 0 60px;
+  padding: 0 0 32px;
   animation: listIn 0.3s ease-out 0.1s both;
   overflow: visible;
 }
@@ -920,19 +922,6 @@
 .track-item>*:nth-child(3),
 .track-item>*:nth-child(4) {
   display: none;
-}
-
-@media (min-width: 768px) {
-
-  .track-item,
-  .albumTrackItem {
-    grid-template-columns: 36px 1fr 160px 80px 52px;
-  }
-
-  .track-item>*:nth-child(3),
-  .track-item>*:nth-child(4) {
-    display: block;
-  }
 }
 
 /* Track Number */
@@ -1144,6 +1133,7 @@
 }
 
 .albumItemLeft .indexText {
+  display: none;
   font-family: 'Geist Mono', monospace;
   font-size: 12px;
   font-weight: 300;
@@ -1201,6 +1191,7 @@
 }
 
 .albumItemDurationCol {
+  display: none;
   text-align: right;
   flex-shrink: 0;
 }
@@ -1216,6 +1207,7 @@
 }
 
 .albumItemMain .extra {
+  display: none;
   margin-top: 2px;
   padding-top: 4px;
 }
@@ -1405,8 +1397,8 @@
 .relatedAlbums {
   grid-column: 1 / -1;
   background: var(--surface2);
-  padding: 40px 24px 36px 24px; /* increased top padding */
-  margin-top: 28px;
+  padding: 24px 24px 32px;
+  margin-top: 12px;
   position: relative;
   z-index: 300;
   isolation: isolate;
@@ -1430,4 +1422,38 @@
 /* Reuse library album grid styles via libraryAlbumGroup class */
 .relatedAlbums .libraryAlbumGroup {
   /* Library view styles will be applied automatically */
+}
+
+@media (min-width: 768px) {
+  #albumList,
+  .track-section {
+    padding-bottom: 60px;
+  }
+
+  .relatedAlbums {
+    padding: 40px 24px 36px 24px;
+    margin-top: 28px;
+  }
+
+  .albumViewPictureOuter,
+  .cover-wrap {
+    position: sticky;
+    top: 32px;
+  }
+
+  .albumItemLeft .indexText {
+    display: block;
+  }
+
+  .albumItemDurationCol {
+    display: block;
+  }
+
+  .albumItemMain .extra {
+    display: block;
+  }
+
+  #albumViewPictureBlur {
+    display: block;
+  }
 }

@@ -1,4 +1,5 @@
 import Model from './model.js';
+import Util from './util.js';
 
 /**
  * Value object wrapper around hqp <PlaylistGet /> object.
@@ -35,9 +36,13 @@ export default class PlaylistVo {
     if (!uri) {
       return -1;
     }
+    const targetPath = Util.toComparableLocalPath(uri);
     for (let i = 0; i < this._array.length; i++) {
       const item = this._array[i];
       if (item['@_uri'] == uri) {
+        return i;
+      }
+      if (targetPath && Util.toComparableLocalPath(item['@_uri']) == targetPath) {
         return i;
       }
     }

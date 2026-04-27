@@ -68,6 +68,7 @@ export default class App {
   metaRetryMax = 3;
   isBrandLogoAnimationRunning = false;
   brandLogoAnimationCooldownUntil = 0;
+  isCompactViewport = false;
 
   constructor() {
     if (Util.isTouch) {
@@ -193,7 +194,7 @@ export default class App {
   }
 
   triggerBrandLogoAnimation() {
-    if (!Settings.showLogoAnimation) {
+    if (!Settings.showLogoAnimation || this.isCompactViewport) {
       return;
     }
     const now = Date.now();
@@ -205,7 +206,7 @@ export default class App {
   }
 
   updateBrandLogoAnimationState() {
-    if (Settings.showLogoAnimation) {
+    if (Settings.showLogoAnimation && !this.isCompactViewport) {
       return;
     }
 
@@ -1113,6 +1114,13 @@ export default class App {
     $(document.body).css('pointer-events', '');
   }
 
+  updateViewportMotionMode() {
+    this.isCompactViewport = window.innerWidth < 768;
+    this.transitionDurationMs = this.isCompactViewport ? 0 : 350;
+    $('html').toggleClass('isCompactViewport', this.isCompactViewport);
+    this.updateBrandLogoAnimationState();
+  }
+
   doWindowResize() {
     // Must set <body> height programmatically because
     // 100vh + `webkit-fill-available` fails on Mobile Firefox
@@ -1122,6 +1130,7 @@ export default class App {
     // This prevents bottom clipping of the playbar when the topbar grows taller
     // (e.g. 768-1024px two-row topbar in some emulated/mobile viewports).
     $('#page').height(h);
+    this.updateViewportMotionMode();
 
     // Views should listen for this if they need to know about window-resize
     $(document).trigger('debounced-window-resize');

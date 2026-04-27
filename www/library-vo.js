@@ -89,7 +89,13 @@ export default class LibraryVo {
 
   // @Nullable
   getTrackHashForTrackUri(uri) {
-    return this._trackUriToTrackHash[uri];
+    if (!uri) {
+      return null;
+    }
+    return this._trackUriToTrackHash[uri]
+      || this._trackUriToTrackHash[Util.makeFileUri(uri)]
+      || this._trackUriToTrackHash[Util.toComparableLocalPath(uri)]
+      || null;
   }
 
   // @Nullable
@@ -139,9 +145,13 @@ export default class LibraryVo {
       for (const item of this._albums) {
         const path = item['@_path'];
         this._pathToItem[path] = item;
+        const comparablePath = Util.toComparableLocalPath(path);
+        if (comparablePath) {
+          this._pathToItem[comparablePath] = item;
+        }
       }
     }
-    let path = uri.replace('file://', '');
+    let path = Util.toComparableLocalPath(uri);
     path = Util.stripFilenameFromPath(path);
     return this._pathToItem[path];
   }
@@ -242,9 +252,21 @@ export default class LibraryVo {
     for (const album of this.albums) {
       const tracks = AlbumUtil.getTracksOf(album);
       for (const track of tracks) {
-        const uri = 'file://' + album['@_path'] + '/' + track['@_name']
+        const folder = Util.decodeXmlEntities(album['@_path'] || '').replace(/[\/\\]+$/, '');
+        const filename = Util.decodeXmlEntities(track['@_name'] || '').replace(/^[\/\\]+/, '');
+        const uri = (folder && filename) ? `${folder}/${filename}` : '';
+        const encodedUri = Util.makeFileUriFromParts(album['@_path'], track['@_name']);
+        const rawUri = 'file://' + album['@_path'] + '/' + track['@_name'];
+        const comparablePath = Util.toComparableLocalPath(uri);
         const hash = track['@_hash'];
-        this._trackUriToTrackHash[uri] = hash;
+        if (uri) {
+          this._trackUriToTrackHash[uri] = hash;
+        }
+        this._trackUriToTrackHash[encodedUri] = hash;
+        this._trackUriToTrackHash[rawUri] = hash;
+        if (comparablePath) {
+          this._trackUriToTrackHash[comparablePath] = hash;
+        }
       }
     }
   }

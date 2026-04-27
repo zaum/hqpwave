@@ -41,6 +41,9 @@ export default class PlaybarView {
   ratio;
   isVolumePanelShowing = false;
   _coverUrl = '';
+  isTransportFadeRunning = false;
+  transportFadeUnlockTimeoutId = null;
+  transportFadeStepTimeoutId = null;
 
   constructor() {
     this.$el = $("#playbarView");
@@ -84,7 +87,7 @@ export default class PlaybarView {
     this._initCircularProgress();
 
     this.$playButton.on('click tap', this.onPlayButton);
-    this.$stopButton.on('click tap', () => Service.queueCommandFrontAndGetStatus(Commands.stop()));
+    this.$stopButton.on('click tap', this.onStopButton);
     this.$previousButton.on("click tap", this.onPreviousButton);
     this.$nextButton.on("click tap", this.onNextButton);
     this.$seekBackwardButton.on("click tap", () => this.seekBySeconds(-10));
@@ -102,6 +105,7 @@ export default class PlaybarView {
     Util.addAppListener(this, 'model-state-updated', this.onModelStateUpdated);
     Util.addAppListener(this, 'progress-thumb-drag', this.onProgressThumbDrag);
     Util.addAppListener(this, 'new-track', this.onNewTrackDetected);
+    Util.addAppListener(this, 'playbar-track-change-command', this.onTrackChangeCommand);
 
     this.pointerUtil = new ModalPointerUtil(
         [this.$volumeInline, this.$volumeToggle, this.volumePanel.$el],
@@ -494,16 +498,28 @@ export default class PlaybarView {
   }
 
   onPlayButton = (e) => {
-    const xml = Model.status.isPlaying ? Commands.pause() : Commands.play();
-    Service.queueCommandFrontAndGetStatus(xml);
+    if (Model.status.isPlaying) {
+      this.queueTransportWithFade(Commands.pause());
+      return;
+    }
+
+    Service.queueCommandFrontAndGetStatus(Commands.play());
+  };
+
+  onStopButton = () => {
+    this.queueTransportWithFade(Commands.stop());
   };
 
   onPreviousButton = (e) => {
-    Service.queueCommandFrontAndGetStatus(Commands.previous());
+    this.queueTransportWithFade(Commands.previous());
   };
 
   onNextButton = (e) => {
-    Service.queueCommandFrontAndGetStatus(Commands.next());
+    this.queueTransportWithFade(Commands.next());
+  };
+
+  onTrackChangeCommand = (commandXml) => {
+    this.queueTransportWithFade(commandXml);
   };
 
   onProgressThumbDrag() {
@@ -571,6 +587,123 @@ export default class PlaybarView {
   onVolumeToggleClick = (e) => {
     this.toggleVolumePopup();
   };
+
+  queueTransportWithFade(transportCommand) {
+    if (this.isTransportFadeRunning) {
+      return;
+    }
+
+    if (!Model.status.isPlaying) {
+      Service.queueCommandFrontAndGetStatus(transportCommand);
+      return;
+    }
+
+    const currentVolume = Model.status.volume;
+    const fadeTargets = this.buildTransportFadeTargets(currentVolume);
+    if (fadeTargets.length === 0) {
+      Service.queueCommandFrontAndGetStatus(transportCommand);
+      return;
+    }
+
+    this.beginTransportFadeLock();
+    this.runTransportFadeStep({
+      transportCommand: transportCommand,
+      originalVolume: currentVolume,
+      fadeTargets: fadeTargets,
+      index: 0
+    });
+  }
+
+  buildTransportFadeTargets(currentVolume) {
+    if (isNaN(currentVolume)) {
+      return [];
+    }
+
+    const minVolume = -40;
+    const fadeDepth = Math.min(18, Math.max(0, currentVolume - minVolume));
+    if (fadeDepth <= 0) {
+      return [];
+    }
+
+    const targetVolume = currentVolume - fadeDepth;
+    const steps = Math.min(4, fadeDepth);
+    const targets = [];
+
+    for (let i = 1; i <= steps; i++) {
+      const rawTarget = currentVolume - ((fadeDepth * i) / steps);
+      const nextValue = Math.max(minVolume, Math.round(rawTarget));
+      if (nextValue < currentVolume && nextValue !== targets[targets.length - 1]) {
+        targets.push(nextValue);
+      }
+    }
+
+    if (targets.length === 0 && targetVolume < currentVolume) {
+      targets.push(targetVolume);
+    }
+
+    return targets;
+  }
+
+  runTransportFadeStep({ transportCommand, originalVolume, fadeTargets, index }) {
+    if (index >= fadeTargets.length) {
+      this.finishTransportFade(transportCommand, originalVolume);
+      return;
+    }
+
+    const nextVolume = fadeTargets[index];
+    Service.queueCommandFront(Commands.volume(nextVolume), () => {
+      clearTimeout(this.transportFadeStepTimeoutId);
+      this.transportFadeStepTimeoutId = setTimeout(() => {
+        this.runTransportFadeStep({
+          transportCommand: transportCommand,
+          originalVolume: originalVolume,
+          fadeTargets: fadeTargets,
+          index: index + 1
+        });
+      }, 55);
+    });
+  }
+
+  finishTransportFade(transportCommand, originalVolume) {
+    Service.queueCommandFront(transportCommand, () => {
+      clearTimeout(this.transportFadeStepTimeoutId);
+      this.transportFadeStepTimeoutId = setTimeout(() => {
+        this.restoreTransportVolume(originalVolume);
+      }, 120);
+    });
+  }
+
+  restoreTransportVolume(originalVolume) {
+    if (isNaN(originalVolume)) {
+      Service.queueCommandFront(Commands.status(), () => {
+        this.endTransportFadeLock();
+      });
+      return;
+    }
+
+    Service.queueCommandFront(Commands.volume(originalVolume), () => {
+      Service.queueCommandFront(Commands.status(), () => {
+        this.endTransportFadeLock();
+      });
+    });
+  }
+
+  beginTransportFadeLock() {
+    clearTimeout(this.transportFadeUnlockTimeoutId);
+    clearTimeout(this.transportFadeStepTimeoutId);
+    this.isTransportFadeRunning = true;
+    this.transportFadeUnlockTimeoutId = setTimeout(() => {
+      this.endTransportFadeLock();
+    }, 2000);
+  }
+
+  endTransportFadeLock() {
+    clearTimeout(this.transportFadeUnlockTimeoutId);
+    clearTimeout(this.transportFadeStepTimeoutId);
+    this.transportFadeUnlockTimeoutId = null;
+    this.transportFadeStepTimeoutId = null;
+    this.isTransportFadeRunning = false;
+  }
 
   _updateMusicPlayingAnimation() {
     const $musicPlaying = this.$el.find("#musicPlaying");

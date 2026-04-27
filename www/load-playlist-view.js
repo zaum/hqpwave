@@ -147,26 +147,20 @@ export default class LoadPlaylistView  extends Subview {
     if (!path || typeof path !== 'string') {
       return '';
     }
-    let result = path;
-    try {
-      result = decodeURIComponent(result);
-    } catch (e) {
-      // keep original when not URI encoded
+    const result = Util.decodeXmlEntities(path).trim();
+    if (!result) {
+      return '';
     }
-    const entityMap = {
-      amp: '&',
-      lt: '<',
-      gt: '>',
-      quot: '"',
-      apos: "'"
-    };
-    result = result.replace(/&(amp|lt|gt|quot|apos);/g, (m, name) => entityMap[name] || m);
-    return result.trim();
+    if (/^file:/i.test(result)) {
+      return Util.toComparableLocalPath(result);
+    }
+    return result;
   }
 
   makeTransportPathCandidates(path) {
     const raw = (typeof path === 'string') ? path.trim() : '';
     const decoded = this.decodePlaylistPath(raw);
+    const comparablePath = Util.toComparableLocalPath(decoded || raw);
 
     const values = [];
     const add = (value) => {
@@ -182,16 +176,21 @@ export default class LoadPlaylistView  extends Subview {
 
     add(raw);
     add(decoded);
+    add(comparablePath);
 
-    const noFilePrefix = decoded.replace(/^file:\/\//i, '');
+    const noFilePrefix = comparablePath || decoded.replace(/^file:\/\//i, '');
     add(noFilePrefix);
 
     const slashPath = noFilePrefix.replace(/\\/g, '/');
     add(slashPath);
+    if (/^[a-zA-Z]:\//.test(slashPath) || slashPath.startsWith('//')) {
+      add(slashPath.replace(/\//g, '\\'));
+    }
 
     // Some HQPlayer builds accept file:// URI form, others prefer local path.
     add(`file://${noFilePrefix}`);
     add(`file:///${slashPath.replace(/^\/+/, '')}`);
+    add(Util.makeFileUri(decoded || raw));
 
     return values;
   }

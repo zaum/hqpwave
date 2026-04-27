@@ -614,6 +614,13 @@
   transform: scale(1);
 }
 
+@media (max-width: 1599px) {
+  .libraryItem.show-play-button .libraryItemPlayBtn {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .libraryItemPlayBtn:hover {
   transform: scale(1.1) !important;
   background: var(--accent-hover, var(--accent));

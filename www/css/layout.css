@@ -253,6 +253,36 @@
   display: none;
 }
 
+@media (max-width: 767px) {
+  #topBar {
+    row-gap: 12px;
+    padding-bottom: 2px;
+    background: var(--bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  #topBar .topbar-nav {
+    width: 100%;
+    gap: 4px;
+    padding-top: 10px;
+    padding-bottom: 0;
+    overflow-x: visible;
+  }
+
+  #topBar .nav-pill {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px;
+    border: 1px solid var(--text);
+    box-sizing: border-box;
+    text-align: center;
+  }
+}
+
 /* Let the page grid allocate space (topbar auto, main 1fr, playbar fixed).
    Avoid forcing #mainArea to 100% of the viewport, which can clip the playbar
    when the topbar grows taller (768-1024px, 2-row topbar). */

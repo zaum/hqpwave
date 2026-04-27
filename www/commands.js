@@ -149,7 +149,7 @@ Commands.setRate = (value) => {
 };
 
 Commands.volume = (value) => { // float
-  return `<Volume value=${value} />`;
+  return `<Volume value="${value}" />`;
 };
 
 Commands.volumeUp = () => {
@@ -164,10 +164,8 @@ Commands.volumeDown = () => {
 // Higher-level functions
 
 Commands.playlistAddUsingAlbumAndIndex = (album, trackIndex) => {
-	const albumPath = album['@_path'];
 	const track = AlbumUtil.getTracksOf(album)[trackIndex];
-	const trackFilename = track['@_name'];
-	const uri = `file://${albumPath}/${trackFilename}`; // todo system directory separator char
+	const uri = DataUtil.makeUriUsingAlbumAndTrack(album, track);
 	return Commands.playlistAdd(uri);
 };
 

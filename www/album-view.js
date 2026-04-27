@@ -97,6 +97,20 @@ export default class AlbumView extends Subview {
   albumImageLoadSessionId = 0;
   albumCoverCount = 0;
 
+  isWideAlbumLayout() {
+    return window.innerWidth >= 768;
+  }
+
+  resetPictureHolderState() {
+    if (this.$picturePlaceholder) {
+      this.$picturePlaceholder.remove();
+      this.$picturePlaceholder = null;
+    }
+    this.$pictureHolder.removeClass('is-unpinned');
+    this.$pictureHolder.css('transform', '');
+    this._isUnpinned = false;
+  }
+
   constructor() {
     super($("#albumView"));
     this.$pictureHolder = this.$el.find('.albumViewPictureOuter');
@@ -146,6 +160,11 @@ export default class AlbumView extends Subview {
     };
     this.onAlbumViewScroll = () => {
       try {
+        if (!this.isWideAlbumLayout()) {
+          this.resetPictureHolderState();
+          return;
+        }
+
         const st = this.$el[0].scrollTop || 0;
         const pictureTop = this.$pictureHolder.position() ? this.$pictureHolder.position().top : 0;
         const pictureHeight = this.$pictureHolder.outerHeight() || 0;
@@ -194,6 +213,7 @@ export default class AlbumView extends Subview {
 
     // Reset any stale visibility state (e.g. left over from full-overlay animation)
     this.$picture.css({ visibility: '', transform: '' });
+    this.resetPictureHolderState();
 
     super.show();
 
@@ -256,14 +276,7 @@ hide() {
     $(document).trigger('enable-user-input');
     this.$el.off('scroll.albumView');
     $(document).off('album-favorite-changed.related', this.onRelatedAlbumFavoriteChanged);
-    // remove placeholder if present
-    if (this.$picturePlaceholder) {
-      this.$picturePlaceholder.remove();
-      this.$picturePlaceholder = null;
-    }
-    this._isUnpinned = false;
-    // reset any transform
-    this.$pictureHolder.css('transform', '');
+    this.resetPictureHolderState();
   };
 
   populate(album) {
