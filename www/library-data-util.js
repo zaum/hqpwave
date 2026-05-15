@@ -63,4 +63,30 @@ export default class LibraryDataUtil {
     const b = o2['@_path'];
     return a == b ? 0 : a > b ? 1 : -1;
   }
+
+  /**
+   * Sort by date added (most recent first).
+   * Uses album's position in the original array as a proxy for date added,
+   * since HQPlayer doesn't provide an explicit date added field.
+   * Assumes albums are added in order, with newer albums at higher indices.
+   */
+  static sortByDateAddedDesc(o1, o2) {
+    // Use the _originalIndex if set, otherwise fall back to other comparison
+    const a = o1['_originalIndex'] || 0;
+    const b = o2['_originalIndex'] || 0;
+    return b - a; // Descending: newer (higher index) first
+  }
+
+  /**
+   * Sort by release date (year) descending - newest first.
+   */
+  static sortByReleaseDateDesc(o1, o2) {
+    const a = parseInt(o1['year']) || 0;
+    const b = parseInt(o2['year']) || 0;
+    if (a === b) {
+      // Fall back to artist/album sort for same year
+      return LibraryDataUtil.sortByArtistThenAlbum(o1, o2);
+    }
+    return b - a; // Descending: higher year first
+  }
 }

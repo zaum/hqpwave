@@ -150,9 +150,126 @@
   width: 320px;
 }
 
+/* Sort icons container - default position (large screens) */
+.sort-icons {
+  position: absolute;
+  left: -160px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 10;
+}
+
+/* Sort icons inline with brand logo (small screens) */
+.sort-icons-inline {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin-left: 16px;
+  display: none; /* Hidden by default, shown only in library view on small screens */
+}
+
+/* Sort icons only visible in library view */
+#page:not(.libraryView) .sort-icons,
+#page:not(.libraryView) .sort-icons-inline {
+  display: none !important;
+}
+
+/* Individual sort icon button */
+.sort-icon {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-md);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.sort-icon svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.sort-icon:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+  background: var(--raised);
+}
+
+.sort-icon.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* Cycling sort button - hidden by default, shown only on small screens */
+.sort-cycle-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-md);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.sort-cycle-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.sort-cycle-btn:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+  background: var(--raised);
+}
+
+.sort-cycle-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* Random icon SVG for cycle button */
+.sort-cycle-btn .random-icon-svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Random icon in cycle button for small screens */
+.sort-cycle-btn .random-icon-svg rect {
+  fill: currentColor;
+}
+
+/* Override for small screen cycling button */
+@media (max-width: 1024px) {
+  .sort-icons-inline .sort-cycle-btn .random-icon-svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .search-help {
   position: absolute;
-  left: -24px;
+  left: -32px;
   top: 50%;
   transform: translateY(-50%);
   width: 16px;
@@ -251,6 +368,51 @@
   .search-help,
   .search-help-tooltip {
     display: none;
+  }
+
+  /* Hide sort icons in search-wrap on small screens */
+  .search-wrap .sort-icons {
+    display: none;
+  }
+
+  /* Show cycling sort button only in library view on small screens */
+  #page.libraryView .sort-cycle-btn {
+    display: flex;
+  }
+
+  /* Hide individual sort icons on small screens */
+  .sort-icons-inline .sort-icon {
+    display: none;
+  }
+
+  /* Show inline sort icons container but only with cycling button */
+  #page.libraryView .sort-icons-inline {
+    display: flex;
+    gap: 6px;
+  }
+
+  /* Smaller cycling button for inline layout */
+  .sort-icons-inline .sort-cycle-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .sort-icons-inline .sort-cycle-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Mobile adjustments */
+  .sort-icons-inline {
+    margin-left: 12px;
+    gap: 4px;
+  }
+
+  .sort-icons-inline .sort-icon {
+    width: 24px;
+    height: 24px;
   }
 }
 

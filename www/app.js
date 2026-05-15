@@ -161,11 +161,12 @@ export default class App {
     $("#appTitle").on("click", () => this.doAppTitleClick());
     $('#backToLibraryButton').on('click', () => this.goToLibraryView());
 
+    // Initialize sort icon buttons
+    this.initSortIcons();
+
     App.instance = this; // yes really
 
     this.updateMostStateClasses();
-
-    // Make the correct things visible.
     // Important: don't call subview.hide() here because subclasses may have
     // side effects (event unbinding, enabling input, etc.).
     for (let subview of this.subviews) {
@@ -257,6 +258,198 @@ export default class App {
           break;
       }
     });
+  }
+
+  /**
+   * Initialize sort icon buttons in the search bar.
+   */
+  initSortIcons() {
+    const $sortIcons = $('.sort-icon');
+    const $sortCycleBtn = $('.sort-cycle-btn');
+
+    // Generate or load saved random icon pattern FIRST (needed for cycle button)
+    this.loadOrGenerateRandomIcon();
+
+    // Set initial active state based on saved setting
+    const currentSort = Settings.librarySortOrder;
+    $sortIcons.removeClass('active');
+    $sortIcons.filter(`[data-sort="${currentSort}"]`).addClass('active');
+
+    // Handle sort icon clicks
+    $sortIcons.on('click', (e) => {
+      const $btn = $(e.currentTarget);
+      const sortType = $btn.data('sort');
+
+      // Update active state
+      $sortIcons.removeClass('active');
+      $btn.addClass('active');
+
+      // Update cycling button icon
+      this.updateSortCycleButtonIcon(sortType);
+
+      // Save setting
+      Settings.librarySortOrder = sortType;
+
+      // Trigger sort order change event
+      $(document).trigger('library-albums-sort-order-changed');
+    });
+
+    // Initialize cycling sort button (after random icon is generated)
+    this.initSortCycleButton($sortCycleBtn, currentSort);
+  }
+
+  /**
+   * Initialize the cycling sort button for small screens.
+   */
+  initSortCycleButton($btn, currentSort) {
+    if ($btn.length === 0) return;
+
+    // Set initial icon based on current sort
+    this.updateSortCycleButtonIcon(currentSort);
+
+    // Cycle through sort options on click
+    $btn.on('click', () => {
+      const sortOptions = ['dateAdded', 'artist', 'releaseDate', 'random'];
+      const currentIndex = sortOptions.indexOf(Settings.librarySortOrder);
+      const nextIndex = (currentIndex + 1) % sortOptions.length;
+      const nextSort = sortOptions[nextIndex];
+
+      // Update cycling button icon
+      this.updateSortCycleButtonIcon(nextSort);
+
+      // Update individual sort icons active state
+      const $sortIcons = $('.sort-icon');
+      $sortIcons.removeClass('active');
+      $sortIcons.filter(`[data-sort="${nextSort}"]`).addClass('active');
+
+      // Save setting and trigger event
+      Settings.librarySortOrder = nextSort;
+      $(document).trigger('library-albums-sort-order-changed');
+    });
+  }
+
+  /**
+   * Update the cycling sort button icon based on sort type.
+   */
+  updateSortCycleButtonIcon(sortType) {
+    const $btn = $('.sort-cycle-btn');
+    if ($btn.length === 0) return;
+
+    const $iconContainer = $btn.find('.sort-cycle-icon');
+    if ($iconContainer.length === 0) return;
+
+    // SVG icons for each sort type
+    const icons = {
+      dateAdded: '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>',
+      artist: '<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>',
+      releaseDate: '<path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>'
+    };
+
+    // For random, we use the generated random-icon-svg
+    if (sortType === 'random') {
+      const $randomSvg = $('.random-icon-svg').first();
+      if ($randomSvg.length > 0) {
+        const randomContent = $randomSvg.html();
+        $iconContainer.html(randomContent).attr('class', 'sort-cycle-icon random-icon-svg');
+      }
+    } else if (icons[sortType]) {
+      $iconContainer.html(icons[sortType]).attr('class', 'sort-cycle-icon');
+    }
+
+    // Update title
+    const titles = {
+      dateAdded: 'Sort: Date Added (click to change)',
+      artist: 'Sort: Artist (click to change)',
+      releaseDate: 'Sort: Release Date (click to change)',
+      random: 'Sort: Random (click to change)'
+    };
+    $btn.attr('title', titles[sortType] || 'Sort: click to change');
+  }
+
+  /**
+   * Load saved random icon from localStorage or generate a new one if not exists.
+   */
+  loadOrGenerateRandomIcon() {
+    const $svg = $('.random-icon-svg');
+    if ($svg.length === 0) return;
+
+    // Try to load saved icon data
+    let savedPattern = null;
+    try {
+      savedPattern = localStorage.getItem('hqpwv:randomIconPattern');
+    } catch (e) {
+      // Storage not available
+    }
+
+    if (savedPattern) {
+      // Use saved pattern
+      this.renderRandomIcon(JSON.parse(savedPattern));
+    } else {
+      // Generate new pattern and save it
+      const pattern = this.generateRandomIconPattern();
+      this.renderRandomIcon(pattern);
+      try {
+        localStorage.setItem('hqpwv:randomIconPattern', JSON.stringify(pattern));
+      } catch (e) {
+        // Storage not available
+      }
+    }
+  }
+
+  /**
+   * Generate random grid pattern data for the random sort icon.
+   * Returns array of opacity values for a 5x5 grid.
+   */
+  generateRandomIconPattern() {
+    const gridSize = 5;
+    const pattern = [];
+
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        // Randomly decide if this cell is filled (60% chance)
+        const isFilled = Math.random() > 0.4;
+        const opacity = isFilled ? 1 : (Math.random() > 0.5 ? 0.3 : 0.1);
+        pattern.push(opacity);
+      }
+    }
+
+    return pattern;
+  }
+
+  /**
+   * Render random icon SVG from pattern data.
+   */
+  renderRandomIcon(pattern) {
+    const $svg = $('.random-icon-svg');
+    if ($svg.length === 0 || !pattern) return;
+
+    // Clear existing content
+    $svg.empty();
+
+    // 5x5 grid configuration
+    const gridSize = 5;
+    const cellSize = 3.5;
+    const gap = 1;
+    const startPos = 2;
+
+    // Render cells from pattern
+    for (let i = 0; i < pattern.length; i++) {
+      const row = Math.floor(i / gridSize);
+      const col = i % gridSize;
+      const x = startPos + col * (cellSize + gap);
+      const y = startPos + row * (cellSize + gap);
+      const opacity = pattern[i];
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', cellSize);
+      rect.setAttribute('height', cellSize);
+      rect.setAttribute('rx', '0.5');
+      rect.setAttribute('opacity', opacity);
+
+      $svg.append(rect);
+    }
   }
 
   setActiveNavPill(view) {

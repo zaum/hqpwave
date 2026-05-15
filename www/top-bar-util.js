@@ -25,7 +25,7 @@ class TopBarUtil {
   _pendingRaf = false;
   _lastScrollY = 0;
 
-  COLLAPSE_THRESHOLD = 30; // px - scroll distance to collapse topbar first-row
+  COLLAPSE_THRESHOLD = 80; // px - scroll distance to collapse topbar first-row
 
   _mq1024 = window.matchMedia('(max-width: 1024px)');
 

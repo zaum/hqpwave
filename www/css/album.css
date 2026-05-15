@@ -216,6 +216,7 @@
   position: relative;
   z-index: 2;
   display: block;
+  background-color: var(--surface);
 }
 
 .albumViewPictureOuter,
@@ -628,7 +629,7 @@
   flex-wrap: wrap;
 }
 
-# (removed unified .metaCaption comment)
+/* (removed unified .metaCaption comment) */
 
 #albumViewPerformer .metaValue,
 #albumViewComposer .metaValue {
@@ -1139,6 +1140,12 @@
   font-weight: 300;
   color: var(--text-3);
   text-align: center;
+}
+
+@media (max-width: 767px) {
+  .albumItemLeft .indexText {
+    display: block;
+  }
 }
 
 .favoriteTrackCover {

@@ -17,6 +17,7 @@ export default class LibraryAlbumsList extends LibraryContentList {
 
   filteredSortedAlbums;
   sortType;
+  sortOrder;
   groupType = 'none'; // Always use 'none' - no grouping
   filterType;
 
@@ -27,9 +28,11 @@ export default class LibraryAlbumsList extends LibraryContentList {
   constructor($el) {
     super($el);
     this.setSortType(Settings.librarySortType);
+    this.setSortOrder(Settings.librarySortOrder);
     // Force groupType to 'none' - no grouping
     Settings.libraryGroupType = 'none';
     Util.addAppListener(this, 'library-albums-sort-changed', this.onSortChanged);
+    Util.addAppListener(this, 'library-albums-sort-order-changed', this.onSortOrderChanged);
     Util.addAppListener(this, 'library-albums-filter-changed', this.onFilterChanged);
     // Initialize timeline minimap controller (no-op if DOM missing)
     try {
@@ -99,6 +102,21 @@ export default class LibraryAlbumsList extends LibraryContentList {
     this.domDirty = true;
   }
 
+  setSortOrder(sortOrder) {
+    const isSameOrder = this.sortOrder == sortOrder;
+
+    // Always update for random to force re-shuffle on each click
+    if (isSameOrder && sortOrder !== 'random') {
+      return;
+    }
+
+    this.sortOrder = sortOrder;
+
+    this.filteredSortedAlbumsDirty = true;
+    this.groupsDirty = true;
+    this.domDirty = true;
+  }
+
   setGroupType(groupType) {
     if (this.groupType == groupType) {
       return;
@@ -132,27 +150,37 @@ export default class LibraryAlbumsList extends LibraryContentList {
   // No special update needed - uses default library rendering
 
   makeFilteredSortedAlbums() {
-    if (!this.albums || !this.sortType) {
+    if (!this.albums) {
       return;
     }
 
     const a = LibraryDataUtil.makeFilteredAlbumsArray(this.albums, Settings.libraryFilterType);
 
-    switch (this.sortType) {
+    // Use sortOrder if set, otherwise fall back to sortType for backward compatibility
+    const order = this.sortOrder || this.sortType || 'artist';
+
+    switch (order) {
+      case 'dateAdded':
+        a.sort(LibraryDataUtil.sortByDateAddedDesc);
+        break;
       case 'artist':
         a.sort(LibraryDataUtil.sortByArtistThenAlbum);
         break;
+      case 'releaseDate':
+        a.sort(LibraryDataUtil.sortByReleaseDateDesc);
+        break;
+      case 'random':
+        Util.shuffleArray(a);
+        break;
+      // Legacy sortType support
       case 'album':
         a.sort(LibraryDataUtil.sortByAlbumThenArtist);
         break;
       case 'path':
         a.sort(LibraryDataUtil.sortByPath);
         break;
-      case 'random':
-        Util.shuffleArray(a);
-        break;
       default:
-        cl('warning logic error');
+        a.sort(LibraryDataUtil.sortByArtistThenAlbum);
         break;
     }
     this.filteredSortedAlbums = a;
@@ -199,6 +227,11 @@ export default class LibraryAlbumsList extends LibraryContentList {
 
   onSortChanged() {
     this.setSortType(Settings.librarySortType);
+    this.update();
+  }
+
+  onSortOrderChanged() {
+    this.setSortOrder(Settings.librarySortOrder);
     this.update();
   }
 

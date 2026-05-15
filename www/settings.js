@@ -11,6 +11,7 @@ class Settings {
   _librarySearchType;
   _librarySearchValue;
   _librarySortType;
+  _librarySortOrder;
   _libraryGroupType;
   _libraryFilterType;
   _libraryCollapsedGroups;
@@ -38,6 +39,7 @@ class Settings {
     this._librarySearchValue = this.storage.getItem('librarySearchValue') || '';
 
     this._librarySortType = this.storage.getItem('librarySortType') || 'artist';
+    this._librarySortOrder = this.storage.getItem('librarySortOrder') || 'dateAdded';
     this._libraryGroupType = this.storage.getItem('libraryGroupType') || 'none';
     this._libraryFilterType = this.storage.getItem('libraryFilterType') || 'none';
 
@@ -115,6 +117,15 @@ class Settings {
   set librarySortType(s) {
     this._librarySortType = s;
     this.storage.setItem('librarySortType', s);
+  }
+
+  get librarySortOrder() {
+    return this._librarySortOrder;
+  }
+
+  set librarySortOrder(s) {
+    this._librarySortOrder = s;
+    this.storage.setItem('librarySortOrder', s);
   }
 
   get libraryGroupType() {

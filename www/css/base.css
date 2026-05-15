@@ -481,7 +481,7 @@ label {
 }
 
 .settings-label::after {
-  content: ''; 
+  content: '';
   flex: 1;
   height: 1px;
   background: var(--border);

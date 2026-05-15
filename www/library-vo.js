@@ -190,6 +190,8 @@ export default class LibraryVo {
     for (let i = responseArray.length - 1; i >= 0; i--) {
       const item = responseArray[i];
       if (this.isAlbum(item)) {
+        // Store original index for dateAdded sorting (higher index = more recently added)
+        item['_originalIndex'] = i;
         this._albums.push(item);
       } else if (this.isPlaylist(item)) {
         this._hqPlaylistItems.push(item);

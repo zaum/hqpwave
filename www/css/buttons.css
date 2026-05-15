@@ -621,6 +621,8 @@
   z-index: 160;
 }
 
+
+
 #sidebarToggle::before {
   content: "";
   position: absolute;
@@ -638,6 +640,11 @@
   transform: rotate(180deg);
 }
 
+#sidebarToggle.hasActiveFilters .sidebar-toggle-icon,
+#sidebarToggle.isMobileToggle.hasActiveFilters .sidebar-toggle-icon {
+  fill: var(--accent) !important;
+}
+
 #sidebarToggle.isCollapsed .sidebar-toggle-icon {
   transform: rotate(0deg);
 }
@@ -647,8 +654,11 @@
 }
 
 #sidebarToggle.hasActiveFilters,
-.hasSidebarFilters #sidebarToggle {
-  color: var(--accent);
+.hasSidebarFilters #sidebarToggle,
+#sidebarToggle.hasActiveFilters.isMobileToggle,
+#sidebarToggle.isMobileToggle.hasActiveFilters {
+  color: var(--accent) !important;
+  background: var(--accent-bg) !important;
 }
 
 #sidebarToggle.hasActiveFilters:hover,

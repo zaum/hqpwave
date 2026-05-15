@@ -107,7 +107,7 @@ export default class LibraryContentList {
       this.populateGroupDiv($group, group);
     }
     this.$el.append($group);
-    
+
     // Update play button visibility based on setting
     this.updateOverlayVisibility();
     this.primeInitialPreload();
@@ -372,7 +372,7 @@ export default class LibraryContentList {
     const showPlayButton = Settings.showPlayButton;
     const showFormatOverlay = Settings.showFormatOverlay;
     const $items = this.$el.find('.libraryItem');
-    
+
     $items.each((index, item) => {
       const $item = $(item);
       if (showPlayButton) {
