@@ -138,9 +138,20 @@ export default class App {
       }
       this.showHqpSettingsView();
     });
-    this.$brandLogo.on('click', () => {
-      this.setActiveNavPill('library');
-      this.goToLibraryView();
+    this.$brandLogo.on('click', (e) => {
+      console.log('brandLogo click');
+      e.preventDefault();
+      e.stopPropagation();
+      $('html, body').scrollTop(0);
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      for (const subview of this.subviews) {
+        subview.$el[0].scrollTop = 0;
+      }
+      this.libraryView.$el[0].scrollTop = 0;
+      if (this.libraryView.$scrollEl) {
+        this.libraryView.$scrollEl[0].scrollTop = 0;
+      }
     });
     this.$brandLogo.off('.brandLogoAnim');
     this.$brandLogo.on('mouseenter.brandLogoAnim', () => {
@@ -159,7 +170,6 @@ export default class App {
     this.updateBrandLogoAnimationState();
     setTimeout(() => this.triggerBrandLogoAnimation(), 180);
     $("#appTitle").on("click", () => this.doAppTitleClick());
-    $('#backToLibraryButton').on('click', () => this.goToLibraryView());
 
     // Initialize sort icon buttons
     this.initSortIcons();
@@ -465,20 +475,6 @@ export default class App {
       this.$hqpSettingsButton.addClass('active');
     } else {
       this.$navPills.filter(`[data-view="${view}"]`).addClass('active');
-    }
-
-    // Show/hide back-to-library button: hide when library view is active
-    try {
-      const $backBtn = $('#backToLibraryButton');
-      if ($backBtn && $backBtn.length) {
-        if (view === 'library') {
-          $backBtn.hide();
-        } else {
-          $backBtn.show();
-        }
-      }
-    } catch (e) {
-      // ignore DOM issues
     }
   }
 

@@ -924,15 +924,32 @@
    DISCOGRAPHY
    ═══════════════════════════════════════════════════════════════ */
 
+.artistDiscographyTitle {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 32px 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
 #artistDiscography {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 24px;
-  margin-top: 32px;
+  margin-top: 0;
   margin-bottom: 80px;
   position: relative;
   z-index: 10;
   overflow: visible;
+}
+
+@media (min-width: 768px) {
+  .artistDiscographyTitle {
+    padding-top: 40px;
+  }
 }
 
 .artistDiscItem {

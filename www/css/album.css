@@ -398,6 +398,40 @@
   gap: 8px;
 }
 
+@media (max-width: 767px) {
+  #albumViewTextsInner {
+    flex-wrap: wrap;
+  }
+
+  #albumViewButtons {
+    order: 1;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  #albumViewPathRow {
+    order: 2;
+  }
+
+  #albumViewArtist,
+  .hero-artist {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  #albumViewGenreButtons {
+    display: flex;
+    margin-left: auto;
+    margin-top: 0;
+  }
+
+  #albumViewGenreButtons .genre-tag {
+    font-size: 7px;
+    padding: 2px 6px;
+  }
+
+}
+
 .hero-format {
   display: inline-flex;
   align-items: center;
@@ -611,13 +645,16 @@
 
 #albumViewPerformerComposer {
   margin-top: 8px;
+  display: none !important;
 }
 
 #albumViewPerformer,
-#albumViewComposer {
+#albumViewComposer,
+#albumList .albumPerformerLine {
   display: flex;
-  align-items: baseline;
-  gap: 0.4em;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
   font-size: 12px;
   color: var(--text-3);
   font-weight: 300;
@@ -625,15 +662,17 @@
 
 /* Allow performer/composer items to wrap to next line when long */
 #albumViewPerformer,
-#albumViewComposer {
+#albumViewComposer,
+#albumList .albumPerformerLine {
   flex-wrap: wrap;
 }
 
 /* (removed unified .metaCaption comment) */
 
 #albumViewPerformer .metaValue,
-#albumViewComposer .metaValue {
-  font-size: inherit;
+#albumViewComposer .metaValue,
+#albumList .albumPerformerAfterTrackList .metaValue {
+  font-size: 12px;
   line-height: inherit;
   color: var(--text-2);
   display: inline-block;
@@ -644,19 +683,54 @@
 
 /* Preserve consecutive spaces (so two-space separators are visible) and allow wrapping */
 #albumViewPerformer .metaValue,
-#albumViewComposer .metaValue {
+#albumViewComposer .metaValue,
+#albumList .albumPerformerAfterTrackList .metaValue {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 /* Make any parenthetical instrument text lighter and slightly smaller */
 #albumViewPerformer .metaValue em,
-#albumViewComposer .metaValue em {
+#albumViewComposer .metaValue em,
+#albumList .albumPerformerAfterTrackList .metaValue em {
   color: var(--text-3);
   font-style: italic;
   font-weight: 300;
-  font-size: 1em;
-  margin-left: 0.2em;
+  font-size: 12px;
+  margin-left: 0;
+}
+
+#albumList .albumPerformerAfterTrackList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+#albumList .albumPerformerLine + .albumPerformerLine {
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+#albumList .albumPerformerValueItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 0.75fr);
+  column-gap: 18px;
+  align-items: baseline;
+}
+
+#albumList .albumPerformerMusician,
+#albumList .albumPerformerRole {
+  font-size: 12px;
+  line-height: inherit;
+  overflow-wrap: anywhere;
+}
+
+#albumList .albumPerformerRole {
+  color: var(--text-3);
+  font-style: italic;
 }
 
 #albumViewGenreButtons,
@@ -665,6 +739,11 @@
   gap: 6px;
   flex-wrap: wrap;
   margin-top: 10px;
+}
+
+#albumViewArtist > #albumViewGenreButtons {
+  align-items: center;
+  margin-top: 0;
 }
 
 #albumViewGenreButtons .genre-tag,
@@ -1157,6 +1236,12 @@
   overflow: hidden;
   flex-shrink: 0;
   position: relative;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.favoriteTrackCover:hover {
+  opacity: 0.75;
 }
 
 .favoriteTrackCoverImg,
@@ -1409,6 +1494,15 @@
   position: relative;
   z-index: 300;
   isolation: isolate;
+}
+
+#similarAlbums {
+  background: var(--bg);
+}
+
+#similarAlbums.isAfterArtistAlbums {
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .relatedAlbumsInner {

@@ -45,7 +45,12 @@ export default class LibraryView extends Subview {
     this.$scrollEl = this.$el.find('.library-main');
     // Throttled scroll handler for better performance on mobile
     // Increase throttle slightly to reduce work during fast scrolls and prevent jank
-    this._throttledScrollHandler = this._throttle(() => TopBarUtil.onSubviewScroll(this.$scrollEl), 50); // ~20fps
+    this._throttledScrollHandler = this._throttle(() => {
+      TopBarUtil.onSubviewScroll(this.$scrollEl);
+      if (window.App && window.App.instance && typeof window.App.instance.onScroll === 'function') {
+        window.App.instance.onScroll();
+      }
+    }, 50); // ~20fps
     this.$scrollEl.on('scroll', this._throttledScrollHandler);
     this.$title = this.$el.find('#libraryTitle');
     this.$title.addClass('clickable');
@@ -145,6 +150,8 @@ export default class LibraryView extends Subview {
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
     Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
+    Util.addAppListener(this, 'library-albums-sort-changed library-albums-sort-order-changed',
+      () => this.applyAllFilters());
     $(document).on('meta-track-favorite-changed meta-track-incremented', this.trackMetaChangeHandler);
     this.$el.on('click tap', '.libraryNoneAction', this.onEmptyStateResetClick);
 
@@ -314,6 +321,14 @@ export default class LibraryView extends Subview {
         }
         $item.find('.favoriteButton').on('click tap', (e) => TrackListItemUtil.onFavoriteButtonClick(e));
         $item.find('.playButton').on('click tap', (e) => this.onFavoriteTrackPlayClick(e));
+        $item.find('.favoriteTrackCover').on('click tap', (e) => {
+          e.stopPropagation();
+          const hash = $item.attr('data-hash');
+          const album = hash ? Model.library.getAlbumByTrackHash(hash) : null;
+          if (album) {
+            $(document).trigger('track-album-button-click', album);
+          }
+        });
         this.$searchList.append($item);
       }
     } else {
@@ -330,21 +345,15 @@ export default class LibraryView extends Subview {
     const song = track['@_song'] || 'Track';
     const hash = track['@_hash'] || '';
     const album = Model.library.getAlbumByTrackHash(hash);
-    const coverUrl = album ? DataUtil.getAlbumImageUrl(album) : '';
+    const coverUrl = album ? DataUtil.getAlbumImageUrlWithSize(album, 300) : '';
     const coverMissingClass = coverUrl ? '' : 'isCoverMissing';
     const isFavorite = MetaUtil.isTrackFavoriteFor(hash);
     const favoriteSelectedClass = isFavorite ? 'isSelected' : '';
     const numViews = MetaUtil.getNumViewsFor(hash);
 
     let extra = '';
-    if (track['@_performer']) {
-      extra += `<div class='extraLine'><span class='caption'>Performer</span> <span class='extraValue'>${Util.formatMetaHtml(track['@_performer'])}</span></div>`;
-    }
     if (track['@_artist']) {
       extra += `<div class='extraLine'><span class='caption'>Artist</span> <span class='extraValue'>${track['@_artist']}</span></div>`;
-    }
-    if (track['@_composer']) {
-      extra += `<div class='extraLine'><span class='caption'>Composer</span> <span class='extraValue'>${Util.formatMetaHtml(track['@_composer'])}</span></div>`;
     }
 
     let s = '';
@@ -383,30 +392,27 @@ export default class LibraryView extends Subview {
       return;
     }
 
-    const tracks = this.$searchList.find('.albumItem');
-    if (!tracks || index >= tracks.length) {
+    const items = this.$searchList.find('.albumItem');
+    if (!items || index >= items.length) {
       return;
     }
 
-    const hash = $(tracks[index]).attr('data-hash');
-    if (!hash) {
-      return;
+    const commands = [];
+    for (let i = index; i < items.length; i++) {
+      const hash = $(items[i]).attr('data-hash');
+      if (!hash) continue;
+      const trackAndAlbum = Model.library.getTrackAndAlbumByHash(hash);
+      if (!trackAndAlbum) continue;
+      const [track, album] = trackAndAlbum;
+      const uri = DataUtil.makeUriUsingAlbumAndTrack(album, track);
+      if (uri) {
+        commands.push(Commands.playlistAdd(uri));
+      }
     }
 
-    const album = Model.library.getAlbumByTrackHash(hash);
-    if (!album) {
-      return;
+    if (commands.length > 0) {
+      AppUtil.doPlaylistAdds(commands, true, true);
     }
-
-    const albumTracks = AlbumUtil.getTracksOf(album);
-    const trackIndex = albumTracks.findIndex(t => t['@_hash'] === hash);
-    if (!(trackIndex >= 0)) {
-      return;
-    }
-
-    const endIndex = albumTracks.length > 0 ? albumTracks.length - 1 : trackIndex;
-    const commands = Commands.playlistAddUsingAlbumAndIndices(album, trackIndex, endIndex, true);
-    AppUtil.doPlaylistAdds(commands, true, true);
   }
 
   /**
@@ -509,6 +515,32 @@ export default class LibraryView extends Subview {
 
       return true;
     });
+
+    // Sort filteredAlbums based on Settings.librarySortOrder (or Settings.librarySortType)
+    const order = Settings.librarySortOrder || Settings.librarySortType || 'artist';
+    switch (order) {
+      case 'dateAdded':
+        filteredAlbums.sort(LibraryDataUtil.sortByDateAddedDesc);
+        break;
+      case 'artist':
+        filteredAlbums.sort(LibraryDataUtil.sortByArtistThenAlbum);
+        break;
+      case 'releaseDate':
+        filteredAlbums.sort(LibraryDataUtil.sortByReleaseDateDesc);
+        break;
+      case 'random':
+        Util.shuffleArray(filteredAlbums);
+        break;
+      case 'album':
+        filteredAlbums.sort(LibraryDataUtil.sortByAlbumThenArtist);
+        break;
+      case 'path':
+        filteredAlbums.sort(LibraryDataUtil.sortByPath);
+        break;
+      default:
+        filteredAlbums.sort(LibraryDataUtil.sortByArtistThenAlbum);
+        break;
+    }
 
     if (browse === 'favorite-tracks') {
       const tracks = this.makeFavoriteTracks(filteredAlbums);

@@ -16,6 +16,7 @@ const log = require('./log');
 const db = require('./db');
 const packageJson = require('./../package.json');
 const proxy = require('./proxy');
+const fetch = require('node-fetch');
 const meta = require('./meta');
 const commandHandler = require('./server-command-handler');
 const metaHandler = require('./server-meta-handler');
@@ -563,6 +564,36 @@ app.get('/endpoints/artistImportStatus', (request, response) => {
 
 app.get('/endpoints/artistImage', (request, response) => {
   artistHandler.doImage(request, response);
+});
+
+app.get('/endpoints/cover', async (request, response) => {
+  const { hash, size, v } = request.query;
+  if (!hash) {
+    return response.status(400).send('Missing hash parameter');
+  }
+  const maxSize = parseInt(size, 10) || 400;
+  const hqplayerIp = hqpIp;
+  if (!hqplayerIp) {
+    return response.status(503).send('HQPlayer not connected');
+  }
+  const coverUrl = `http://${hqplayerIp}:8088/cover/${hash}?v=${v || ''}`;
+  try {
+    const imageBuffer = await fetch(coverUrl).then(res => {
+      if (!res.ok) throw new Error(`HQPlayer cover fetch failed: ${res.status}`);
+      return res.arrayBuffer();
+    });
+    const sharp = require('sharp');
+    const resized = await sharp(Buffer.from(imageBuffer))
+      .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
+      .toFormat('jpeg', { quality: 85 })
+      .toBuffer();
+    response.set('Content-Type', 'image/jpeg');
+    response.set('Cache-Control', 'public, max-age=31536000');
+    response.send(resized);
+  } catch (err) {
+    console.error('[cover endpoint] Error:', err.message);
+    response.status(500).send('Failed to fetch/resize cover');
+  }
 });
 
 app.get('/endpoints/artistDbStats', (req, res) => {

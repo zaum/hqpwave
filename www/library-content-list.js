@@ -308,7 +308,7 @@ export default class LibraryContentList {
    */
   static makeAlbumListItem(album) {
     const hash = album['@_hash'];
-    const imgPath = DataUtil.getAlbumImageUrl(album);
+    const imgPath = DataUtil.getAlbumImageUrlWithSize(album, 300);
     const artist = album['@_artist'];
     const albumText = album['@_album'];
     const bits = AlbumUtil.getBitrateText(album);

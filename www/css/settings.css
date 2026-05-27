@@ -256,6 +256,14 @@
   transition: color 0.25s;
 }
 
+.mode-toggle-input:not(:checked)~.mode-labels .mode-label-pcm {
+  color: var(--accent);
+}
+
+.mode-toggle-input:checked~.mode-labels .mode-label-dsd {
+  color: var(--accent);
+}
+
 .mode-toggle-input:checked~.mode-labels .mode-label-pcm {
   color: var(--text-3);
   opacity: 0.6;
@@ -1082,6 +1090,12 @@
   height: auto;
   filter: grayscale(1) saturate(0) brightness(0.55);
   opacity: 0.8;
+}
+
+@media (max-width: 767px) {
+  .footer-brand-logo .brand-logo-text {
+    display: none;
+  }
 }
 
 .footer-brand #footerVersion {

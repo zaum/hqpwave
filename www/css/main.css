@@ -8,7 +8,7 @@
 @import url('./components.css');
 @import url('./layout.css');
 @import url('./library.css');
-@import url('./album.css');
+@import url('./album.css?v=20260526_2');
 @import url('./artist.css');
 @import url('./playlist.css');
 @import url('./settings.css');

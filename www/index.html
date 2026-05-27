@@ -8,7 +8,7 @@
   <!-- Favicons -->
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.png" type="image/png">
-  <link rel="stylesheet" href="css/main.css?v=20260324_6">
+  <link rel="stylesheet" href="css/main.css?v=20260526_2">
   <!-- Google Material Symbols for icons used in UI -->
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=sync">
@@ -57,16 +57,6 @@
 
     <!-- Top Bar -->
     <header id="topBar">
-      <!-- Back to Library Button -->
-      <button id="backToLibraryButton" title="Back to Library" aria-label="Back to Library">
-        <svg width="18" height="18" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" fill="none"
-          stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-          focusable="false">
-          <path d="M19 12H5" />
-          <path d="M12 19l-7-7 7-7" />
-        </svg>
-      </button>
-
       <div id="brandLogo" class="brand" aria-label="HQ Player Wave" title="HQ Player Wave">
         <svg class="brand-logo" viewBox="0 0 498 223" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
           <g class="brand-logo-text">
@@ -138,7 +128,6 @@
             </svg>
           </button>
         </div>
-        <div class="search-help" role="img" aria-label="Search syntax help" tabindex="0">i</div>
         <div class="search-help-tooltip" role="tooltip" aria-hidden="true">
           <div class="search-help-title">SEARCH OPTIONS</div>
           <div class="search-help-line"><span>Text:</span> genre, artist, album, track name...</div>
@@ -421,8 +410,14 @@
         </div>
         <div id="relatedAlbums" class="relatedAlbums">
           <div class="relatedAlbumsInner">
-            <h3 class="relatedAlbumsTitle">Related Albums</h3>
+            <h3 id="relatedAlbumsTitle" class="relatedAlbumsTitle">Artist albums</h3>
             <div id="relatedAlbumsList" class="libraryAlbumGroup"></div>
+          </div>
+        </div>
+        <div id="similarAlbums" class="relatedAlbums">
+          <div class="relatedAlbumsInner">
+            <h3 id="similarAlbumsTitle" class="relatedAlbumsTitle">Similar albums</h3>
+            <div id="similarAlbumsList" class="libraryAlbumGroup"></div>
           </div>
         </div>
       </section>

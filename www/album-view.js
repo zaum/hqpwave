@@ -72,6 +72,58 @@ const normalizeStr = (s) => {
   }
 };
 
+const normalizeList = (items) => {
+  const result = [];
+  const seen = new Set();
+
+  for (const item of items || []) {
+    const normalized = normalizeStr(item);
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    result.push(normalized);
+  }
+
+  return result;
+};
+
+const getAlbumYear = (album) => {
+  const year = parseInt(album?.['year'] || album?.['@_year'] || (album?.['@_date'] ? album['@_date'].substring(0, 4) : ''));
+  return (year >= 1500 && year <= 2099) ? year : 0;
+};
+
+const getAlbumDurationSeconds = (album) => {
+  const tracks = AlbumUtil.getTracksOf(album);
+  let seconds = 0;
+
+  for (const track of tracks) {
+    const value = parseFloat(track['@_length']);
+    if (!isNaN(value) && value > 0) {
+      seconds += value;
+    }
+  }
+
+  return seconds;
+};
+
+const splitAlbumCreditItems = (value) => {
+  if (value === null || value === undefined) {
+    return [];
+  }
+
+  const raw = String(value).trim();
+  if (!raw) {
+    return [];
+  }
+
+  const parts = raw.split(/\s*(?:;|\||,(?=\s*[^\s,]))\s*/g)
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  return parts.length ? parts : [raw];
+};
+
 
 /**
  * Album view containing a header and a list of track list items.
@@ -120,8 +172,12 @@ export default class AlbumView extends Subview {
     this.$list = this.$el.find('#albumList');
     this.$artistButton = this.$el.find('#albumViewArtist');
     this.$texts = this.$el.find('#albumViewTexts');
+    this.$relatedBlock = this.$el.find('#relatedAlbums');
     this.$relatedList = this.$el.find('#relatedAlbumsList');
-    this.$relatedTitle = this.$el.find('.relatedAlbumsTitle');
+    this.$relatedTitle = this.$el.find('#relatedAlbumsTitle');
+    this.$similarBlock = this.$el.find('#similarAlbums');
+    this.$similarList = this.$el.find('#similarAlbumsList');
+    this.$similarTitle = this.$el.find('#similarAlbumsTitle');
     this.$prevImageButton = this.$el.find('#albumViewPrevImageButton');
     this.$nextImageButton = this.$el.find('#albumViewNextImageButton');
 
@@ -134,11 +190,16 @@ export default class AlbumView extends Subview {
     $("#albumCloseButton").on("click tap", () => $(document).trigger('album-view-close-button', this.album, true));
     this.$el.on("click", "#artistBackToLibraryButton", () => $(document).trigger('album-view-close-button', null, true));
 
-    this.$picture.on('click tap', () => $(document).trigger('album-picture-click', {
-      $sourceImage: this.$picture,
-      album: this.album,
-      coverCount: this.albumCoverCount
-    }));
+    this.$picture.on('click tap', () => {
+      const fullSizeUrl = DataUtil.getAlbumImageUrl(this.album);
+      this.$picture.attr('src', fullSizeUrl);
+      this.$pictureBlur.attr('src', fullSizeUrl);
+      $(document).trigger('album-picture-click', {
+        $sourceImage: this.$picture,
+        album: this.album,
+        coverCount: this.albumCoverCount
+      });
+    });
     this.$el.on('click tap', '#albumViewOpenFolderButton', this.onOpenFolderButtonClick);
     this.$prevImageButton.on('click tap', this.onPrevAlbumImageClick);
     this.$nextImageButton.on('click tap', this.onNextAlbumImageClick);
@@ -148,17 +209,19 @@ export default class AlbumView extends Subview {
     this.onRelatedAlbumFavoriteChanged = (e, hash, isFav) => {
       try {
         const selector = `[data-hash="${hash}"]`;
-        const $item = this.$relatedList.find(selector);
-        if ($item.length > 0) {
-          if (isFav) {
-            $item.addClass('isFavorite');
-          } else {
-            $item.removeClass('isFavorite');
-          }
+        const $items = this.$el.find('#relatedAlbumsList, #similarAlbumsList').find(selector);
+        if ($items.length > 0 && isFav) {
+          $items.addClass('isFavorite');
+        } else if ($items.length > 0) {
+          $items.removeClass('isFavorite');
         }
       } catch (err) { /* ignore */ }
     };
+
     this.onAlbumViewScroll = () => {
+      if (App && App.instance && typeof App.instance.onScroll === 'function') {
+        App.instance.onScroll();
+      }
       try {
         if (!this.isWideAlbumLayout()) {
           this.resetPictureHolderState();
@@ -305,13 +368,50 @@ hide() {
       this.$list.append($item);
     }
 
+    const performer = this.album['@_performer'];
+    const composer = this.album['@_composer'];
+    if (performer || composer) {
+      const $performerBlock = $('<div class="albumPerformerAfterTrackList"></div>');
+      if (performer) {
+        this.appendAlbumCreditBlock($performerBlock, 'Performed by', performer);
+      }
+      if (composer) {
+        this.appendAlbumCreditBlock($performerBlock, 'Composed by', composer);
+      }
+      this.$list.append($performerBlock);
+    }
+
     this.currentPlayingSong = undefined;
     this.updateHighlightedTrack();
   }
 
+  appendAlbumCreditBlock($holder, label, value) {
+    const items = splitAlbumCreditItems(value);
+    if (!items.length) {
+      return;
+    }
+
+    const $line = $('<div class="albumPerformerLine"></div>');
+    $line.append($('<span class="metaCaption"></span>').text(label));
+    const $value = $('<span class="metaValue"></span>');
+
+    for (const item of items) {
+      const match = item.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+      const musician = match ? match[1].trim() : item;
+      const role = match ? match[2].trim() : '';
+      const $item = $('<span class="albumPerformerValueItem"></span>');
+      $item.append($('<span class="albumPerformerMusician"></span>').text(musician));
+      $item.append($('<span class="albumPerformerRole"></span>').text(role));
+      $value.append($item);
+    }
+
+    $line.append($value);
+    $holder.append($line);
+  }
+
   updateInfoArea() {
 
-    const defaultImageUrl = DataUtil.getAlbumImageUrl(this.album);
+    const defaultImageUrl = DataUtil.getAlbumImageUrlWithSize(this.album, 400);
     this.albumCoverCount = defaultImageUrl ? 1 : 0;
     this.setAlbumImageByIndex(0, [defaultImageUrl]);
 
@@ -393,11 +493,15 @@ hide() {
       $composer.text('');
       ViewUtil.setDisplayed($composer, false);
     }
-    ViewUtil.setDisplayed($('#albumViewPerformerComposer'), (performer || composer));
+    ViewUtil.setDisplayed($('#albumViewPerformerComposer'), false);
 
     $("#albumViewStats").html(AlbumUtil.makeAlbumStatsText(this.album));
 
-    AlbumUtil.updateGenreButtons($('#albumViewGenreButtons'), this.album);
+    const $genreContainer = $('#albumViewGenreButtons');
+    AlbumUtil.updateGenreButtons($genreContainer, this.album);
+
+    const $artistRow = $('#albumViewArtist');
+    $artistRow.append($genreContainer);
 
     const albumHash = this.getAlbumHash();
     MetaUtil.isAlbumFavoriteFor(albumHash)
@@ -413,7 +517,11 @@ hide() {
       this.$relatedList.empty();
 
       const artists = splitAlbumArtists(this.album['@_artist'] || this.album['@_performer'] || '');
-      if (!artists.length) return;
+      if (!artists.length) {
+        ViewUtil.setDisplayed(this.$relatedBlock, false);
+        this.updateSimilarAlbums(false);
+        return;
+      }
 
       const allAlbums = (Model && Model.library && Array.isArray(Model.library.albums)) ? Model.library.albums : [];
       const currentHash = this.getAlbumHash();
@@ -437,65 +545,277 @@ hide() {
       }
 
       if (!matches.length) {
-        // hide related albums block when empty
         this.$relatedTitle && this.$relatedTitle.text('');
-        ViewUtil.setDisplayed(this.$el.find('#relatedAlbums'), false);
+        ViewUtil.setDisplayed(this.$relatedBlock, false);
+        this.updateSimilarAlbums(false);
         return;
       }
 
-      // Show related albums block and set title to '<Artist> Other Albums'
-      ViewUtil.setDisplayed(this.$el.find('#relatedAlbums'), true);
-      const titleText = 'Related albums';
+      ViewUtil.setDisplayed(this.$relatedBlock, true);
+      const titleText = 'Artist albums';
       if (this.$relatedTitle && this.$relatedTitle.length) {
         this.$relatedTitle.text(titleText);
       }
 
-      // Render all matches
-      const max = matches.length;
-      for (let i = 0; i < max; i++) {
-        const alb = matches[i];
-        const $item = LibraryContentList.makeAlbumListItem(alb);
-        // Ensure images are loaded immediately for this small list
-        const $img = $item.find('img');
-        if ($img.length) {
-          const src = $img.attr('data-src') || $img.attr('src');
-          if (src) {
-            $img.attr('src', src);
-          }
+      this.renderAlbumRecommendationList(this.$relatedList, matches);
+      this.preloadRelatedCovers(matches);
+      this.updateSimilarAlbums(true);
+    } catch (e) {
+      cl('error updating related albums', e);
+    }
+  }
+
+  updateSimilarAlbums(hasArtistAlbums = false) {
+    try {
+      if (!this.$similarList || !this.album) {
+        return;
+      }
+
+      this.$similarBlock.toggleClass('isAfterArtistAlbums', hasArtistAlbums);
+      this.$similarList.empty();
+      const matches = this.getSimilarAlbums(16);
+
+      if (!matches.length) {
+        this.$similarTitle && this.$similarTitle.text('');
+        ViewUtil.setDisplayed(this.$similarBlock, false);
+        return;
+      }
+
+      ViewUtil.setDisplayed(this.$similarBlock, true);
+      if (this.$similarTitle && this.$similarTitle.length) {
+        this.$similarTitle.text('Similar albums');
+      }
+
+      this.renderAlbumRecommendationList(this.$similarList, matches);
+      this.preloadRelatedCovers(matches);
+    } catch (e) {
+      cl('error updating similar albums', e);
+    }
+  }
+
+  getSimilarAlbums(limit = 16) {
+    const allAlbums = (Model && Model.library && Array.isArray(Model.library.albums)) ? Model.library.albums : [];
+    const currentHash = this.getAlbumHash();
+    const currentArtists = normalizeList(splitAlbumArtists(this.album['@_artist'] || this.album['@_performer'] || ''));
+    const scored = [];
+
+    for (const candidate of allAlbums) {
+      const hash = candidate['@_hash'];
+      if (!hash || hash === currentHash) {
+        continue;
+      }
+
+      const candidateArtists = normalizeList(splitAlbumArtists(candidate['@_artist'] || candidate['@_performer'] || ''));
+      const sameArtist = this.hasListOverlap(currentArtists, candidateArtists);
+      const score = this.getAlbumSimilarityScore(this.album, candidate, sameArtist);
+
+      if (score <= 0) {
+        continue;
+      }
+
+      scored.push({ album: candidate, score, sameArtist });
+    }
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return (a.album['@_album'] || '').localeCompare(b.album['@_album'] || '');
+    });
+
+    const result = [];
+    let sameArtistCount = 0;
+
+    for (const item of scored) {
+      if (item.sameArtist) {
+        sameArtistCount++;
+        if (sameArtistCount > 1) {
+          continue;
         }
-        // Wire clicks/keyboard to open album view (use App to ensure scrolling)
-        $item.on('click tap', (e) => {
-          e.stopPropagation();
+      }
+      result.push(item.album);
+      if (result.length >= limit) {
+        break;
+      }
+    }
+
+    return result;
+  }
+
+  getAlbumSimilarityScore(source, candidate, sameArtist) {
+    const sourceGenres = normalizeList(source['genres'] || AppUtil.splitGenreString(source['@_genre']));
+    const candidateGenres = normalizeList(candidate['genres'] || AppUtil.splitGenreString(candidate['@_genre']));
+    const genreScore = this.getListOverlapRatio(sourceGenres, candidateGenres);
+
+    const sourceComposers = normalizeList(splitAlbumCreditItems(source['@_composer']));
+    const candidateComposers = normalizeList(splitAlbumCreditItems(candidate['@_composer']));
+    const composerScore = this.hasListOverlap(sourceComposers, candidateComposers) ? 1 : 0;
+
+    const sourcePerformers = normalizeList(splitAlbumCreditItems(source['@_performer']));
+    const candidatePerformers = normalizeList(splitAlbumCreditItems(candidate['@_performer']));
+    const performerScore = this.getListOverlapRatio(sourcePerformers, candidatePerformers);
+
+    const yearScore = this.getYearSimilarityScore(getAlbumYear(source), getAlbumYear(candidate));
+    const shapeScore = this.getAlbumShapeScore(source, candidate);
+    const personalScore = this.getPersonalAlbumScore(candidate);
+
+    let score = (genreScore * 45)
+      + (composerScore * 20)
+      + (yearScore * 15)
+      + (performerScore * 10)
+      + (shapeScore * 5)
+      + (personalScore * 5);
+
+    if (sameArtist) {
+      score *= 0.45;
+    }
+
+    const hasStrongSignal = genreScore > 0 || composerScore > 0 || performerScore > 0;
+    return hasStrongSignal ? score : 0;
+  }
+
+  getListOverlapRatio(a, b) {
+    if (!a.length || !b.length) {
+      return 0;
+    }
+
+    const bSet = new Set(b);
+    let common = 0;
+    for (const value of a) {
+      if (bSet.has(value)) {
+        common++;
+      }
+    }
+
+    const union = new Set([...a, ...b]).size;
+    return union ? common / union : 0;
+  }
+
+  hasListOverlap(a, b) {
+    if (!a.length || !b.length) {
+      return false;
+    }
+
+    const bSet = new Set(b);
+    return a.some(value => bSet.has(value));
+  }
+
+  getYearSimilarityScore(sourceYear, candidateYear) {
+    if (!sourceYear || !candidateYear) {
+      return 0;
+    }
+
+    const diff = Math.abs(sourceYear - candidateYear);
+    if (diff === 0) {
+      return 1;
+    }
+    if (diff <= 5) {
+      return 0.8;
+    }
+    if (diff <= 10) {
+      return 0.45;
+    }
+    if (diff <= 20) {
+      return 0.2;
+    }
+    return 0;
+  }
+
+  getAlbumShapeScore(source, candidate) {
+    const sourceTracks = AlbumUtil.getTracksOf(source).length;
+    const candidateTracks = AlbumUtil.getTracksOf(candidate).length;
+    const sourceDuration = getAlbumDurationSeconds(source);
+    const candidateDuration = getAlbumDurationSeconds(candidate);
+    let score = 0;
+    let parts = 0;
+
+    if (sourceTracks > 0 && candidateTracks > 0) {
+      const diff = Math.abs(sourceTracks - candidateTracks);
+      score += Math.max(0, 1 - (diff / Math.max(sourceTracks, candidateTracks)));
+      parts++;
+    }
+
+    if (sourceDuration > 0 && candidateDuration > 0) {
+      const diff = Math.abs(sourceDuration - candidateDuration);
+      score += Math.max(0, 1 - (diff / Math.max(sourceDuration, candidateDuration)));
+      parts++;
+    }
+
+    return parts ? score / parts : 0;
+  }
+
+  getPersonalAlbumScore(album) {
+    const hash = album['@_hash'];
+    let score = (hash && MetaUtil.isAlbumFavoriteFor(hash)) ? 0.7 : 0;
+    const tracks = AlbumUtil.getTracksOf(album);
+
+    for (const track of tracks) {
+      const trackHash = track['@_hash'];
+      if (MetaUtil.isTrackFavoriteFor(trackHash)) {
+        score += 0.2;
+      }
+      if (MetaUtil.getNumViewsFor(trackHash) > 0) {
+        score += 0.05;
+      }
+    }
+
+    return Math.min(1, score);
+  }
+
+  renderAlbumRecommendationList($list, albums) {
+    for (const alb of albums) {
+      const $item = LibraryContentList.makeAlbumListItem(alb);
+      const $img = $item.find('img');
+      if ($img.length) {
+        const src = $img.attr('data-src') || $img.attr('src');
+        if (src) {
+          $img.attr('src', src);
+        }
+      }
+
+      $item.on('click tap', (e) => {
+        e.stopPropagation();
+        if (App && App.instance && typeof App.instance.showAlbumView === 'function') {
+          App.instance.showAlbumView(alb, $item);
+          setTimeout(() => {
+            try {
+              const av = App.instance.albumView;
+              if (av && av.$el && av.$el[0]) {
+                av.$el[0].scrollTop = 0;
+              }
+            } catch (err) { /* ignore */ }
+          }, 40);
+        } else {
+          $(document).trigger('library-item-click', [alb, $item]);
+        }
+      });
+      $item.on('keydown', (e) => {
+        if (e.keyCode == 13) {
           if (App && App.instance && typeof App.instance.showAlbumView === 'function') {
             App.instance.showAlbumView(alb, $item);
-            // ensure album view scrolls to top once shown
-            setTimeout(() => {
-              try {
-                const av = App.instance.albumView;
-                if (av && av.$el && av.$el[0]) {
-                  av.$el[0].scrollTop = 0;
-                }
-              } catch (err) { /* ignore */ }
-            }, 40);
           } else {
             $(document).trigger('library-item-click', [alb, $item]);
           }
-        });
-        $item.on('keydown', (e) => {
-          if (e.keyCode == 13) {
-            if (App && App.instance && typeof App.instance.showAlbumView === 'function') {
-              App.instance.showAlbumView(alb, $item);
-            } else {
-              $(document).trigger('library-item-click', [alb, $item]);
-            }
-          }
-        });
+        }
+      });
 
+      $list.append($item);
+    }
+  }
 
-        this.$relatedList.append($item);
+  preloadRelatedCovers(relatedAlbums) {
+    if (!relatedAlbums || !relatedAlbums.length) return;
+    const preloadCount = Math.min(relatedAlbums.length, 16);
+    const size = 300;
+    for (let i = 0; i < preloadCount; i++) {
+      const album = relatedAlbums[i];
+      if (!album) continue;
+      const url = DataUtil.getAlbumImageUrlWithSize(album, size);
+      if (url) {
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = url;
       }
-    } catch (e) {
-      cl('error updating related albums', e);
     }
   }
 
@@ -806,6 +1126,9 @@ hide() {
   }
 
   onNewTrack = (e, currentUri, lastUri) => {
+    if (!App || !App.instance) {
+      return;
+    }
     if (App.instance.getTopSubview() != this) {
       return;
     }

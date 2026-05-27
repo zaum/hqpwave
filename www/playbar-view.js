@@ -765,7 +765,7 @@ export default class PlaybarView {
       }
       return;
     }
-    const url = DataUtil.getAlbumImageUrl(album);
+    const url = DataUtil.getAlbumImageUrlWithSize(album, 300);
     if (url && url !== this._coverUrl) {
       this._coverUrl = url;
       this.$coverImg.attr('src', url);

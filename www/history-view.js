@@ -64,9 +64,16 @@ export default class HistoryView  extends Subview {
     const agoStrings = [];
     const dateKeys = [];
 
+    let prevHash = null;
     for (let i = MetaUtil.history.length - 1; i >= 0; i--) { // revchron
 
       const item = MetaUtil.history[i];
+
+      // Skip consecutive duplicate tracks
+      if (item['hash'] === prevHash) {
+        continue;
+      }
+      prevHash = item['hash'];
       const track = Model.library.getTrackByHash(item['hash']) || {};
       tracks.push(track);
 

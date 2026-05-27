@@ -67,8 +67,15 @@ class DataUtil {
     return (o['#text']) ? o['#text'] : DataUtil.NO_ERROR_TEXT_TEXT;
   }
 
-  static getAlbumImageUrl(album) {
+static getAlbumImageUrl(album) {
     return `${Values.imagesEndpoint}${album['@_hash']}?v=${Values.coverCacheKey}`;
+  }
+
+  static getAlbumImageUrlWithSize(album, size = 400) {
+    const hash = album['@_hash'];
+    if (!hash) return '';
+    const origin = window.location.origin;
+    return `${origin}/endpoints/cover?hash=${hash}&size=${size}&v=${Values.coverCacheKey}`;
   }
 
   /** Where track is assumed to be from album. */

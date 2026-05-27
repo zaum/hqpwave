@@ -466,19 +466,6 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BACK TO LIBRARY BUTTON (index.html:61)
-   ═══════════════════════════════════════════════════════════════ */
-
-.backToLibraryButton {
-  appearance: none;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  cursor: pointer;
-  padding: 8px;
-}
-
-/* ═══════════════════════════════════════════════════════════════
    ALBUM VIEW IMAGE NAV BUTTON (album.css:299)
    ═══════════════════════════════════════════════════════════════ */
 

@@ -164,18 +164,7 @@ class TopBarUtil {
    * flag to avoid redundant DOM class toggles which can cause jank.
    */
   _updateTopbarScrollStateFromY(y) {
-    if (!this._mq1024.matches) return;
-    if (y > this.COLLAPSE_THRESHOLD) {
-      if (!this.isTopbarCollapsed) {
-        TopBar.$el.addClass('topbar-scrolled');
-        this.isTopbarCollapsed = true;
-      }
-    } else {
-      if (this.isTopbarCollapsed) {
-        TopBar.$el.removeClass('topbar-scrolled');
-        this.isTopbarCollapsed = false;
-      }
-    }
+    // Topbar hide-on-scroll disabled for 1024px and below
   }
 }
 
