@@ -260,8 +260,6 @@ export default class LoadPlaylistView  extends Subview {
     let candidateIndex = 0;
 
     const onLoaded = () => {
-      Values.bumpCoverCacheKey();
-
       // HQPlayer returns OK immediately but processes the new playlist
       // asynchronously. Delay PlaylistGet so the model gets the NEW data
       // before we transition back.

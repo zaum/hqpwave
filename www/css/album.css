@@ -1510,6 +1510,15 @@
   margin: 0 auto;
 }
 
+.relatedAlbumsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 32px 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .relatedAlbumsTitle {
   /* Match the album artist name style from the album info area */
   font-size: 12px;
@@ -1517,7 +1526,7 @@
   color: var(--text-2);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin: 0 0 32px 8px; 
+  margin: 0; 
 }
 
 /* Reuse library album grid styles via libraryAlbumGroup class */
