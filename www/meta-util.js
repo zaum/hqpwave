@@ -296,6 +296,11 @@ class MetaUtil {
     $.ajax( { url: url, error: onError, success: onSuccess } );
   }
 
+  clearHistory() {
+    this._history = [];
+    $(document).trigger('meta-track-incremented');
+  }
+
   addToHistory(hash) {
     const o = {
       'hash': hash,

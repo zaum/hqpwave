@@ -415,8 +415,8 @@
                   <div id="albumPlayNowButton" class="textButton">
                     <div class="iconPlay"></div>Play
                   </div>
-                  <div id="albumQueueButton" class="textButton">
-                    <div class="iconPlus" aria-hidden="true"></div>Add to queue
+                  <div id="albumPlaylistButton" class="textButton">
+                    <div class="iconPlus" aria-hidden="true"></div>Add to playlist
                   </div>
                   <div id="albumFavoriteButton" class="iconButton toggleButton favoriteButton">
                     <div class="favoriteIcon"></div>
@@ -441,7 +441,7 @@
             <div class="relatedAlbumsHeader">
               <h3 id="similarAlbumsTitle" class="relatedAlbumsTitle">Similar albums</h3>
               <button id="similarAlbumsAddRandomButton" class="textButton" type="button">
-                <div class="iconPlus" aria-hidden="true"></div>add random tracks to queue
+                <div class="iconPlus" aria-hidden="true"></div>add random tracks to playlist
               </button>
             </div>
             <div id="similarAlbumsList" class="libraryAlbumGroup"></div>
@@ -548,6 +548,9 @@
         </div>
 
         <div id="historyView" class="subview">
+          <div class="historyButtons">
+            <div id="historyClearButton" class="textButton">Clear</div>
+          </div>
           <div id="historyList"></div>
         </div>
 
@@ -964,8 +967,8 @@
 
       <!-- Context Menus -->
       <div id="albumContextMenu" class="contextMenu">
-        <div id="albumContextItemQueue" class="contextItem">Queue track</div>
-        <div id="albumContextItemQueueMultiple" class="contextItem">Queue this and following tracks</div>
+        <div id="albumContextItemPlaylist" class="contextItem">Add track to playlist</div>
+        <div id="albumContextItemPlaylistMultiple" class="contextItem">Add this and following tracks to playlist</div>
         <div id="albumContextItemPlayNow" class="contextItem">Play track now</div>
         <div id="albumContextItemPlayNowMultiple" class="contextItem">Play this and following tracks now</div>
       </div>
@@ -977,7 +980,7 @@
       </div>
 
       <div id="trackListItemContextMenu" class="contextMenu">
-        <div id="trackListItemContextQueue" class="contextItem">Queue track</div>
+        <div id="trackListItemContextPlaylist" class="contextItem">Add track to playlist</div>
         <div id="trackListItemContextPlayNow" class="contextItem">Play track now</div>
       </div>
 

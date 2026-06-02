@@ -185,7 +185,8 @@ export default class AlbumView extends Subview {
 
     this.$artistButton.on('click tap', '.albumArtistPart', this.onArtistButton);
     $("#albumPlayNowButton").on("click tap", this.onPlayNowButton);
-    $("#albumQueueButton").on("click tap", this.onQueueButton);
+    $("#albumPlaylistButton").on("click tap", this.onPlaylistButton);
+    $("#similarAlbumsAddRandomButton").on("click tap", this.onSimilarAlbumsAddRandom);
     this.$albumFavoriteButton.on('click tap', this.onAlbumFavoriteButton);
     $("#albumCloseButton").on("click tap", () => $(document).trigger('album-view-close-button', this.album, true));
     this.$el.on("click", "#artistBackToLibraryButton", () => $(document).trigger('album-view-close-button', null, true));
@@ -361,7 +362,7 @@ hide() {
       const item = this.tracks[i];
       const $item = $(this.makeListItem(i, item));
       $item.on("click tap", e => this.onItemClick(e));
-      $item.find(".queueTrackButton").on("click tap", e => this.onQueueTrackButtonClick(e));
+      $item.find(".playlistTrackButton").on("click tap", e => this.onPlaylistTrackButtonClick(e));
       $item.find(".favoriteButton").on("click tap", e => TrackListItemUtil.onFavoriteButtonClick(e));
       $item.find(".playButton").on("click tap", e => this.onPlayButtonClick(e));
       this.listItems$.push($item);
@@ -573,7 +574,8 @@ hide() {
 
       this.$similarBlock.toggleClass('isAfterArtistAlbums', hasArtistAlbums);
       this.$similarList.empty();
-      const matches = this.getSimilarAlbums(16);
+      this._similarAlbums = this.getSimilarAlbums(16);
+      const matches = this._similarAlbums;
 
       if (!matches.length) {
         this.$similarTitle && this.$similarTitle.text('');
@@ -892,7 +894,7 @@ hide() {
     s += `      <div class="favoriteIcon"></div>`;
     s += `    </div>`;
     s += `  </div>`;
-    s += `  <button type="button" class="iconButton albumItemQueueButton queueTrackButton" data-index="${index}" title="Add Track To Queue" aria-label="Add Track To Queue"><div class="iconPlus" aria-hidden="true"></div></button>`;
+    s += `  <button type="button" class="iconButton albumItemPlaylistButton playlistTrackButton" data-index="${index}" title="Add Track To Playlist" aria-label="Add Track To Playlist"><div class="iconPlus" aria-hidden="true"></div></button>`;
     s += `</div>`;
     return $(s);
     // also: [$]["name"] is filename; [$]["hash"];
@@ -1008,9 +1010,28 @@ hide() {
     AppUtil.doPlaylistAdds(commands, true, true);
   };
 
-  onQueueButton = (event) => {
+  onPlaylistButton = (event) => {
     const commands = Commands.playlistAddUsingAlbumAndIndices(this.album);
     AppUtil.doPlaylistAdds(commands);
+  };
+
+  onSimilarAlbumsAddRandom = () => {
+    const matches = this._similarAlbums || this.getSimilarAlbums(16);
+    const commands = [];
+    for (const album of matches) {
+      const tracks = AlbumUtil.getTracksOf(album);
+      if (tracks && tracks.length > 0) {
+        const randomIndex = Math.floor(Math.random() * tracks.length);
+        const track = tracks[randomIndex];
+        const uri = DataUtil.makeUriUsingAlbumAndTrack(album, track);
+        if (uri) {
+          commands.push(Commands.playlistAdd(uri));
+        }
+      }
+    }
+    if (commands.length > 0) {
+      AppUtil.doPlaylistAdds(commands);
+    }
   };
 
   onAlbumFavoriteButton = (event) => {
@@ -1050,10 +1071,10 @@ hide() {
     AppUtil.doPlaylistAdds(commands, isPlayNow, isPlayNow);
   }
 
-  onQueueTrackButtonClick(event) {
+  onPlaylistTrackButtonClick(event) {
     event.preventDefault();
     event.stopPropagation();
-    const $button = $(event.currentTarget).closest('.queueTrackButton');
+    const $button = $(event.currentTarget).closest('.playlistTrackButton');
     const $row = $button.closest('.albumItem');
     const index = parseInt($row.attr('data-index'));
     if (!(index >= 0)) {

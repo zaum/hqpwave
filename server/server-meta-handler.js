@@ -87,6 +87,12 @@ const doGet = (request, response) => {
     return;
   }
 
+  if (request.query['clearHistory'] !== undefined) {
+    meta.clearHistory();
+    safeJson(response, { success: true });
+    return;
+  }
+
   if (request.query['deletePlaylist'] !== undefined) {
     const name = request.query['name'];
     const index = request.query['index'];

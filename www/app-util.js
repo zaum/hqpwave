@@ -54,7 +54,7 @@ export default class AppUtil {
     } else if (isReplace) {
       verbText = 'Adding';
     } else {
-      verbText = 'Queueing';
+      verbText = 'Adding';
     }
 
     const tracksText = (playlistAddCommands.length > 1) ? 'tracks' : 'track';

@@ -17,8 +17,8 @@ export default class AlbumContextMenu extends ContextMenu {
   constructor($el) {
     super($el);
 
-    this.$itemQueue = this.$el.find('#albumContextItemQueue');
-    this.$itemQueueMultiple = this.$el.find('#albumContextItemQueueMultiple');
+    this.$itemPlaylist = this.$el.find('#albumContextItemPlaylist');
+    this.$itemPlaylistMultiple = this.$el.find('#albumContextItemPlaylistMultiple');
     this.$itemPlayNow = this.$el.find('#albumContextItemPlayNow');
     this.$itemPlayNowMultiple = this.$el.find('#albumContextItemPlayNowMultiple');
   }
@@ -32,7 +32,7 @@ export default class AlbumContextMenu extends ContextMenu {
     // Update items' vis
     const lastTrackEndIndex = AlbumUtil.getTracksOf(this.album).length - 1;
     const isLastItem = (this.index == lastTrackEndIndex);
-    ViewUtil.setDisplayed(this.$itemQueueMultiple, !isLastItem);
+    ViewUtil.setDisplayed(this.$itemPlaylistMultiple, !isLastItem);
     ViewUtil.setDisplayed(this.$itemPlayNowMultiple, !isLastItem);
   }
 
@@ -47,11 +47,11 @@ export default class AlbumContextMenu extends ContextMenu {
     const startIndex = this.index;
     let endIndex;
     switch (id) {
-      case 'albumContextItemQueue':
+      case 'albumContextItemPlaylist':
         endIndex = startIndex;
         isPlayNow = false;
         break;
-      case 'albumContextItemQueueMultiple':
+      case 'albumContextItemPlaylistMultiple':
         endIndex = lastTrackEndIndex;
         isPlayNow = false;
         break;

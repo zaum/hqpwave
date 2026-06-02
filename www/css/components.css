@@ -119,22 +119,22 @@
   padding: 4px 0;
 }
 
-#albumContextItemQueue,
-#albumContextItemQueueMultiple,
+#albumContextItemPlaylist,
+#albumContextItemPlaylistMultiple,
 #albumContextItemPlayNow,
 #albumContextItemPlayNowMultiple,
 #playlistContextUp,
 #playlistContextDown,
 #playlistContextRemove,
-#trackListItemContextQueue,
+#trackListItemContextPlaylist,
 #trackListItemContextPlayNow,
 #loadPlaylistContextDelete {
   position: relative;
   padding-left: 36px;
 }
 
-#albumContextItemQueue::before,
-#trackListItemContextQueue::before {
+#albumContextItemPlaylist::before,
+#trackListItemContextPlaylist::before {
   content: '+';
   position: absolute;
   left: 16px;

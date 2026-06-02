@@ -1525,6 +1525,12 @@
   display: flex;
 }
 
+@media (max-width: 767px) {
+  #playbarSystemMessage {
+    max-width: calc(50vw - 100px);
+  }
+}
+
 
 .playbar-center {
   display: flex;
@@ -2397,7 +2403,8 @@
 #toast {
   visibility: hidden;
   position: absolute;
-  width: 100%;
+  left: 0;
+  right: 0;
   height: 84px;
   top: -84px;
   overflow: hidden;
@@ -2416,7 +2423,7 @@
   padding: 8px 28px;
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: 26px;
-  color: var(--text);
+  color: var(--textInv);
   text-align: center;
   line-height: 68px;
   text-overflow: ellipsis;
@@ -2432,13 +2439,14 @@
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: inherit;
   line-height: inherit;
-  color: var(--text);
+  color: var(--accent);
 }
 
 #snack {
   visibility: hidden;
   position: absolute;
-  width: 100%;
+  left: 0;
+  right: 0;
   height: 0;
   top: 0;
   overflow: hidden;
@@ -2506,7 +2514,7 @@
 #snack #snackInner #snackLine1 {
   margin-left: 64px;
   margin-right: 64px;
-  color: var(--text);
+  color: var(--textInv);
   font-weight: 400;
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: 32px;
@@ -2519,7 +2527,7 @@
   margin-right: 64px;
   font-family: 'Doto', 'Geist', sans-serif;
   font-size: 28px;
-  color: var(--text);
+  color: var(--textInv);
   line-height: 1.25;
 }
 

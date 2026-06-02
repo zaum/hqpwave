@@ -99,6 +99,7 @@ export default class PlaylistView extends Subview {
           $item.find(".deleteButton").on("click tap", this.onDeleteButton);
           $item.find(".dragHandleButton").on("mousedown touchstart", this.onDragHandleDown);
       }
+      this.$list.find(".trackItemAlbumHeader.isSingleTrackAlbum .dragHandleButton").on("mousedown touchstart", this.onDragHandleDown);
     }
 
     this.updateSelectedItem();
@@ -215,6 +216,13 @@ export default class PlaylistView extends Subview {
     });
     $('body').append(this.$dragGhost);
 
+    // If dragging from an album header, also hide the corresponding track item
+    if ($listItem.hasClass('trackItemAlbumHeader')) {
+      const $trackItem = this.$list.find(`.trackItem[data-index="${index}"]:not(.trackItemAlbumHeader)`);
+      $trackItem.addClass('isDragging');
+      $trackItem.css('opacity', '0');
+    }
+
     // Hide original item and add dragging class
     $listItem.addClass('isDragging');
     $listItem.css('opacity', '0');
@@ -327,11 +335,22 @@ export default class PlaylistView extends Subview {
       this.$dragGhost = null;
     }
 
+    const from = this.dragStartIndex;
+    const to = this.dragCurrentIndex;
+
     // Restore original item visibility and remove dragging class
-    if (this.dragStartIndex >= 0 && this.trackItems$ && this.trackItems$[this.dragStartIndex]) {
-      const $originalItem = this.trackItems$[this.dragStartIndex];
-      $originalItem.removeClass('isDragging');
-      $originalItem.css('opacity', '1');
+    if (from >= 0) {
+      if (this.trackItems$ && this.trackItems$[from]) {
+        const $originalItem = this.trackItems$[from];
+        $originalItem.removeClass('isDragging');
+        $originalItem.css('opacity', '1');
+      }
+      // Restore album header if it was the drag source
+      const $albumHeader = this.$list.find(`.trackItemAlbumHeader[data-index="${from}"]`);
+      if ($albumHeader.length) {
+        $albumHeader.removeClass('isDragging');
+        $albumHeader.css('opacity', '1');
+      }
     }
 
     // Reset all track positions smoothly
@@ -339,9 +358,6 @@ export default class PlaylistView extends Subview {
       transform: 'translateY(0)',
       transition: 'transform 200ms ease-out'
     });
-
-    const from = this.dragStartIndex;
-    const to = this.dragCurrentIndex;
 
     this.dragStartIndex = -1;
     this.dragCurrentIndex = -1;

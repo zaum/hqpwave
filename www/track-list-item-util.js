@@ -23,7 +23,7 @@ export default class TrackListItemUtil {
 
     for (let i = 0; i < array.length; i++) {
 
-      const $albumLine = TrackListItemUtil.makeAlbumHeaderIfNecessary(i, array);
+      const $albumLine = TrackListItemUtil.makeAlbumHeaderIfNecessary(i, array, '', '', false, false, false);
       if ($albumLine) {
         $holder.append($albumLine);
         $albumLine.find('.albumLineButton').on('click tap', TrackListItemUtil.onAlbumButton);
@@ -154,7 +154,10 @@ export default class TrackListItemUtil {
       s += `  </div>`;
       s += `  <div class="left">`;
       if (!hideDragIcon) {
-        s += `<div class="iconButton dragHandleButton"></div>`;
+        const isSingleTrackAlbum = album && (album != albumPrevious) && (album != albumNext);
+        if (!isSingleTrackAlbum) {
+          s += `<div class="iconButton dragHandleButton"></div>`;
+        }
       }
       s += `<span class="trackItemNum">${leftText}</span>`;
       s += `</div>`;
@@ -282,7 +285,7 @@ export default class TrackListItemUtil {
   /**
    * Returns null if `item` is not from library or `item` is from same album as `itemPrevious`.
    */
-  static makeAlbumHeaderIfNecessary(index, array, leftText = '', dateKey = '', sameDatePrev = false, sameDateNext = false) {
+  static makeAlbumHeaderIfNecessary(index, array, leftText = '', dateKey = '', sameDatePrev = false, sameDateNext = false, hideDragIcon = true) {
 
     const item = array[index];
     const album = TrackListItemUtil.getAlbumForTrackDataItem(item);
@@ -294,6 +297,10 @@ export default class TrackListItemUtil {
     if (album == albumPrevious) {
       return null;
     }
+
+    const itemNext = (index < array.length - 1) ? array[index + 1] : null;
+    const albumNext = itemNext ? TrackListItemUtil.getAlbumForTrackDataItem(itemNext) : null;
+    const isSingleTrackAlbum = album != albumNext;
 
     const imgPath = DataUtil.getAlbumImageUrl(album);
     const albumText = album['@_album'];
@@ -317,7 +324,7 @@ export default class TrackListItemUtil {
     const statsText = AlbumUtil.makePlaylistAlbumStatsText(album);
 
     let s = '';
-    s +=  `<div class="trackItem groupFirst trackItemAlbumHeader">`;
+    s +=  `<div class="trackItem groupFirst trackItemAlbumHeader${isSingleTrackAlbum ? ' isSingleTrackAlbum' : ''}"${isSingleTrackAlbum ? ` data-index="${index}"` : ''}>`;
     // placeholder timeline column: show connector segments when adjacent items share same date
     s += `  <div class="timelineCol-placeholder">`;
     s += `    <div class="timelineInner-placeholder">`;
@@ -325,6 +332,9 @@ export default class TrackListItemUtil {
     s += `      <div class="line bottom ${sameDateNext ? 'visible' : ''}"></div>`;
     s += `    </div>`;
     s += `  </div>`;
+    if (isSingleTrackAlbum && !hideDragIcon) {
+      s += `  <div class="left"><div class="iconButton dragHandleButton"></div></div>`;
+    }
     s +=    `<div class="albumLineButton" data-hash="${album['@_hash']}">`;
     s +=      `<div class="coverThumb">`;
     s +=        `<img src="${imgPath}" alt="">`;

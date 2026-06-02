@@ -69,6 +69,7 @@ export default class App {
   isBrandLogoAnimationRunning = false;
   brandLogoAnimationCooldownUntil = 0;
   isCompactViewport = false;
+  lastViewedAlbum = null;
 
   constructor() {
     if (Util.isTouch) {
@@ -545,30 +546,20 @@ export default class App {
       return;
     }
 
-    // If we couldn't resolve an album via metadata/playlist, try matching
-    // the playbar cover URL to a library album hash (coversEndpoint + hash).
-    const coverUrl = (this.playbarView && this.playbarView._coverUrl) ? this.playbarView._coverUrl : null;
-    if (coverUrl && Model.hasLibrary) {
-      try {
-        const base = Values.imagesEndpoint;
-        if (coverUrl.startsWith(base)) {
-          const rest = coverUrl.substring(base.length);
-          const hash = rest.split('?')[0];
-          if (hash) {
-            const found = Model.library.getAlbumByAlbumHash(hash);
-            if (found) {
-              this.showAlbumView(found);
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        // ignore and fall through to default behavior
-      }
+    // Fallback: use the album shown in the playbar cover (bottom left corner)
+    const playbarAlbum = this.playbarView ? this.playbarView._getCurrentAlbum() : null;
+    if (playbarAlbum) {
+      this.showAlbumView(playbarAlbum);
+      return;
     }
 
     if (ViewUtil.isVisible(this.albumView.$el)) {
       this.setActiveNavPill('album');
+      return;
+    }
+
+    if (this.lastViewedAlbum) {
+      this.showAlbumView(this.lastViewedAlbum);
       return;
     }
 
@@ -732,6 +723,7 @@ export default class App {
   }
 
   showAlbumView(album, $libraryItem) {
+    this.lastViewedAlbum = album;
     this.setActiveNavPill('album');
     // If album view is already the top subview, update it in-place instead
     if (this.getTopSubview() === this.albumView) {
@@ -953,7 +945,8 @@ export default class App {
     const statusMeta = Model.status?.metadata || {};
     const hasCurrentAlbum = !!this.getCurrentAlbum()
       || Boolean(statusMeta['@_album'] || statusMeta['@_uri'])
-      || (!!this.playbarView && !!this.playbarView._coverUrl);
+      || (!!this.playbarView && !!this.playbarView._coverUrl)
+      || !!this.lastViewedAlbum;
     const isAlbumVisible = ViewUtil.isVisible(this.albumView.$el);
 
     if (hasCurrentAlbum || isAlbumVisible) {

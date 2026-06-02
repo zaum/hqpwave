@@ -548,10 +548,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ALBUM ITEM QUEUE BUTTON (album.css:1319)
+   ALBUM ITEM PLAYLIST BUTTON
    ═══════════════════════════════════════════════════════════════ */
 
-.albumItemQueueButton {
+.albumItemPlaylistButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -564,7 +564,7 @@
   opacity: 0.55;
 }
 
-.albumItemQueueButton .iconPlus {
+.albumItemPlaylistButton .iconPlus {
   width: 18px;
   height: 18px;
   pointer-events: none;
@@ -579,8 +579,8 @@
   mask-position: center;
 }
 
-.albumItem:hover .albumItemQueueButton,
-.albumItemQueueButton:hover {
+.albumItem:hover .albumItemPlaylistButton,
+.albumItemPlaylistButton:hover {
   opacity: 1;
 }
 

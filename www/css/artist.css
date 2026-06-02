@@ -1040,7 +1040,7 @@
 
 .artistDiscItem .coverWrap.bw {
   filter: grayscale(100%) brightness(0.72) contrast(0.95);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.28s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, filter 0.28s ease;
 }
 
 .artistDiscItem .coverWrap.bw:hover {

@@ -282,6 +282,12 @@ activitySaveMetaAndStartTimeout = () => {
 
 // ---
 
+const clearHistory = () => {
+  data[HISTORY_KEY] = [];
+  saveFile();
+  return true;
+};
+
 const clearData = () => {
   data = makeData();
   saveFile();
@@ -303,5 +309,6 @@ module.exports = {
   incrementTrackViews: incrementTrackViews,
   updateTrackViews: updateTrackViews,
   clean: clean,
-  clearData: clearData
+  clearData: clearData,
+  clearHistory: clearHistory
 };

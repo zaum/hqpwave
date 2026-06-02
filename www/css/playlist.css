@@ -21,7 +21,7 @@
 }
 
 #playlistMainView {
-  padding: 24px 0 80px !important;
+  padding: 0 0 80px !important;
   align-items: stretch !important;
 }
 
@@ -29,7 +29,8 @@
 #playlistView .viewHeader,
 #playlistView .playlist-header,
 #playlistView .playlistButtons,
-#playlistView #playlistSaver {
+#playlistView #playlistSaver,
+#historyView .historyButtons {
   padding-left: 20px !important;
   padding-right: 20px !important;
   box-sizing: border-box !important;
@@ -72,16 +73,33 @@
   padding-right: 8px !important;
 }
 
+#playlistView .trackItem {
+  padding-left: 6px !important;
+}
+
+#playlistView .trackItemAlbumHeader {
+  padding-left: 8px !important;
+}
+
+#playlistView .trackItemAlbumHeader .statsText {
+  display: none !important;
+}
+
+#playlistView .trackItemDurationCol {
+  display: none !important;
+}
+
 @media (min-width: 768px) {
   #playlistMainView {
-    padding: 24px 48px 80px !important;
+    padding: 0 48px 80px !important;
     align-items: center !important;
   }
 
   #playlistView .viewHeader,
   #playlistView .playlist-header,
   #playlistView .playlistButtons,
-  #playlistView #playlistSaver {
+  #playlistView #playlistSaver,
+  #historyView .historyButtons {
     padding-left: unset !important;
     padding-right: unset !important;
   }
@@ -116,6 +134,22 @@
   #playlistView .trackItem .main {
     padding-left: 12px !important;
     padding-right: 12px !important;
+  }
+
+  #playlistView .trackItem {
+    padding-left: 12px !important;
+  }
+
+  #playlistView .trackItemAlbumHeader {
+    padding-left: 16px !important;
+  }
+
+  #playlistView .trackItemAlbumHeader .statsText {
+    display: unset !important;
+  }
+
+  #playlistView .trackItemDurationCol {
+    display: unset !important;
   }
 }
 
@@ -193,6 +227,38 @@
   -webkit-mask-position: center;
   mask-position: center;
   background-color: currentColor;
+}
+
+/* History Buttons */
+.historyButtons {
+  display: flex;
+  gap: 8px;
+  padding: 0px 24px 16px 24px;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.historyButtons .textButton {
+  font-size: 10px;
+  padding: 6px 12px;
+}
+
+#historyClearButton::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  display: block;
+  -webkit-mask-image: var(--icon-delete);
+  mask-image: var(--icon-delete);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background-color: currentColor;
+  filter: brightness(var(--icon-brightness));
 }
 
 #playlistLoadButton::before {
@@ -594,6 +660,14 @@
 
 .trackItem.albumTrack .main {
   padding-left: 20px;
+}
+
+.trackItemAlbumHeader .left {
+  width: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .playlistItem {

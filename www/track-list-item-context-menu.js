@@ -44,7 +44,7 @@ class TrackListItemContextMenu extends ContextMenu {
     let uri;
     let commands;
     switch (id) {
-      case 'trackListItemContextQueue':
+      case 'trackListItemContextPlaylist':
         uri = DataUtil.makeUriUsingAlbumAndTrack(album, track);
         commands = [
           Commands.playlistAdd(uri),

@@ -5,9 +5,11 @@ import Model from './model.js';
 import PlaylistVo from './playlist-vo.js'
 import Service from './service.js';
 import Subview from './subview.js';
+import ToastView from './toast-view.js';
 import TrackListItemContextMenu from './track-list-item-context-menu.js';
 import TrackListItemUtil from './track-list-item-util.js';
 import Util from './util.js';
+import Values from './values.js';
 import ViewUtil from './view-util.js';
 
 /**
@@ -22,9 +24,11 @@ export default class HistoryView  extends Subview {
 
   constructor($el) {
   	super($el);
-  	this.$list = this.$el.find('#historyList');
+    this.$list = this.$el.find('#historyList');
     this.$count = this.$el.find('#historyCount');
-  	this.$el.find('#historyCloseButton').on("click tap", () => $(document).trigger('history-close-button'));
+    this.$clearButton = this.$el.find('#historyClearButton');
+    this.$el.find('#historyCloseButton').on("click tap", () => $(document).trigger('history-close-button'));
+    this.$clearButton.on("click tap", this.onClearButton);
     this.trackMetaChangeHandler = TrackListItemUtil.makeTrackMetaChangeHandler(this.$list);
 	}
 
@@ -97,6 +101,7 @@ export default class HistoryView  extends Subview {
     this.tracks = tracks;
 
     this.$count.text(tracks.length > 0 ? `(${tracks.length} tracks)` : ``);
+    this.updateClearButton();
 
     if (tracks.length == 0) {
       const $nonItem = $(`<div id="playHisNonItem">No history</span>`);
@@ -121,6 +126,26 @@ export default class HistoryView  extends Subview {
     const data = this.tracks[index];
     TrackListItemContextMenu.show(this.$el, $button, data);
 	}
+
+  updateClearButton() {
+    if (MetaUtil.history.length > 0) {
+      this.$clearButton.removeClass('isDisabled');
+    } else {
+      this.$clearButton.addClass('isDisabled');
+    }
+  }
+
+  onClearButton = () => {
+    if (!confirm('Are you sure you want to clear all history?')) {
+      return;
+    }
+    MetaUtil.clearHistory();
+    $.ajax({
+      url: `${Values.META_ENDPOINT}?clearHistory`,
+      cache: false
+    });
+    ToastView.show('History cleared');
+  };
 
   onModelLibraryUpdated = () => {
     this.populate();

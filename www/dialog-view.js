@@ -27,7 +27,7 @@ class DialogView {
     this.$button.text(buttonText);
     ViewUtil.setVisible(this.$outer, true);
 
-    this.$button.on('click tap', e => {
+    this.$button.off('click tap').on('click tap', e => {
       ViewUtil.setVisible(this.$outer, false);
       this.$dialog.css('pointer-events', '');
       $(document).trigger('enable-user-input');
