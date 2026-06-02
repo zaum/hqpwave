@@ -189,11 +189,11 @@ class SidebarView {
     this.$el.show();
     if (this.isMobileSidebarMode) {
       this.ensureTopBarObserver();
-      const $topBar = $('#topBar');
+      const $brandLogo = $('#brandLogo');
       const isLibraryView = this.$page.hasClass('libraryView');
       if (isLibraryView) {
-        if ($topBar.length > 0 && !this.$toggle.parent().is($topBar)) {
-          $topBar.prepend(this.$toggle);
+        if ($brandLogo.length > 0 && !this.$toggle.parent().is($brandLogo)) {
+          this.$toggle.insertBefore($brandLogo.find('#searchToggleBtn'));
         }
         this.$toggle.addClass('isMobileToggle');
         this.$toggle.show();

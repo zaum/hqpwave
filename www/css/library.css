@@ -166,20 +166,16 @@
   padding: 0;
 }
 
-/* Sort icons inline with brand logo (small screens) */
-.sort-icons-inline {
-  position: relative;
-  left: auto;
-  top: auto;
-  transform: none;
-  margin-left: 16px;
-  display: none; /* Hidden by default, shown only in library view on small screens */
-}
-
 /* Sort icons only visible in library view */
 #page:not(.libraryView) .sort-icons,
-#page:not(.libraryView) .sort-icons-inline {
+#page:not(.libraryView) .sort-icons-inline,
+#page:not(.libraryView) .sort-icons-right {
   display: none !important;
+}
+
+/* Sort icons in topbar-right - hidden on desktop, shown on small screens */
+.sort-icons-right {
+  display: none;
 }
 
 /* Individual sort icon button */
@@ -340,10 +336,12 @@
   font-size: inherit;
 }
 
-.search-wrap .search-icon:hover ~ .search-help-tooltip,
-.search-wrap .search-icon:focus ~ .search-help-tooltip {
-  opacity: 1;
-  transform: translateY(0);
+@media (min-width: 1024px) {
+  .search-wrap .search-icon:hover ~ .search-help-tooltip,
+  .search-wrap .search-icon:focus ~ .search-help-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -354,10 +352,18 @@
   } */
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   .search-help,
   .search-help-tooltip {
     display: none;
+  }
+
+  .search-icon {
+    cursor: default;
+  }
+
+  .search-icon:hover {
+    background-color: var(--text-2);
   }
 
   /* Hide sort icons in search-wrap on small screens */
@@ -365,44 +371,15 @@
     display: none;
   }
 
-  /* Show cycling sort button only in library view on small screens */
-  #page.libraryView .sort-cycle-btn {
-    display: flex;
-  }
-
-  /* Hide individual sort icons on small screens */
-  .sort-icons-inline .sort-icon {
+  /* Hide the inline magnifier icon inside search-wrap on small screens
+     (we have a separate toggle button) */
+  .search-wrap .search-icon {
     display: none;
   }
 
-  /* Show inline sort icons container but only with cycling button */
-  #page.libraryView .sort-icons-inline {
-    display: flex;
-    gap: 6px;
-  }
-
-  /* Smaller cycling button for inline layout */
-  .sort-icons-inline .sort-cycle-btn {
-    width: 26px;
-    height: 26px;
-  }
-
-  .sort-icons-inline .sort-cycle-btn svg {
-    width: 16px;
-    height: 16px;
-  }
-}
-
-@media (max-width: 767px) {
-  /* Mobile adjustments */
-  .sort-icons-inline {
-    margin-left: 12px;
-    gap: 4px;
-  }
-
-  .sort-icons-inline .sort-icon {
-    width: 24px;
-    height: 24px;
+  /* Search input left padding adjustment when icon is hidden */
+  .search-wrap .search-input {
+    padding-left: 12px;
   }
 }
 
@@ -428,8 +405,10 @@
   z-index: 2;
 }
 
-.search-icon:hover {
-  background-color: var(--text);
+@media (min-width: 1024px) {
+  .search-icon:hover {
+    background-color: var(--text);
+  }
 }
 
 .search-input {
@@ -775,6 +754,27 @@
   .libraryItem.show-play-button .libraryItemPlayBtn {
     opacity: 1;
     transform: scale(1);
+  }
+  .libraryItem.show-format-overlay .libraryItemBits {
+    opacity: 1;
+  }
+  .album-card:hover .album-art,
+  .libraryItem:hover .libraryItemPicture {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--border);
+  }
+  .album-card:hover .art-overlay,
+  .libraryItem:hover .art-overlay {
+    opacity: 0;
+  }
+  .libraryItem:not(.show-play-button):hover .libraryItemPlayBtn {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  .album-card:hover .fav-dot,
+  .libraryItem:hover .libraryItemFavorite {
+    opacity: 0;
   }
 }
 

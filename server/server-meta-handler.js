@@ -115,6 +115,12 @@ const doPost = (request, response) => {
     return;
   }
 
+  if (request.query['clear'] !== undefined) {
+    meta.clearData();
+    safeJson(response, { success: true });
+    return;
+  }
+
   safeStatusJson(response, 400, { error: 'missing_required_param' });
 };
 

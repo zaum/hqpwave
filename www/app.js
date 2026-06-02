@@ -1148,9 +1148,7 @@ export default class App {
           this.goToLibraryView();
           setTimeout(() => {
             try {
-              if (this.libraryView.$globalSearchInput && this.libraryView.$globalSearchInput.length > 0) {
-                ViewUtil.setFocus(this.libraryView.$globalSearchInput);
-              }
+              this.libraryView.openSearch();
             } catch (err) {
               // ignore focus errors
             }
@@ -1211,6 +1209,12 @@ export default class App {
     }
     if (this.libraryView.$globalSearchClear && this.libraryView.$globalSearchClear.length > 0) {
       this.libraryView.$globalSearchClear.css('display', searchValue ? 'flex' : 'none');
+    }
+
+    // Open search row if on small screen
+    if (this.libraryView.$searchToggleBtn && this.libraryView.$searchToggleBtn.length > 0) {
+      $('#topBar').addClass('search-open');
+      this.libraryView.$searchToggleBtn.toggleClass('active', searchValue.length > 0);
     }
 
     if (searchValue.length === 0) {

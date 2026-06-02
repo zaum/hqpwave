@@ -88,15 +88,13 @@
           <path class="brand-logo-mark-stroke"
             d="M70.651,71.038c-0,0 16.048,39.49 28.708,70.644c2.49,6.127 8.444,10.134 15.057,10.134c6.613,0 12.567,-4.007 15.057,-10.134c7.7,-18.949 17.047,-41.948 24.747,-60.897c2.49,-6.127 8.444,-10.134 15.057,-10.134c6.613,0 12.567,4.007 15.057,10.134c7.7,18.949 17.047,41.948 24.747,60.897c2.49,6.127 8.444,10.134 15.057,10.134c6.613,-0 12.567,-4.007 15.057,-10.134c7.7,-18.949 17.047,-41.948 24.747,-60.897c2.49,-6.127 8.444,-10.134 15.057,-10.134c6.613,0 12.567,4.007 15.057,10.134c12.39,30.49 27.923,68.713 27.923,68.713" />
         </svg>
-        <!-- Sort icons inline with brand logo on small screens -->
-        <div class="sort-icons sort-icons-inline">
-          <!-- Cycling sort button for small screens (below 1024px) -->
-          <button class="sort-cycle-btn" title="Sort: click to change">
-            <svg class="sort-cycle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-            </svg>
-          </button>
-        </div>
+        <!-- Search toggle button (magnifier) for small screens -->
+        <button class="search-toggle-btn" id="searchToggleBtn" title="Search" aria-label="Toggle search">
+          <svg class="search-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
       </div>
       <nav class="topbar-nav">
         <div class="nav-pill active" data-view="library">Library</div>
@@ -128,6 +126,7 @@
             </svg>
           </button>
         </div>
+        <div class="search-icon"></div>
         <div class="search-help-tooltip" role="tooltip" aria-hidden="true">
           <div class="search-help-title">SEARCH OPTIONS</div>
           <div class="search-help-line"><span>Text:</span> genre, artist, album, track name...</div>
@@ -141,12 +140,33 @@
           <div class="search-help-example-line"><span>Jazz, DSD, -1980</span> → Jazz albums in DSD released up to 1980
           </div>
         </div>
-        <div class="search-icon"></div>
         <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…"
           autocomplete="off" id="globalSearchInput">
         <div class="search-clear" id="globalSearchClear">×</div>
       </div>
       <div class="topbar-right">
+        <div class="sort-icons sort-icons-right">
+          <button class="sort-icon" data-sort="dateAdded" title="Sort by date added">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+            </svg>
+          </button>
+          <button class="sort-icon" data-sort="artist" title="Sort by artist">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+          </button>
+          <button class="sort-icon" data-sort="releaseDate" title="Sort by release date">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+            </svg>
+          </button>
+          <button class="sort-icon sort-icon-random" data-sort="random" title="Sort by random">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="random-icon-svg">
+              <!-- Grid cells will be generated dynamically by JS -->
+            </svg>
+          </button>
+        </div>
         <div id="topBarButtons">
           <div id="hqpSettingsButton" class="iconButton" title="Upscaler"></div>
           <div id="settingsButton" class="iconButton" title="Settings"></div>
@@ -797,13 +817,16 @@
           <div class="settings-section">
             <div class="settings-label">Metadata from local storage</div>
             <div class="settings-card">
-              <div class="settings-card-row">
+              <div class="settings-card-row row-top">
                 <div>
                   <div class="row-label">Private metadata</div>
                   <div class="row-desc">Play counts, favorites, history, and custom playlists</div>
                 </div>
                 <div class="row-right">
-                  <a href="#" id="metaDownload" class="textButton">Download backup</a>
+                  <div class="column-stack column-stack-right">
+                    <a href="#" id="metaDownload" class="textButton">Download backup</a>
+                    <button id="metaDelete" class="textButton">Delete metadata</button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -739,6 +739,44 @@
   opacity: 1;
 }
 
+@media (max-width: 1599px) {
+  .artistDiscItem.show-format-overlay .libraryItemBits {
+    opacity: 1;
+  }
+  .artistDiscItem:not(.show-play-button):hover .libraryItemPlayBtn {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  .artistDiscItem.is-local:hover {
+    box-shadow: none;
+  }
+  .artistDiscItem.is-local:hover .coverWrap {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  .artistDiscItem.not-local:hover .coverWrap {
+    opacity: 0.4;
+    filter: none;
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  .artistDiscItem.not-local:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  #artistView.mode-legacy .artistDiscItem.not-local:hover .coverWrap,
+  #artistView.mode-legacy .artistDiscItem.not-local:hover .coverWrap img {
+    opacity: 0.4 !important;
+    filter: none !important;
+  }
+  .artistDiscItem .coverWrap.bw:hover img {
+    filter: grayscale(100%) brightness(0.72) contrast(0.95) !important;
+  }
+  .artistDiscItem .coverWrap.bw:hover {
+    transform: none !important;
+  }
+}
+
 .artistDiscItem:not(.show-format-overlay) .libraryItemBits {
   display: none !important;
 }

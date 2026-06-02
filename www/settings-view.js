@@ -6,6 +6,7 @@ import Service from './service.js';
 import Settings from './settings.js';
 import SettingsInfoView from './settings-info-view.js';
 import Subview from './subview.js';
+import ToastView from './toast-view.js';
 import Util from './util.js';
 import Values from './values.js';
 import ViewUtil from './view-util.js';
@@ -65,6 +66,7 @@ export default class SettingsView extends Subview {
     this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
     this.$playerBackgroundColorPicker.on('change', this.onPlayerBackgroundColorChange);
     this.$el.find('#metaDownload').attr('href', Values.META_DOWNLOAD_LINK);
+    this.$el.find('#metaDelete').on('click', () => this.onMetaDeleteClick());
 
     this.$artistDbSize = this.$el.find('#artistDbSize');
     this.$clearArtistDbBtn = this.$el.find('#clearArtistDbBtn');
@@ -450,6 +452,16 @@ export default class SettingsView extends Subview {
     }
 
     return artistNames;
+  }
+
+  onMetaDeleteClick() {
+    if (!confirm('Are you sure you want to delete all local metadata? This action cannot be undone.')) {
+      return;
+    }
+    fetch('/endpoints/meta?clear', { method: 'POST' })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(() => ToastView.show('Metadata deleted. Refresh page.'))
+      .catch(() => ToastView.show('Failed to delete metadata.'));
   }
 
   startArtistBatchImportPolling() {

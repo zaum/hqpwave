@@ -282,6 +282,12 @@ activitySaveMetaAndStartTimeout = () => {
 
 // ---
 
+const clearData = () => {
+  data = makeData();
+  saveFile();
+  return true;
+};
+
 module.exports = {
   init: init,
   getIsEnabled: getIsEnabled,
@@ -296,5 +302,6 @@ module.exports = {
   updateAlbumFavorite: updateAlbumFavorite,
   incrementTrackViews: incrementTrackViews,
   updateTrackViews: updateTrackViews,
-  clean: clean
+  clean: clean,
+  clearData: clearData
 };

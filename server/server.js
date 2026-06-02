@@ -464,6 +464,10 @@ app.get('/endpoints/meta', (request, response) => {
   metaHandler.doGet(request, response);
 });
 
+app.post('/endpoints/meta', (request, response) => {
+  metaHandler.doPost(request, response);
+});
+
 /**
  * 'artist' endpoints (artist metadata + image serving)
  */

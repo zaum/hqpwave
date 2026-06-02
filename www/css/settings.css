@@ -436,7 +436,10 @@
 .color-preset[data-color="#f1efeb"] { background: #f1efeb; }
 
 /* Layout utility classes used where inline styles were removed */
-.column-stack { flex-direction: column; align-items: stretch; gap: 12px; }
+.column-stack { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.column-stack-right { align-items: flex-end; }
+.column-stack-right .textButton { width: 100%; }
+.row-top { align-items: flex-start; }
 .row-between { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .row-right.gap-16 { gap: 16px; }
 .mono-small { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--text-2); }

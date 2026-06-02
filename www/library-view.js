@@ -63,6 +63,7 @@ export default class LibraryView extends Subview {
     // Global search input in topbar
     this.$globalSearchInput = $('#globalSearchInput');
     this.$globalSearchClear = $('#globalSearchClear');
+    this.$searchToggleBtn = $('#searchToggleBtn');
 
     this.albumOptionsView = new LibraryAlbumOptionsView(this.$el.find("#libraryAlbumOptionsView"));
     this.albumsList = new LibraryAlbumsList(this.$el.find('#libraryAlbumsList'));
@@ -140,6 +141,41 @@ export default class LibraryView extends Subview {
 
       updateGlobalSearchClearVisibility();
     }
+
+    // Search toggle button - show/hide search row
+    if (this.$searchToggleBtn.length > 0) {
+      this.$searchToggleBtn.on('click', () => {
+        const $topBar = $('#topBar');
+        const isOpen = $topBar.hasClass('search-open');
+        if (isOpen) {
+          $topBar.removeClass('search-open');
+          this.$globalSearchInput.blur();
+        } else {
+          $topBar.addClass('search-open');
+          // Update active state based on existing content
+          this.$searchToggleBtn.toggleClass('active', this.$globalSearchInput.val().trim().length > 0);
+          // Small delay for the transition to start, then focus
+          setTimeout(() => {
+            this.$globalSearchInput.focus();
+          }, 100);
+        }
+      });
+    }
+
+    // Update search toggle active state when search input changes
+    const updateSearchToggleState = () => {
+      const val = this.$globalSearchInput.val().trim();
+      this.$searchToggleBtn.toggleClass('active', val.length > 0);
+    };
+    this.$globalSearchInput.on('input', updateSearchToggleState);
+
+    // Also update when search is cleared
+    if (this.$globalSearchClear) {
+      this.$globalSearchClear.on('click', () => {
+        updateSearchToggleState();
+      });
+    }
+
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
     Util.addAppListener(this, 'library-albums-filter-changed library-albums-list-populated',
       () => this.updateHeaderText(false));
@@ -178,10 +214,14 @@ export default class LibraryView extends Subview {
   }
 
   /**
-   * Animates in search view state.
+   * Opens search via toggle button or keyboard shortcut.
    */
   openSearch() {
-    // Search is now handled by top header filter
+    if (this.$searchToggleBtn && this.$searchToggleBtn.length > 0 && this.$searchToggleBtn.is(':visible')) {
+      this.$searchToggleBtn.click();
+    } else {
+      ViewUtil.setFocus(this.$globalSearchInput);
+    }
   }
 
   /**
@@ -783,6 +823,9 @@ export default class LibraryView extends Subview {
    */
   applyHeaderSearchFilter(searchValue) {
     this.applyAllFilters();
+    if (this.$searchToggleBtn && this.$searchToggleBtn.length > 0) {
+      this.$searchToggleBtn.toggleClass('active', searchValue && searchValue.trim().length > 0);
+    }
   }
 
   /**
@@ -806,6 +849,9 @@ export default class LibraryView extends Subview {
 
   clearHeaderSearchFilter() {
     this.applyAllFilters();
+    if (this.$searchToggleBtn && this.$searchToggleBtn.length > 0) {
+      this.$searchToggleBtn.removeClass('active');
+    }
   }
 
   onEmptyStateResetClick = (event) => {
@@ -829,6 +875,9 @@ export default class LibraryView extends Subview {
     }
     if (this.$globalSearchClear && this.$globalSearchClear.length > 0) {
       this.$globalSearchClear.css('display', 'none');
+    }
+    if (this.$searchToggleBtn && this.$searchToggleBtn.length > 0) {
+      this.$searchToggleBtn.removeClass('active');
     }
     this.clearHeaderSearchFilter();
   }
