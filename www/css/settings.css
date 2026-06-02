@@ -1096,6 +1096,26 @@
 }
 
 @media (max-width: 767px) {
+  #settingsView .viewHeader,
+  #hqpSettingsView .viewHeader {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  #settingsProjectAnchor {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .settings-content {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  #hqpSettingsCloseButton {
+    right: 20px;
+  }
+
   .footer-brand-logo .brand-logo-text {
     display: none;
   }

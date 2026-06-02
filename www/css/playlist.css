@@ -30,8 +30,8 @@
 #playlistView .playlist-header,
 #playlistView .playlistButtons,
 #playlistView #playlistSaver {
-  padding-left: 8px !important;
-  padding-right: 8px !important;
+  padding-left: 20px !important;
+  padding-right: 20px !important;
   box-sizing: border-box !important;
 }
 
@@ -40,8 +40,8 @@
   margin-left: 0 !important;
   margin-right: 0 !important;
   max-width: 100% !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding-left: 20px !important;
+  padding-right: 20px !important;
   box-sizing: border-box !important;
 }
 
@@ -995,4 +995,19 @@
   max-width: 1800px;
   margin: 0 auto;
   padding: 20px 48px;
+}
+
+@media (max-width: 768px) {
+  #historyView .viewHeader,
+  #loadPlaylistView .viewHeader {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  #historyList,
+  #loadCustomList,
+  #loadHqpList {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
 }
