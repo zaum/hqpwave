@@ -27,9 +27,11 @@ class SidebarView {
   activeFormats = new Set();
   activeGenres = new Set();
   activePeriods = new Set(); // store period elements or data
+  activeLabels = new Set();
   browseFilter = 'all-albums'; // 'all-albums', 'favorite-albums', 'favorite-tracks'
   genreMultiSelect = false;
   periodMultiSelect = false;
+  labelMultiSelect = false;
 
   constructor() {
     this.$el = $('#sidebar');
@@ -79,6 +81,7 @@ class SidebarView {
     this.$formatChips = this.$el.find('.fchip');
     this.$genreList = $('#genreList');
     this.$periodList = $('#periodList');
+    this.$labelList = $('#labelList');
     this.$browseItems = this.$el.find('.sidebar-item[data-filter]');
 
     // Format chip click handler (OR logic - multiple can be selected)
@@ -132,11 +135,17 @@ class SidebarView {
       this.resetPeriodFilter();
     });
 
+    $('#resetLabel').on('click', () => {
+      this.resetLabelFilter();
+    });
+
     // Initialize period filters
     this.initPeriodFilters();
 
     // Listen for library updates to populate genre list
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
+    Util.addAppListener(this, 'settings-hide-labels-changed', this.onSettingsChanged);
+    Util.addAppListener(this, 'settings-label-threshold-changed', this.onSettingsChanged);
     Util.addAppListener(this, 'meta-load-result', this.onMetaLoadResult);
     Util.addAppListener(this, 'album-favorite-changed', this.onAlbumFavoriteChanged);
     Util.addAppListener(this, 'meta-track-favorite-changed', this.onTrackFavoriteChanged);
@@ -270,11 +279,27 @@ class SidebarView {
   onModelLibraryUpdated() {
     this.updateCounts();
     this.populateGenreList();
+    this.populateLabelList();
     this.updatePeriodCounts();
+    this.updateLabelCounts();
+    this.updateLabelsExtractingIndicator();
+  }
+
+  updateLabelsExtractingIndicator() {
+    const extracting = Model.library && Model.library.labelsExtracting;
+    $('#sidebarRecordLabel').toggleClass('label-extracting', !!extracting);
   }
 
   onMetaLoadResult = () => {
     this.updateCounts();
+  }
+
+  onSettingsChanged = () => {
+    if (Model.library && Model.library.albums) {
+      this.populateLabelList();
+      this.updateLabelCounts();
+      this.updateLabelsExtractingIndicator();
+    }
   }
 
   onAlbumFavoriteChanged = () => {
@@ -402,6 +427,90 @@ class SidebarView {
   }
 
   /**
+   * Populate label list from library.
+   */
+  populateLabelList() {
+    const albums = Model.library.albums || [];
+    const labelMap = new Map();
+
+    for (const album of albums) {
+      const labels = album['labels'];
+      if (labels && labels.length) {
+        for (const label of labels) {
+          const count = labelMap.get(label) || 0;
+          labelMap.set(label, count + 1);
+        }
+      }
+    }
+
+    const sortedLabels = Array.from(labelMap.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0], undefined, { sensitivity: 'base' })
+    );
+
+    this.$labelList.empty();
+
+    for (const [label, count] of sortedLabels) {
+      if (Settings.hideLabelsWithFewAlbums && count < Settings.labelVisibilityThreshold) {
+        continue;
+      }
+      const $item = $(`
+        <div class="label-item" data-label="${this.escapeHtml(label)}">
+          <span class="label-name" style="color: var(--text-2)">${this.escapeHtml(label)}</span>
+          <span class="label-count">${count}</span>
+        </div>
+      `);
+
+      $item.on('mouseenter', () => {
+        if (!this.activeLabels.has($item.data('label'))) {
+          $item.find('.label-name').css('color', 'var(--text)');
+        }
+      });
+
+      $item.on('mouseleave', () => {
+        if (!this.activeLabels.has($item.data('label'))) {
+          $item.find('.label-name').css('color', 'var(--text-2)');
+        }
+      });
+
+      $item.on('click', (e) => {
+        const isShiftClick = e.shiftKey;
+        const labelName = $item.data('label');
+        const isAlreadySelected = this.activeLabels.has(labelName);
+
+        if (!isShiftClick && !this.labelMultiSelect && isAlreadySelected) {
+          this.activeLabels.delete(labelName);
+          $item.removeClass('active');
+          $item.find('.label-name').css('color', 'var(--text-2)');
+          this.onFiltersChanged();
+          return;
+        }
+
+        if (!isShiftClick && !this.labelMultiSelect) {
+          this.activeLabels.clear();
+          this.$labelList.find('.label-item').removeClass('active');
+          this.$labelList.find('.label-name').css('color', 'var(--text-2)');
+        }
+
+        if (this.activeLabels.has(labelName)) {
+          this.activeLabels.delete(labelName);
+          $item.removeClass('active');
+          $item.find('.label-name').css('color', 'var(--text-2)');
+        } else {
+          this.activeLabels.add(labelName);
+          $item.addClass('active');
+          $item.find('.label-name').css('color', 'var(--text)');
+        }
+
+        this.labelMultiSelect = this.activeLabels.size > 1;
+
+        this.onFiltersChanged();
+      });
+
+      this.$labelList.append($item);
+    }
+  }
+
+  /**
    * Update counts for period items.
    */
   updatePeriodCounts() {
@@ -419,6 +528,26 @@ class SidebarView {
       }).length;
 
       $item.find('.period-count').text(count);
+    });
+  }
+
+  /**
+   * Update counts for label items.
+   */
+  updateLabelCounts() {
+    const albums = Model.library.albums || [];
+    const $labelItems = this.$labelList.find('.label-item');
+
+    $labelItems.each((i, el) => {
+      const $item = $(el);
+      const labelName = $item.data('label');
+
+      const count = albums.filter(album => {
+        const labels = album['labels'];
+        return labels && labels.includes(labelName);
+      }).length;
+
+      $item.find('.label-count').text(count);
     });
   }
 
@@ -478,6 +607,12 @@ class SidebarView {
     this.$periodList.find('.period-item').removeClass('active');
     this.periodMultiSelect = false;
 
+    // Clear label filters
+    this.activeLabels.clear();
+    this.$labelList.find('.label-item').removeClass('active');
+    this.$labelList.find('.label-name').css('color', 'var(--text-2)');
+    this.labelMultiSelect = false;
+
     // Reset browse to "All Albums"
     this.$browseItems.removeClass('active');
     this.$browseItems.filter('[data-filter="all-albums"]').addClass('active');
@@ -524,6 +659,17 @@ class SidebarView {
     this.activePeriods.clear();
     this.$periodList.find('.period-item').removeClass('active');
     this.periodMultiSelect = false;
+    this.onFiltersChanged();
+  }
+
+  /**
+   * Reset label filter only.
+   */
+  resetLabelFilter() {
+    this.activeLabels.clear();
+    this.$labelList.find('.label-item').removeClass('active');
+    this.$labelList.find('.label-name').css('color', 'var(--text-2)');
+    this.labelMultiSelect = false;
     this.onFiltersChanged();
   }
 
@@ -580,6 +726,14 @@ class SidebarView {
       $resetPeriod.removeClass('visible');
     }
 
+    // Label reset icon
+    const $resetLabel = $('#resetLabel');
+    if (this.activeLabels.size > 0) {
+      $resetLabel.addClass('visible');
+    } else {
+      $resetLabel.removeClass('visible');
+    }
+
     // Global reset icon
     const $resetFilters = $('#resetFilters');
     if (this.hasActiveFilters()) {
@@ -606,9 +760,11 @@ class SidebarView {
       formats: Array.from(this.activeFormats),
       genres: Array.from(this.activeGenres),
       periods: periods,
+      labels: Array.from(this.activeLabels),
       browse: this.browseFilter,
       genreMultiSelect: this.genreMultiSelect,
-      periodMultiSelect: this.periodMultiSelect
+      periodMultiSelect: this.periodMultiSelect,
+      labelMultiSelect: this.labelMultiSelect
     };
   }
 
@@ -619,6 +775,7 @@ class SidebarView {
     return this.activeFormats.size > 0 ||
       this.activeGenres.size > 0 ||
       this.activePeriods.size > 0 ||
+      this.activeLabels.size > 0 ||
       this.browseFilter !== 'all-albums';
   }
 

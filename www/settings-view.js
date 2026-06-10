@@ -29,6 +29,8 @@ export default class SettingsView extends Subview {
   $artistBatchImportStatusText;
   $highlightColorPicker;
   $playerBackgroundColorPicker;
+  $hideLabelsWithFewAlbumsCheckbox;
+  $labelVisibilityThresholdInput;
   infoView;
   _artistBatchImportPollTimer = null;
   _artistBatchWasRunning = false;
@@ -67,6 +69,11 @@ export default class SettingsView extends Subview {
     this.$highlightColorPicker.on('change', this.onHighlightColorChange);
     this.$playerBackgroundColorPicker = this.$el.find('#playerBackgroundColorPicker');
     this.$playerBackgroundColorPicker.on('change', this.onPlayerBackgroundColorChange);
+    this.$hideLabelsWithFewAlbumsCheckbox = this.$el.find('#settingsHideLabelsWithFewAlbums');
+    this.$hideLabelsWithFewAlbumsCheckbox.on('click tap', this.onHideLabelsWithFewAlbumsCheckbox);
+    this.$labelVisibilityThresholdInput = this.$el.find('#labelVisibilityThresholdInput');
+    this.$labelVisibilityThresholdInput.on('change', this.onLabelVisibilityThresholdChange);
+    this.$labelVisibilityThresholdInput.on('blur', this.onLabelVisibilityThresholdChange);
     this.$el.find('#metaDownload').attr('href', Values.META_DOWNLOAD_LINK);
     this.$el.find('#metaDelete').on('click', () => this.onMetaDeleteClick());
 
@@ -290,6 +297,9 @@ export default class SettingsView extends Subview {
 
     this.updatePlayerBackgroundColorPicker();
 
+    this.updateHideLabelsWithFewAlbumsCheckbox();
+    this.updateLabelVisibilityThresholdInput();
+
     this.$el[0].scrollTop = 0;
 
     Service.queueCommandFront(Commands.getInfo());
@@ -427,6 +437,30 @@ export default class SettingsView extends Subview {
   onShowLogoAnimationCheckbox = () => {
     Settings.showLogoAnimation = !Settings.showLogoAnimation;
     this.updateShowLogoAnimationCheckbox();
+  }
+
+  updateHideLabelsWithFewAlbumsCheckbox() {
+    if (Settings.hideLabelsWithFewAlbums) {
+      this.$hideLabelsWithFewAlbumsCheckbox.addClass('isChecked');
+      this.$hideLabelsWithFewAlbumsCheckbox.prop('checked', true);
+    } else {
+      this.$hideLabelsWithFewAlbumsCheckbox.removeClass('isChecked');
+      this.$hideLabelsWithFewAlbumsCheckbox.prop('checked', false);
+    }
+  }
+
+  onHideLabelsWithFewAlbumsCheckbox = () => {
+    Settings.hideLabelsWithFewAlbums = !Settings.hideLabelsWithFewAlbums;
+    this.updateHideLabelsWithFewAlbumsCheckbox();
+  }
+
+  updateLabelVisibilityThresholdInput() {
+    this.$labelVisibilityThresholdInput.val(String(Settings.labelVisibilityThreshold));
+  }
+
+  onLabelVisibilityThresholdChange = () => {
+    Settings.labelVisibilityThreshold = this.$labelVisibilityThresholdInput.val();
+    this.updateLabelVisibilityThresholdInput();
   }
 
   updateArtistReleaseLimitInput() {

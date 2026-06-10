@@ -26,6 +26,10 @@ export default class LibraryVo {
   _pathToItem;
   /** Alphabetized list of genre names */
   _genreNames;
+  /** Alphabetized list of label names */
+  _labelNames;
+  /** True if labels are still being extracted in background */
+  _labelsExtracting = false;
 
   constructor(responseObject=null) {
     // Get main array from response object
@@ -49,7 +53,12 @@ export default class LibraryVo {
         }
       }
     }
+    this._labelsExtracting = !!(responseObject && responseObject['@_labelsExtracting']);
     this.init(responseArray);
+  }
+
+  get labelsExtracting() {
+    return this._labelsExtracting;
   }
 
   /** Direct access to albums array. */  // todo rename
@@ -224,6 +233,7 @@ export default class LibraryVo {
     }
 
     this.initGenreArrays();
+    this.initLabelArrays();
 
     // Init album lookup
     this.initTrackUriToTrackHash();
@@ -247,6 +257,30 @@ export default class LibraryVo {
       }
     }
     this._genreNames = Object.keys(names).sort();
+  }
+
+  /**
+   * Creates new 'labels' property on the album objects, which is an array.
+   * Also inits the `_labelNames` array.
+   */
+  initLabelArrays() {
+    const names = {};
+    for (const album of this._albums) {
+      album['labels'] = [];
+      let labelValue = album['@_label'];
+      if (labelValue) {
+        if (Array.isArray(labelValue)) {
+          labelValue = labelValue.filter(Boolean).join(', ');
+        }
+        if (typeof labelValue === 'string') {
+          album['labels'] = AppUtil.splitGenreString(labelValue);
+          for (const label of album['labels']) {
+            names[label] = '';
+          }
+        }
+      }
+    }
+    this._labelNames = Object.keys(names).sort();
   }
 
   initTrackUriToTrackHash() {

@@ -652,7 +652,7 @@
 
 #albumViewPerformerComposer {
   margin-top: 8px;
-  display: none !important;
+  display: none;
 }
 
 #albumViewPerformer,
@@ -678,10 +678,11 @@
 
 #albumViewPerformer .metaValue,
 #albumViewComposer .metaValue,
+#albumViewLabel .metaValue,
 #albumList .albumPerformerAfterTrackList .metaValue {
   font-size: 12px;
   line-height: inherit;
-  color: var(--text-2);
+  color: var(--text);
   display: inline-block;
   margin-left: 0;
   text-transform: none;
@@ -691,6 +692,7 @@
 /* Preserve consecutive spaces (so two-space separators are visible) and allow wrapping */
 #albumViewPerformer .metaValue,
 #albumViewComposer .metaValue,
+#albumViewLabel .metaValue,
 #albumList .albumPerformerAfterTrackList .metaValue {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -699,6 +701,7 @@
 /* Make any parenthetical instrument text lighter and slightly smaller */
 #albumViewPerformer .metaValue em,
 #albumViewComposer .metaValue em,
+#albumViewLabel .metaValue em,
 #albumList .albumPerformerAfterTrackList .metaValue em {
   color: var(--text-3);
   font-style: italic;

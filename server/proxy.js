@@ -10,6 +10,7 @@ const readline = require('readline');
 const { XMLParser } = require('fast-xml-parser');
 
 const log = require('./log');
+const labelCache = require('./label-cache');
 
 const TROUBLESHOOTING_URL = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
 const UDP_ADDRESS = "239.192.0.199";
@@ -477,8 +478,12 @@ const postProcessJson = (json) => {
 
 /**
  * Do any filtering, etc.
+ * Injects cached label data from local audio files.
+ * Fires background extraction for uncached albums.
  */
 const postProcessLibrary = (json) => {
+  labelCache.injectLabels(json);
+  labelCache.backgroundEnsureLabels(json).catch(() => {});
   return json;
 };
 

@@ -442,6 +442,7 @@
 .row-top { align-items: flex-start; }
 .row-between { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .row-right.gap-16 { gap: 16px; }
+.row-right-combo .toggle-switch + .settingsNumberInput { margin-left: 4px; }
 .mono-small { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--text-2); }
 .inputGroup.row { display: flex; align-items: center; gap: 8px; width: 100%; }
 .settingsInput.expanded { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2); }

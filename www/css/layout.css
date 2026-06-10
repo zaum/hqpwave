@@ -15,6 +15,11 @@
   }
 }
 
+@keyframes label-extract-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.1; }
+}
+
 /* Animate glow on a pseudo-element (opacity) instead of animating box-shadow directly.
    This avoids a visible "vibration" at peak brightness on some GPUs/browsers. */
 .music-playing.isPlaying~.pb-cover::before {
@@ -1106,6 +1111,10 @@
   letter-spacing: 0.15em;
 }
 
+.sidebar-label-row .sidebar-label.label-extracting {
+  animation: label-extract-pulse 1.2s ease-in-out infinite;
+}
+
 .sidebar-label-reset {
   cursor: pointer;
   opacity: 0;
@@ -1266,6 +1275,49 @@
 }
 
 .genre-item.active .genre-count {
+  color: var(--text-3);
+}
+
+.label-list {
+  padding: 0;
+}
+
+.label-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 20px;
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.14s, background 0.14s;
+  border-left: 2px solid transparent;
+  letter-spacing: 0.01em;
+}
+
+.label-item:hover {
+  color: var(--text);
+}
+
+.label-item.active {
+  color: var(--text);
+  border-left-color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 400;
+}
+
+.label-count {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+  flex: 0 0 48px;
+  width: 48px;
+  text-align: right;
+}
+
+.label-item.active .label-count {
   color: var(--text-3);
 }
 

@@ -129,7 +129,7 @@
         <div class="search-icon"></div>
         <div class="search-help-tooltip" role="tooltip" aria-hidden="true">
           <div class="search-help-title">SEARCH OPTIONS</div>
-          <div class="search-help-line"><span>Text:</span> genre, artist, album, track name...</div>
+           <div class="search-help-line"><span>Text:</span> genre, artist, album, track name, record label...</div>
           <div class="search-help-line"><span>Year:</span> 1970, 1970-1980, 1990-, -2000...</div>
           <div class="search-help-line"><span>Format:</span> dsd, dsd64, dsd128, dsd256, dsd512...</div>
           <div class="search-help-line"><span>Sample rate:</span> 44.1, 96, 192, 44100hz, 44.1khz...</div>
@@ -140,7 +140,7 @@
           <div class="search-help-example-line"><span>Jazz, DSD, -1980</span> → Jazz albums in DSD released up to 1980
           </div>
         </div>
-        <input class="search-input" type="text" placeholder="Artist, album, genre, DSD256, 1970–1980…"
+        <input class="search-input" type="text" placeholder="Artist, album, genre, record label, DSD256, 1970–1980…"
           autocomplete="off" id="globalSearchInput">
         <div class="search-clear" id="globalSearchClear">×</div>
       </div>
@@ -350,6 +350,24 @@
           </div>
         </div>
       </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Record Label Section -->
+      <div class="sidebar-section">
+        <div class="sidebar-label-row">
+          <div class="sidebar-label" id="sidebarRecordLabel">Record label</div>
+          <div class="sidebar-label-reset" id="resetLabel" title="Reset record label filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </div>
+        </div>
+        <div class="label-list" id="labelList">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
     </aside>
 
     <!-- View Transition Overlay (covers sidebar + main + everything below topbar) -->
@@ -409,6 +427,7 @@
                 <div id="albumViewPerformerComposer">
                   <div id="albumViewPerformer"></div>
                   <div id="albumViewComposer"></div>
+                  <div id="albumViewLabel"></div>
                 </div>
                 <div id="albumViewGenreButtons"></div>
                 <div id="albumViewButtons">
@@ -843,6 +862,20 @@
                     <a href="#" id="metaDownload" class="textButton">Download backup</a>
                     <button id="metaDelete" class="textButton">Delete metadata</button>
                   </div>
+                </div>
+              </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Hide record labels with few albums in sidebar</div>
+                  <div class="row-desc">Album count threshold</div>
+                </div>
+                <div class="row-right row-right-combo">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="settingsHideLabelsWithFewAlbums" checked>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                  <input type="text" id="labelVisibilityThresholdInput" class="settingsNumberInput" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="5">
                 </div>
               </div>
             </div>

@@ -371,13 +371,22 @@ hide() {
 
     const performer = this.album['@_performer'];
     const composer = this.album['@_composer'];
-    if (performer || composer) {
+    const labels = this.album['labels'];
+    const hasLabels = labels && labels.length > 0;
+    if (performer || composer || hasLabels) {
       const $performerBlock = $('<div class="albumPerformerAfterTrackList"></div>');
       if (performer) {
         this.appendAlbumCreditBlock($performerBlock, 'Performed by', performer);
       }
       if (composer) {
         this.appendAlbumCreditBlock($performerBlock, 'Composed by', composer);
+      }
+      if (hasLabels) {
+        const $line = $('<div class="albumPerformerLine"></div>');
+        $line.append($('<span class="metaCaption"></span>').text('Record label'));
+        const $value = $('<span class="metaValue"></span>').text(labels.join(', '));
+        $line.append($value);
+        $performerBlock.append($line);
       }
       this.$list.append($performerBlock);
     }

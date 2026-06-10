@@ -27,6 +27,8 @@ class Settings {
   _currentRule;
   _thresholdRule;
   _abRule;
+  _hideLabelsWithFewAlbums;
+  _labelVisibilityThreshold;
 
   constructor() {
     this.initFromLocalStorage();
@@ -93,6 +95,14 @@ class Settings {
     if (!this._abRule) {
       this._abRule = AbRuleView.getDefaultValues();
     }
+
+    this._hideLabelsWithFewAlbums = this.storage.getItem('hideLabelsWithFewAlbums');
+    if (this._hideLabelsWithFewAlbums === null) {
+      this._hideLabelsWithFewAlbums = true;
+    } else {
+      this._hideLabelsWithFewAlbums = (this._hideLabelsWithFewAlbums === 'true');
+    }
+    this._labelVisibilityThreshold = this._sanitizeLabelVisibilityThreshold(this.storage.getItem('labelVisibilityThreshold'));
   }
 
   get librarySearchType() {
@@ -376,6 +386,35 @@ class Settings {
   commitAbRule() {
     const s = JSON.stringify(this._abRule);
     this.storage.setItem('abRule', s);
+  }
+
+  get hideLabelsWithFewAlbums() {
+    return this._hideLabelsWithFewAlbums;
+  }
+
+  set hideLabelsWithFewAlbums(b) {
+    this._hideLabelsWithFewAlbums = b;
+    this.storage.setItem('hideLabelsWithFewAlbums', String(b));
+    $(document).trigger('settings-hide-labels-changed');
+  }
+
+  get labelVisibilityThreshold() {
+    return this._labelVisibilityThreshold;
+  }
+
+  set labelVisibilityThreshold(value) {
+    const sanitized = this._sanitizeLabelVisibilityThreshold(value);
+    this._labelVisibilityThreshold = sanitized;
+    this.storage.setItem('labelVisibilityThreshold', String(sanitized));
+    $(document).trigger('settings-label-threshold-changed');
+  }
+
+  _sanitizeLabelVisibilityThreshold(value) {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return 5;
+    }
+    return Math.min(parsed, 999);
   }
 }
 

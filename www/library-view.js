@@ -465,7 +465,7 @@ export default class LibraryView extends Subview {
       return;
     }
 
-    const { formats, genres, periods, browse } = SidebarView.getFilterState();
+    const { formats, genres, periods, labels, browse } = SidebarView.getFilterState();
 
     // Get search value from either input (they should be synced)
     let searchValue = '';
@@ -485,6 +485,7 @@ export default class LibraryView extends Subview {
     const hasSidebarFilters = (formats && formats.length > 0)
       || (genres && genres.length > 0)
       || (periods && periods.length > 0)
+      || (labels && labels.length > 0)
       || browse !== 'all-albums';
     const hasSearchFilter = searchTerms.length > 0;
     const emptyStateContext = {
@@ -526,7 +527,19 @@ export default class LibraryView extends Subview {
         }
       }
 
-      // 4. Sidebar: Period filter (OR logic)
+      // 4. Sidebar: Label filter (OR logic)
+      if (labels && labels.length > 0) {
+        const albumLabels = album['labels'];
+        let inLabel = false;
+        if (albumLabels && albumLabels.length > 0) {
+          inLabel = albumLabels.some(l => labels.includes(l));
+        }
+        if (!inLabel) {
+          return false;
+        }
+      }
+
+      // 6. Sidebar: Period filter (OR logic)
       if (periods && periods.length > 0) {
         const albumYear = parseInt(album['year'] || album['@_year']);
         let inPeriod = false;
@@ -543,7 +556,7 @@ export default class LibraryView extends Subview {
         }
       }
 
-      // 5. Header Search Filter (AND logic)
+      // 7. Header Search Filter (AND logic)
       if (searchTerms.length > 0) {
         // For each search term, check if album matches
         // ALL terms must match for the album to be included
@@ -745,10 +758,12 @@ export default class LibraryView extends Subview {
     const artist = normalizeText(album['@_artist']);
     const albumName = normalizeText(album['@_album']);
     const genre = normalizeText(album['@_genre']);
+    const label = normalizeText(album['@_label']);
 
     if (artist.includes(searchValue) ||
       albumName.includes(searchValue) ||
-      genre.includes(searchValue)) {
+      genre.includes(searchValue) ||
+      label.includes(searchValue)) {
       return true;
     }
 
