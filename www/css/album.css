@@ -430,6 +430,13 @@
     padding: 2px 6px;
   }
 
+  #albumPlaylistButton {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(10px, 2.4vw, 12px);
+    padding: 8px 12px;
+  }
 }
 
 .hero-format {
@@ -968,9 +975,13 @@
 
 @media (min-width: 1600px) {
 
+  .albumViewPictureColumn {
+    min-height: 640px;
+  }
+
   .albumViewPictureOuter,
   .cover-wrap {
-    max-width: 720px;
+    width: 640px;
   }
 
   #albumViewPicture,
@@ -980,7 +991,7 @@
     aspect-ratio: 1 / 1;
     object-fit: cover;
     max-height: none;
-    max-width: 520px;
+    max-width: none;
   }
 }
 

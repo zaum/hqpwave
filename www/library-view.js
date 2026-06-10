@@ -558,27 +558,28 @@ export default class LibraryView extends Subview {
 
     // Sort filteredAlbums based on Settings.librarySortOrder (or Settings.librarySortType)
     const order = Settings.librarySortOrder || Settings.librarySortType || 'artist';
+    const direction = Settings.librarySortDirection || 'asc';
     switch (order) {
       case 'dateAdded':
-        filteredAlbums.sort(LibraryDataUtil.sortByDateAddedDesc);
+        filteredAlbums.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByDateAddedDesc, direction));
         break;
       case 'artist':
-        filteredAlbums.sort(LibraryDataUtil.sortByArtistThenAlbum);
+        filteredAlbums.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByArtistThenAlbum, direction));
         break;
       case 'releaseDate':
-        filteredAlbums.sort(LibraryDataUtil.sortByReleaseDateDesc);
+        filteredAlbums.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByReleaseDateDesc, direction));
         break;
       case 'random':
         Util.shuffleArray(filteredAlbums);
         break;
       case 'album':
-        filteredAlbums.sort(LibraryDataUtil.sortByAlbumThenArtist);
+        filteredAlbums.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByAlbumThenArtist, direction));
         break;
       case 'path':
-        filteredAlbums.sort(LibraryDataUtil.sortByPath);
+        filteredAlbums.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByPath, direction));
         break;
       default:
-        filteredAlbums.sort(LibraryDataUtil.sortByArtistThenAlbum);
+        filteredAlbums.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByArtistThenAlbum, direction));
         break;
     }
 

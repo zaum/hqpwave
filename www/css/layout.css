@@ -477,10 +477,6 @@
     will-change: transform;
   }
 
-  .brand-logo {
-    width: 90px;
-  }
-
   .topbar-nav {
     grid-area: nav;
     padding: 6px 0;

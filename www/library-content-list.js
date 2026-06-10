@@ -35,7 +35,7 @@ export default class LibraryContentList {
     const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0 };
     this.intersectionObs = new IntersectionObserver(this.onIntersection, config);
     $(document).on('album-favorite-changed', this.onAlbumFavoriteChanged);
-    $(document).on('settings-show-play-button-changed settings-show-format-overlay-changed', this.onSettingsChanged);
+    $(document).on('settings-show-play-button-changed settings-show-format-overlay-changed settings-show-library-date-and-format-changed', this.onSettingsChanged);
   }
 
   show(type = null, value = null) {
@@ -315,6 +315,22 @@ export default class LibraryContentList {
     const isFavoriteClass = MetaUtil.isAlbumFavoriteFor(hash) ? 'isFavorite' : '';
     const showPlayButton = Settings.showPlayButton;
     const showFormatOverlay = Settings.showFormatOverlay;
+    const showLibraryDateAndFormat = Settings.showLibraryDateAndFormat;
+
+    // Date and format for library row
+    const fullDate = album['@_date'];
+    const date = fullDate ? fullDate.substring(0, 4) : '';
+    const bitrateText = AlbumUtil.getBitrateText(album);
+    const filetypeText = AlbumUtil.getFiletypeText(album);
+    const formatParts = [];
+    if (bitrateText) formatParts.push(`<span class="libraryFormatText">${bitrateText}</span>`);
+    if (filetypeText) formatParts.push(`<span class="libraryFormatText">${filetypeText}</span>`);
+    const formatHtml = formatParts.length ? formatParts.join('<span class="libraryStatsDot" aria-hidden="true">•</span>') : '';
+
+    const dateHtml = date ? `<div class="libraryItemYear">${date}</div>` : '';
+    const formatRuleHtml = formatHtml ? '<div class="libraryItemMetaRule" aria-hidden="true"></div>' : '';
+    const dateAndFormatHtml = formatHtml ? `<div class="libraryItemText3">${formatHtml}</div>` : '';
+    const hasLibraryMeta = !!(date || formatHtml);
 
     let s = `<div class="libraryItem ${isFavoriteClass}" data-hash="${hash}">`; /* tabindex="0" */
     s += `<div class="libraryItemPicture">
@@ -328,8 +344,11 @@ export default class LibraryContentList {
                </div>`;
     s += `<div class="libraryItemTexts">
                   <div class="libraryItemFavorite" title="Toggle Favorite" role="button" aria-label="Toggle Favorite"></div>
+                  ${dateHtml}
                   <div class="libraryItemText1">${artist}</div>
                   <div class="libraryItemText2">${albumText}</div>
+                  ${formatRuleHtml}
+                  ${dateAndFormatHtml}
                 </div>`;
     s += `</div>`;
     const $item = $(s);
@@ -353,6 +372,12 @@ export default class LibraryContentList {
       $item.removeClass('show-format-overlay');
     }
 
+    if (showLibraryDateAndFormat && hasLibraryMeta) {
+      $item.addClass('show-library-date');
+    } else {
+      $item.removeClass('show-library-date');
+    }
+
     // Prevent text area from triggering album view - only cover should be clickable
     $item.find('.libraryItemTexts').on('click tap', (e) => {
       e.stopPropagation();
@@ -371,6 +396,7 @@ export default class LibraryContentList {
   updateOverlayVisibility() {
     const showPlayButton = Settings.showPlayButton;
     const showFormatOverlay = Settings.showFormatOverlay;
+    const showLibraryDateAndFormat = Settings.showLibraryDateAndFormat;
     const $items = this.$el.find('.libraryItem');
 
     $items.each((index, item) => {
@@ -385,6 +411,12 @@ export default class LibraryContentList {
         $item.addClass('show-format-overlay');
       } else {
         $item.removeClass('show-format-overlay');
+      }
+
+      if (showLibraryDateAndFormat) {
+        $item.addClass('show-library-date');
+      } else {
+        $item.removeClass('show-library-date');
       }
     });
   }

@@ -33,6 +33,7 @@ export default class LibraryAlbumsList extends LibraryContentList {
     Settings.libraryGroupType = 'none';
     Util.addAppListener(this, 'library-albums-sort-changed', this.onSortChanged);
     Util.addAppListener(this, 'library-albums-sort-order-changed', this.onSortOrderChanged);
+    Util.addAppListener(this, 'library-albums-sort-direction-changed', this.onSortDirectionChanged);
     Util.addAppListener(this, 'library-albums-filter-changed', this.onFilterChanged);
     // Initialize timeline minimap controller (no-op if DOM missing)
     try {
@@ -158,29 +159,30 @@ export default class LibraryAlbumsList extends LibraryContentList {
 
     // Use sortOrder if set, otherwise fall back to sortType for backward compatibility
     const order = this.sortOrder || this.sortType || 'artist';
+    const direction = Settings.librarySortDirection || 'asc';
 
     switch (order) {
       case 'dateAdded':
-        a.sort(LibraryDataUtil.sortByDateAddedDesc);
+        a.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByDateAddedDesc, direction));
         break;
       case 'artist':
-        a.sort(LibraryDataUtil.sortByArtistThenAlbum);
+        a.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByArtistThenAlbum, direction));
         break;
       case 'releaseDate':
-        a.sort(LibraryDataUtil.sortByReleaseDateDesc);
+        a.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByReleaseDateDesc, direction));
         break;
       case 'random':
         Util.shuffleArray(a);
         break;
       // Legacy sortType support
       case 'album':
-        a.sort(LibraryDataUtil.sortByAlbumThenArtist);
+        a.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByAlbumThenArtist, direction));
         break;
       case 'path':
-        a.sort(LibraryDataUtil.sortByPath);
+        a.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByPath, direction));
         break;
       default:
-        a.sort(LibraryDataUtil.sortByArtistThenAlbum);
+        a.sort(LibraryDataUtil.withDirection(LibraryDataUtil.sortByArtistThenAlbum, direction));
         break;
     }
     this.filteredSortedAlbums = a;
@@ -232,6 +234,13 @@ export default class LibraryAlbumsList extends LibraryContentList {
 
   onSortOrderChanged() {
     this.setSortOrder(Settings.librarySortOrder);
+    this.update();
+  }
+
+  onSortDirectionChanged() {
+    this.filteredSortedAlbumsDirty = true;
+    this.groupsDirty = true;
+    this.domDirty = true;
     this.update();
   }
 

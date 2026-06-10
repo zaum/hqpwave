@@ -12,6 +12,7 @@ class Settings {
   _librarySearchValue;
   _librarySortType;
   _librarySortOrder;
+  _librarySortDirection;
   _libraryGroupType;
   _libraryFilterType;
   _libraryCollapsedGroups;
@@ -40,6 +41,7 @@ class Settings {
 
     this._librarySortType = this.storage.getItem('librarySortType') || 'artist';
     this._librarySortOrder = this.storage.getItem('librarySortOrder') || 'dateAdded';
+    this._librarySortDirection = this.storage.getItem('librarySortDirection') || 'asc';
     this._libraryGroupType = this.storage.getItem('libraryGroupType') || 'none';
     this._libraryFilterType = this.storage.getItem('libraryFilterType') || 'none';
 
@@ -54,6 +56,7 @@ class Settings {
     this._colorTheme = this.storage.getItem('colorTheme') || 'dark';
     this._showPlayButton = this.storage.getItem('showPlayButton') || 'true';
     this._showFormatOverlay = this.storage.getItem('showFormatOverlay') || 'true';
+    this._showLibraryDateAndFormat = this.storage.getItem('showLibraryDateAndFormat') || 'true';
     this._showLogoAnimation = this.storage.getItem('showLogoAnimation') || 'true';
     this._highlightColor = this.storage.getItem('highlightColor') || '#e8c88a';
     this._playerBackgroundColor = this.storage.getItem('playerBackgroundColor') || '#111112';
@@ -126,6 +129,15 @@ class Settings {
   set librarySortOrder(s) {
     this._librarySortOrder = s;
     this.storage.setItem('librarySortOrder', s);
+  }
+
+  get librarySortDirection() {
+    return this._librarySortDirection;
+  }
+
+  set librarySortDirection(s) {
+    this._librarySortDirection = s;
+    this.storage.setItem('librarySortDirection', s);
   }
 
   get libraryGroupType() {
@@ -234,6 +246,17 @@ class Settings {
     this._showFormatOverlay = s;
     this.storage.setItem('showFormatOverlay', s);
     $(document).trigger('settings-show-format-overlay-changed');
+  }
+
+  get showLibraryDateAndFormat() {
+    return (this._showLibraryDateAndFormat === 'true');
+  }
+
+  set showLibraryDateAndFormat(b) {
+    const s = (b === true || b === 'true') ? 'true' : 'false';
+    this._showLibraryDateAndFormat = s;
+    this.storage.setItem('showLibraryDateAndFormat', s);
+    $(document).trigger('settings-show-library-date-and-format-changed');
   }
 
   get showLogoAnimation() {

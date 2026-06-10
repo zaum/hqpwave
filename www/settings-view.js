@@ -47,6 +47,8 @@ export default class SettingsView extends Subview {
     this.$showPlayButtonCheckbox.on('click tap', this.onShowPlayButtonCheckbox);
     this.$showFormatOverlayCheckbox = this.$el.find('#settingsShowFormatOverlayCheckbox');
     this.$showFormatOverlayCheckbox.on('click tap', this.onShowFormatOverlayCheckbox);
+    this.$showLibraryDateAndFormatCheckbox = this.$el.find('#settingsShowLibraryDateAndFormatCheckbox');
+    this.$showLibraryDateAndFormatCheckbox.on('click tap', this.onShowLibraryDateAndFormatCheckbox);
     this.$showLogoAnimationCheckbox = this.$el.find('#settingsShowLogoAnimationCheckbox');
     this.$showLogoAnimationCheckbox.on('click tap', this.onShowLogoAnimationCheckbox);
     this.$artistReleaseLimitInput = this.$el.find('#artistReleaseLimitInput');
@@ -276,6 +278,8 @@ export default class SettingsView extends Subview {
 
     this.updateShowFormatOverlayCheckbox();
 
+    this.updateShowLibraryDateAndFormatCheckbox();
+
     this.updateShowLogoAnimationCheckbox();
 
     this.updateArtistReleaseLimitInput();
@@ -393,6 +397,21 @@ export default class SettingsView extends Subview {
   onShowFormatOverlayCheckbox = () => {
     Settings.showFormatOverlay = !Settings.showFormatOverlay;
     this.updateShowFormatOverlayCheckbox();
+  }
+
+  updateShowLibraryDateAndFormatCheckbox() {
+    if (Settings.showLibraryDateAndFormat) {
+      this.$showLibraryDateAndFormatCheckbox.addClass('isChecked');
+      this.$showLibraryDateAndFormatCheckbox.prop('checked', true);
+    } else {
+      this.$showLibraryDateAndFormatCheckbox.removeClass('isChecked');
+      this.$showLibraryDateAndFormatCheckbox.prop('checked', false);
+    }
+  }
+
+  onShowLibraryDateAndFormatCheckbox = () => {
+    Settings.showLibraryDateAndFormat = !Settings.showLibraryDateAndFormat;
+    this.updateShowLibraryDateAndFormatCheckbox();
   }
 
   updateShowLogoAnimationCheckbox() {

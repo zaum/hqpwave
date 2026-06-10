@@ -772,9 +772,11 @@
     opacity: 0;
     transform: scale(0.9);
   }
-  .album-card:hover .fav-dot,
-  .libraryItem:hover .libraryItemFavorite {
+  .album-card:hover .fav-dot {
     opacity: 0;
+  }
+  .libraryItem:hover .libraryItemFavorite {
+    opacity: 0.72;
   }
 }
 
@@ -827,6 +829,18 @@
   opacity: 0.7;
 }
 
+.libraryItemFavorite {
+  width: 24px;
+  height: 24px;
+  -webkit-mask-size: 24px 24px;
+  mask-size: 24px 24px;
+  opacity: 0.72;
+}
+
+.libraryItem:hover .libraryItemFavorite {
+  opacity: 0.9;
+}
+
 .isMetaEnabled .libraryItem.isFavorite .libraryItemFavorite {
   opacity: 1;
 }
@@ -866,19 +880,36 @@
 /* Album Info */
 .album-info,
 .libraryItemTexts {
-  padding: 10px 2px 0;
+  padding: 14px 0 0;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 44px minmax(0, 1fr);
   grid-template-areas:
     "fav text1"
-    "fav text2";
-  column-gap: 8px;
-  align-items: center;
+    "fav text2"
+    "year rule"
+    ". text3";
+  column-gap: 10px;
+  row-gap: 0;
+  align-items: start;
   cursor: default;
 }
 
 .libraryItemFavorite {
   grid-area: fav;
+  align-self: center;
+  justify-self: center;
+  margin-top: 2px;
+}
+
+.libraryItemYear {
+  grid-area: year;
+  align-self: center;
+  justify-self: center;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.2;
+  padding-top: 5px;
 }
 
 .libraryItemText1 {
@@ -889,8 +920,16 @@
   grid-area: text2;
 }
 
+.libraryItemMetaRule {
+  grid-area: rule;
+  width: 100%;
+  height: 1px;
+  background: var(--border-hi);
+  margin-top: 8px;
+}
+
 .libraryItemText1 {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -898,19 +937,52 @@
   text-overflow: ellipsis;
   letter-spacing: 0.005em;
   line-height: 1.3;
-  padding: 10px 2px 0;
+  padding: 0;
 }
 
 .libraryItemText2 {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 300;
   color: var(--text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 2px;
+  margin-top: 3px;
   letter-spacing: 0.01em;
-  padding: 0 2px;
+  padding: 0;
+}
+
+.libraryItem:not(.show-library-date) .libraryItemYear,
+.libraryItem:not(.show-library-date) .libraryItemMetaRule,
+.libraryItem:not(.show-library-date) .libraryItemText3 {
+  display: none;
+}
+
+.libraryItemText3 {
+  grid-area: text3;
+  font-size: 8px !important;
+  font-weight: 300;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 2px 0 0;
+}
+
+.libraryItemText3 .libraryFormatText {
+  color: var(--accent);
+}
+
+.libraryItemText3 .libraryStatsDot {
+  color: var(--text);
+  display: inline-block;
+  line-height: 1;
+  vertical-align: middle;
+  font-size: 1.4em;
 }
 
 /* Use shared .title-sm from base.css for album titles */

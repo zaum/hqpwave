@@ -286,23 +286,38 @@ export default class App {
     $sortIcons.removeClass('active');
     $sortIcons.filter(`[data-sort="${currentSort}"]`).addClass('active');
 
+    // Update initial tooltips with direction
+    this.updateSortIconTooltips();
+
     // Handle sort icon clicks
     $sortIcons.on('click', (e) => {
       const $btn = $(e.currentTarget);
       const sortType = $btn.data('sort');
 
-      // Update active state
-      $sortIcons.removeClass('active');
-      $btn.addClass('active');
+      if (sortType === 'random') {
+        // Random has no direction, just set it
+        $sortIcons.removeClass('active');
+        $btn.addClass('active');
+        Settings.librarySortOrder = sortType;
+        $(document).trigger('library-albums-sort-order-changed');
+      } else if ($btn.hasClass('active')) {
+        // Clicking the same active button: toggle direction
+        const newDir = Settings.librarySortDirection === 'asc' ? 'desc' : 'asc';
+        Settings.librarySortDirection = newDir;
+        this.updateSortIconTooltips();
+        $(document).trigger('library-albums-sort-direction-changed');
+      } else {
+        // Clicking a different button: set new sort, reset to ascending
+        $sortIcons.removeClass('active');
+        $btn.addClass('active');
+        Settings.librarySortOrder = sortType;
+        Settings.librarySortDirection = 'asc';
+        this.updateSortIconTooltips();
+        $(document).trigger('library-albums-sort-order-changed');
+      }
 
       // Update cycling button icon
       this.updateSortCycleButtonIcon(sortType);
-
-      // Save setting
-      Settings.librarySortOrder = sortType;
-
-      // Trigger sort order change event
-      $(document).trigger('library-albums-sort-order-changed');
     });
 
     // Initialize cycling sort button (after random icon is generated)
@@ -325,6 +340,9 @@ export default class App {
       const nextIndex = (currentIndex + 1) % sortOptions.length;
       const nextSort = sortOptions[nextIndex];
 
+      // Reset direction to ascending when cycling to a new sort type
+      Settings.librarySortDirection = 'asc';
+
       // Update cycling button icon
       this.updateSortCycleButtonIcon(nextSort);
 
@@ -332,6 +350,9 @@ export default class App {
       const $sortIcons = $('.sort-icon');
       $sortIcons.removeClass('active');
       $sortIcons.filter(`[data-sort="${nextSort}"]`).addClass('active');
+
+      // Update sort icon tooltips
+      this.updateSortIconTooltips();
 
       // Save setting and trigger event
       Settings.librarySortOrder = nextSort;
@@ -375,6 +396,24 @@ export default class App {
       random: 'Sort: Random (click to change)'
     };
     $btn.attr('title', titles[sortType] || 'Sort: click to change');
+  }
+
+  /**
+   * Update tooltip text for all sort icon buttons based on current direction.
+   */
+  updateSortIconTooltips() {
+    const tooltips = {
+      dateAdded: 'Sort by date added (click again to reverse)',
+      artist: 'Sort by artist (click again to reverse)',
+      releaseDate: 'Sort by release date (click again to reverse)',
+      random: 'Sort by random'
+    };
+    $('.sort-icon').each(function() {
+      const sortType = $(this).data('sort');
+      if (tooltips[sortType]) {
+        $(this).attr('title', tooltips[sortType]);
+      }
+    });
   }
 
   /**

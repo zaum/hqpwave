@@ -89,4 +89,14 @@ export default class LibraryDataUtil {
     }
     return b - a; // Descending: higher year first
   }
+
+  /**
+   * Wraps a comparator function and reverses its result when direction is 'desc'.
+   */
+  static withDirection(comparator, direction) {
+    if (direction === 'desc') {
+      return (o1, o2) => comparator(o2, o1);
+    }
+    return comparator;
+  }
 }

@@ -94,7 +94,7 @@
   padding: 0;
   box-sizing: border-box;
   font-family: 'Geist', "Noto Sans TC", sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text);
   scrollbar-color: var(--text-3) var(--surface);
   -webkit-tap-highlight-color: transparent;
@@ -103,12 +103,6 @@
 
 *:focus {
   outline: none;
-}
-
-@media (min-width: 480px) {
-  * {
-    font-size: 14px;
-  }
 }
 
 html {
