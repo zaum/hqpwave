@@ -92,10 +92,32 @@ function getLabelFromCommon(common) {
   return null;
 }
 
+const LABEL_NATIVE_TAGS = new Set([
+  'label',
+  'record label',
+  'publisher',
+  'organization'
+]);
+
+function getLabelFromNative(native) {
+  if (!native) return null;
+  for (const format of Object.keys(native)) {
+    for (const tag of native[format]) {
+      if (tag && tag.id && LABEL_NATIVE_TAGS.has(tag.id.toLowerCase())) {
+        const val = tag.value;
+        if (val) {
+          return Array.isArray(val) ? val.filter(Boolean).join(', ') : String(val);
+        }
+      }
+    }
+  }
+  return null;
+}
+
 async function extractLabelFromFile(filePath) {
   try {
     const meta = await musicMetadata.parseFile(filePath, { duration: false, skipCovers: true });
-    return getLabelFromCommon(meta.common) || null;
+    return getLabelFromCommon(meta.common) || getLabelFromNative(meta.native) || null;
   } catch (e) {
     return null;
   }
@@ -163,10 +185,16 @@ async function backgroundEnsureLabels(json) {
   const available = await ensureMusicMetadata();
   if (!available) return;
 
+  let processed = 0;
+
   for (const album of albums) {
     if (!album || !album['@_hash']) continue;
     if (!album['LibraryFile']) continue;
     if (cache[album['@_hash']] !== undefined) continue;
+
+    if (processed === 0) {
+      log.i('label extraction started');
+    }
 
     const tracks = Array.isArray(album['LibraryFile']) ? album['LibraryFile'] : [album['LibraryFile']];
     const trackNames = tracks.map(t => t['@_name']).filter(Boolean);
@@ -175,10 +203,16 @@ async function backgroundEnsureLabels(json) {
 
     try {
       await ensureLabel(album['@_hash'], albumPath, trackNames);
+      processed++;
     } catch (e) {
       cache[album['@_hash']] = '';
       scheduleSave();
+      processed++;
     }
+  }
+
+  if (processed > 0) {
+    log.i('label extraction finished: ' + processed + ' new');
   }
 }
 

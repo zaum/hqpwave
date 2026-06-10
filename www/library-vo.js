@@ -195,13 +195,17 @@ export default class LibraryVo {
     // Separate items into albums and playlists
     this._albums = [];
     this._hqPlaylistItems = [];
+    const seenHashes = new Set();
 
     for (let i = responseArray.length - 1; i >= 0; i--) {
       const item = responseArray[i];
       if (this.isAlbum(item)) {
         // Store original index for dateAdded sorting (higher index = more recently added)
         item['_originalIndex'] = i;
-        this._albums.push(item);
+        if (!seenHashes.has(item['@_hash'])) {
+          seenHashes.add(item['@_hash']);
+          this._albums.push(item);
+        }
       } else if (this.isPlaylist(item)) {
         this._hqPlaylistItems.push(item);
       } else {
