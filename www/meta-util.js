@@ -202,7 +202,8 @@ class MetaUtil {
     const onError = (e) => cl('warning update track favorite failed', e);
     const safeHash = encodeURIComponent(hash);
     const safeValue = encodeURIComponent(String(isFavorite));
-    const url = `${Values.META_ENDPOINT}?updateTrackFavorite&hash=${safeHash}&value=${safeValue}`;
+    const writeFile = Settings.writeFavoritesToAudioFiles ? '&writeFile=true' : '';
+    const url = `${Values.META_ENDPOINT}?updateTrackFavorite&hash=${safeHash}&value=${safeValue}${writeFile}`;
     $.ajax( { url: url, error: onError, success: onSuccess } );
   }
 
@@ -234,7 +235,8 @@ class MetaUtil {
     const onError = (e) => cl('warning update album favorite failed', e);
     const safeHash = encodeURIComponent(hash);
     const safeValue = encodeURIComponent(String(isFavorite));
-    const url = `${Values.META_ENDPOINT}?updateAlbumFavorite&hash=${safeHash}&value=${safeValue}`;
+    const writeFile = Settings.writeFavoritesToAudioFiles ? '&writeFile=true' : '';
+    const url = `${Values.META_ENDPOINT}?updateAlbumFavorite&hash=${safeHash}&value=${safeValue}${writeFile}`;
     $.ajax( { url: url, error: onError, success: onSuccess } );
   }
 

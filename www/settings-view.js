@@ -31,6 +31,7 @@ export default class SettingsView extends Subview {
   $playerBackgroundColorPicker;
   $hideLabelsWithFewAlbumsCheckbox;
   $labelVisibilityThresholdInput;
+  $writeFavoritesToAudioFilesCheckbox;
   infoView;
   _artistBatchImportPollTimer = null;
   _artistBatchWasRunning = false;
@@ -74,6 +75,8 @@ export default class SettingsView extends Subview {
     this.$labelVisibilityThresholdInput = this.$el.find('#labelVisibilityThresholdInput');
     this.$labelVisibilityThresholdInput.on('change', this.onLabelVisibilityThresholdChange);
     this.$labelVisibilityThresholdInput.on('blur', this.onLabelVisibilityThresholdChange);
+    this.$writeFavoritesToAudioFilesCheckbox = this.$el.find('#settingsWriteFavoritesToAudioFiles');
+    this.$writeFavoritesToAudioFilesCheckbox.on('click tap', this.onWriteFavoritesToAudioFilesCheckbox);
     this.$el.find('#metaDownload').attr('href', Values.META_DOWNLOAD_LINK);
     this.$el.find('#metaDelete').on('click', () => this.onMetaDeleteClick());
 
@@ -299,6 +302,7 @@ export default class SettingsView extends Subview {
 
     this.updateHideLabelsWithFewAlbumsCheckbox();
     this.updateLabelVisibilityThresholdInput();
+    this.updateWriteFavoritesToAudioFilesCheckbox();
 
     this.$el[0].scrollTop = 0;
 
@@ -461,6 +465,21 @@ export default class SettingsView extends Subview {
   onLabelVisibilityThresholdChange = () => {
     Settings.labelVisibilityThreshold = this.$labelVisibilityThresholdInput.val();
     this.updateLabelVisibilityThresholdInput();
+  }
+
+  updateWriteFavoritesToAudioFilesCheckbox() {
+    if (Settings.writeFavoritesToAudioFiles) {
+      this.$writeFavoritesToAudioFilesCheckbox.addClass('isChecked');
+      this.$writeFavoritesToAudioFilesCheckbox.prop('checked', true);
+    } else {
+      this.$writeFavoritesToAudioFilesCheckbox.removeClass('isChecked');
+      this.$writeFavoritesToAudioFilesCheckbox.prop('checked', false);
+    }
+  }
+
+  onWriteFavoritesToAudioFilesCheckbox = () => {
+    Settings.writeFavoritesToAudioFiles = !Settings.writeFavoritesToAudioFiles;
+    this.updateWriteFavoritesToAudioFilesCheckbox();
   }
 
   updateArtistReleaseLimitInput() {

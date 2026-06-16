@@ -176,7 +176,7 @@ const getHistory = () => {
   return data[HISTORY_KEY];
 };
 
-const updateTrackFavorite = (hash, isFavorite) => {
+const updateTrackFavorite = (hash, isFavorite, writeFile = false) => {
   let track = data[TRACKS_KEY][hash];
   if (!track) {
     track = {};
@@ -185,10 +185,22 @@ const updateTrackFavorite = (hash, isFavorite) => {
   const boolValue = (isFavorite === true || isFavorite === 'true');
   track['favorite'] = boolValue;
   activitySaveMetaAndStartTimeout();
+
+  if (writeFile) {
+    const trackPathIndex = require('./track-path-index');
+    const audioTagWriter = require('./audio-tag-writer');
+    const filePath = trackPathIndex.getTrackPath(hash);
+    if (filePath) {
+      audioTagWriter.writeFavorite(filePath, boolValue).catch((err) => {
+        log.w('write track favorite to file failed: ' + (err?.message || err));
+      });
+    }
+  }
+
   return track['favorite'];
 };
 
-const updateAlbumFavorite = (hash, isFavorite) => {
+const updateAlbumFavorite = (hash, isFavorite, writeFile = false) => {
   let album = data[ALBUMS_KEY][hash];
   if (!album) {
     album = {};
@@ -197,6 +209,14 @@ const updateAlbumFavorite = (hash, isFavorite) => {
   const boolValue = (isFavorite === true || isFavorite === 'true');
   album['favorite'] = boolValue;
   activitySaveMetaAndStartTimeout();
+
+  if (writeFile) {
+    const audioTagWriter = require('./audio-tag-writer');
+    audioTagWriter.writeAlbumFavorite(hash, boolValue).catch((err) => {
+      log.w('write album favorite marker failed: ' + (err?.message || err));
+    });
+  }
+
   return album['favorite'];
 };
 

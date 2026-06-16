@@ -11,6 +11,8 @@ const { XMLParser } = require('fast-xml-parser');
 
 const log = require('./log');
 const labelCache = require('./label-cache');
+const trackPathIndex = require('./track-path-index');
+const audioTagWriter = require('./audio-tag-writer');
 
 const TROUBLESHOOTING_URL = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
 const UDP_ADDRESS = "239.192.0.199";
@@ -466,7 +468,17 @@ const finishNormalIfPossible = (dataAsString, isFirstChunk) => {
   doCallback(resultJson);
 };
 
+let currentlyPlayingUri = null;
+
 const postProcessJson = (json) => {
+  if (json['Status']) {
+    const meta = json['Status']?.['metadata'];
+    if (meta && meta['@_uri']) {
+      currentlyPlayingUri = meta['@_uri'];
+    }
+    return json;
+  }
+
   // If library data, remove any albums with zero elements
   // Occurs with m3u8 (we're not supporting this). Also seen on WavPack w/o metadata.
   if (json['LibraryGet']) {
@@ -476,14 +488,27 @@ const postProcessJson = (json) => {
   return json
 };
 
+const isCurrentlyPlaying = (filePath) => {
+  if (!currentlyPlayingUri || !filePath) return false;
+  let uri = decodeURIComponent(currentlyPlayingUri);
+  uri = uri.replace(/^file:\/+/i, '');
+  if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(uri)) uri = uri.slice(1);
+  const normalizedUri = path.normalize(uri).toLowerCase();
+  const normalizedFile = path.normalize(filePath).toLowerCase();
+  return normalizedFile === normalizedUri;
+};
+
 /**
  * Do any filtering, etc.
  * Injects cached label data from local audio files.
  * Fires background extraction for uncached albums.
+ * Builds track path index and syncs favorites from audio file tags.
  */
 const postProcessLibrary = (json) => {
   labelCache.injectLabels(json);
   labelCache.backgroundEnsureLabels(json).catch(() => {});
+  trackPathIndex.buildIndex(json);
+  audioTagWriter.backgroundSyncFavorites(json).catch(() => {});
   return json;
 };
 
@@ -621,5 +646,6 @@ const enableStartupExitHotkey = () => {
 module.exports = {
   isBusy: isBusy,
   sendCommandToHqp: sendCommandToHqp,
-  start: start
+  start: start,
+  isCurrentlyPlaying: isCurrentlyPlaying
 };

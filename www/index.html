@@ -455,6 +455,14 @@
             <div id="relatedAlbumsList" class="libraryAlbumGroup"></div>
           </div>
         </div>
+        <div id="appearsOnAlbums" class="relatedAlbums" hidden>
+          <div class="relatedAlbumsInner">
+            <div class="relatedAlbumsHeader">
+              <h3 id="appearsOnTitle" class="relatedAlbumsTitle">Appears on</h3>
+            </div>
+            <div id="appearsOnList" class="libraryAlbumGroup"></div>
+          </div>
+        </div>
         <div id="similarAlbums" class="relatedAlbums">
           <div class="relatedAlbumsInner">
             <div class="relatedAlbumsHeader">
@@ -876,6 +884,19 @@
                     <div class="toggle-thumb"></div>
                   </label>
                   <input type="text" id="labelVisibilityThresholdInput" class="settingsNumberInput" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="5">
+                </div>
+              </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Write favorites to audio files</div>
+                  <div class="row-desc">Save favorite status to audio file tags (FLAC, MP3, DSF, etc.)</div>
+                </div>
+                <div class="row-right">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="settingsWriteFavoritesToAudioFiles">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
                 </div>
               </div>
             </div>

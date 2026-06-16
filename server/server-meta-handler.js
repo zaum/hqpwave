@@ -52,7 +52,8 @@ const doGet = (request, response) => {
       safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
     }
-    const result = meta.updateTrackFavorite(hash, value);
+    const writeFile = (request.query['writeFile'] === 'true');
+    const result = meta.updateTrackFavorite(hash, value, writeFile);
     safeJson(response, { result: result });
     return;
   }
@@ -62,7 +63,8 @@ const doGet = (request, response) => {
       safeStatusJson(response, 400, { error: 'missing_required_sub_param' });
       return;
     }
-    const result = meta.updateAlbumFavorite(hash, value);
+    const writeFile = (request.query['writeFile'] === 'true');
+    const result = meta.updateAlbumFavorite(hash, value, writeFile);
     safeJson(response, { result: result });
     return;
   }

@@ -1514,9 +1514,31 @@
   background: var(--bg);
 }
 
-#similarAlbums.isAfterArtistAlbums {
+#similarAlbums.isAfterRelated {
   margin-top: 0;
-  padding-top: 0;
+  padding-top: 4px;
+}
+
+#appearsOnAlbums {
+  background: var(--bg);
+  margin-top: 0;
+  padding-top: 4px;
+}
+
+#appearsOnAlbums[hidden] {
+  display: none;
+}
+
+#similarAlbums.cover-is-light {
+  --text: #1a1a1c;
+  --text-2: rgba(26,26,28,0.55);
+  --text-3: rgba(26,26,28,0.35);
+}
+
+#similarAlbums.cover-is-dark {
+  --text: #f0efed;
+  --text-2: rgba(240,239,237,0.55);
+  --text-3: rgba(240,239,237,0.28);
 }
 
 .relatedAlbumsInner {

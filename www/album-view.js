@@ -125,6 +125,31 @@ const splitAlbumCreditItems = (value) => {
 };
 
 
+const FORMATION_TOKENS = new Set([
+  'trio','quartet','quintet','sextet','septet','octet','nonet',
+  'duo','duet','ensemble','orchestra','big','band','project',
+  'collective','players','all-stars','group','the','and','or',
+  'with','feat','featuring','ft','vs',
+  'quartett','quintett','sextett','oktett','nonett',
+  'trió','kvartett','kvintett','szextett','duó',
+]);
+
+function haveSharedBaseName(nameA, nameB) {
+  if (!nameA || !nameB) return false;
+  const normA = normalizeStr(nameA);
+  const normB = normalizeStr(nameB);
+  if (normA === normB) return false;
+  const tokensA = normA.split(/\s+/).filter(t => t && !FORMATION_TOKENS.has(t));
+  const tokensB = normB.split(/\s+/).filter(t => t && !FORMATION_TOKENS.has(t));
+  if (!tokensA.length || !tokensB.length) return false;
+  const [shorter, longer] = tokensA.length <= tokensB.length ? [tokensA, tokensB] : [tokensB, tokensA];
+  let overlap = 0;
+  for (const t of shorter) {
+    if (longer.includes(t)) overlap++;
+  }
+  return overlap >= 2 && overlap >= shorter.length * 0.5;
+}
+
 /**
  * Album view containing a header and a list of track list items.
  * todo put top area in its own class
@@ -178,6 +203,9 @@ export default class AlbumView extends Subview {
     this.$similarBlock = this.$el.find('#similarAlbums');
     this.$similarList = this.$el.find('#similarAlbumsList');
     this.$similarTitle = this.$el.find('#similarAlbumsTitle');
+    this.$appearsOnBlock = this.$el.find('#appearsOnAlbums');
+    this.$appearsOnList = this.$el.find('#appearsOnList');
+    this.$appearsOnTitle = this.$el.find('#appearsOnTitle');
     this.$prevImageButton = this.$el.find('#albumViewPrevImageButton');
     this.$nextImageButton = this.$el.find('#albumViewNextImageButton');
 
@@ -525,10 +553,12 @@ hide() {
         return;
       }
       this.$relatedList.empty();
+      this.$appearsOnList && this.$appearsOnList.empty();
 
       const artists = splitAlbumArtists(this.album['@_artist'] || this.album['@_performer'] || '');
       if (!artists.length) {
         ViewUtil.setDisplayed(this.$relatedBlock, false);
+        this.$appearsOnBlock.attr('hidden', '');
         this.updateSimilarAlbums(false);
         return;
       }
@@ -536,7 +566,10 @@ hide() {
       const allAlbums = (Model && Model.library && Array.isArray(Model.library.albums)) ? Model.library.albums : [];
       const currentHash = this.getAlbumHash();
       const matches = [];
+      const appearsMatches = [];
+      const seenExactHashes = new Set();
 
+      // Pass 1: exact whole-word match (existing behavior)
       for (const a of allAlbums) {
         const h = a['@_hash'];
         if (!h || h === currentHash) continue;
@@ -545,31 +578,53 @@ hide() {
         for (const art of artists) {
           if (!art) continue;
           const artNorm = normalizeStr(art);
-          // whole-word match (avoid matching substrings like 'ada' -> 'adams')
           const pattern = new RegExp('\\b' + escapeRegExp(artNorm) + '\\b', 'i');
           if (pattern.test(aArtistNorm)) {
             matches.push(a);
+            seenExactHashes.add(h);
             break;
           }
         }
       }
 
-      if (!matches.length) {
-        this.$relatedTitle && this.$relatedTitle.text('');
+      // Pass 2: Appears on — token-based fuzzy match
+      for (const a of allAlbums) {
+        const h = a['@_hash'];
+        if (!h || h === currentHash || seenExactHashes.has(h)) continue;
+        const aArtist = a['@_artist'] || a['@_performer'] || '';
+        for (const art of artists) {
+          if (art && haveSharedBaseName(art, aArtist)) {
+            appearsMatches.push(a);
+            break;
+          }
+        }
+      }
+
+      // Render Artist albums
+      if (matches.length) {
+        ViewUtil.setDisplayed(this.$relatedBlock, true);
+        if (this.$relatedTitle && this.$relatedTitle.length) {
+          this.$relatedTitle.text('Artist albums');
+        }
+        this.renderAlbumRecommendationList(this.$relatedList, matches);
+        this.preloadRelatedCovers(matches);
+      } else {
         ViewUtil.setDisplayed(this.$relatedBlock, false);
-        this.updateSimilarAlbums(false);
-        return;
       }
 
-      ViewUtil.setDisplayed(this.$relatedBlock, true);
-      const titleText = 'Artist albums';
-      if (this.$relatedTitle && this.$relatedTitle.length) {
-        this.$relatedTitle.text(titleText);
+      // Render Appears on
+      if (appearsMatches.length) {
+        this.$appearsOnBlock.removeAttr('hidden');
+        if (this.$appearsOnTitle && this.$appearsOnTitle.length) {
+          this.$appearsOnTitle.text('Appears on');
+        }
+        this.renderAlbumRecommendationList(this.$appearsOnList, appearsMatches);
+        this.preloadRelatedCovers(appearsMatches);
+      } else {
+        this.$appearsOnBlock.attr('hidden', '');
       }
 
-      this.renderAlbumRecommendationList(this.$relatedList, matches);
-      this.preloadRelatedCovers(matches);
-      this.updateSimilarAlbums(true);
+      this.updateSimilarAlbums(matches.length > 0 || appearsMatches.length > 0);
     } catch (e) {
       cl('error updating related albums', e);
     }
@@ -581,7 +636,7 @@ hide() {
         return;
       }
 
-      this.$similarBlock.toggleClass('isAfterArtistAlbums', hasArtistAlbums);
+      this.$similarBlock.toggleClass('isAfterRelated', hasArtistAlbums);
       this.$similarList.empty();
       this._similarAlbums = this.getSimilarAlbums(16);
       const matches = this._similarAlbums;
@@ -602,6 +657,34 @@ hide() {
     } catch (e) {
       cl('error updating similar albums', e);
     }
+  }
+
+  extractDominantColor(img) {
+    return new Promise(resolve => {
+      const c = document.createElement('canvas');
+      c.width = c.height = 1;
+      const ctx = c.getContext('2d');
+      try {
+        ctx.drawImage(img, 0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        resolve({ r, g, b });
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  }
+
+  applyCoverColor(r, g, b) {
+    const $block = this.$similarBlock;
+    $block.css('background', `rgb(${r},${g},${b})`);
+    const [rs, gs, bs] = [r, g, b].map(c => {
+      c /= 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    const lum = 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    $block
+      .removeClass('cover-is-light cover-is-dark')
+      .addClass(lum > 0.4 ? 'cover-is-light' : 'cover-is-dark');
   }
 
   getSimilarAlbums(limit = 16) {
@@ -1131,6 +1214,15 @@ hide() {
     this.$picture.attr('src', url);
     this.$pictureBlur.attr('src', url);
     this.updateAlbumImageNavButtons();
+
+    // Extract dominant color from the cover for the Similar albums background
+    this.$picture.off('load.coverColor').on('load.coverColor', async () => {
+      const color = await this.extractDominantColor(this.$picture[0]);
+      if (color) this.applyCoverColor(color.r, color.g, color.b);
+    });
+    if (this.$picture[0]?.complete && this.$picture[0]?.naturalWidth > 0) {
+      this.$picture.trigger('load.coverColor');
+    }
   }
 
   updateAlbumImageNavButtons() {

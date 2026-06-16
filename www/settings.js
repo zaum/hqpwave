@@ -29,6 +29,7 @@ class Settings {
   _abRule;
   _hideLabelsWithFewAlbums;
   _labelVisibilityThreshold;
+  _writeFavoritesToAudioFiles;
 
   constructor() {
     this.initFromLocalStorage();
@@ -103,6 +104,9 @@ class Settings {
       this._hideLabelsWithFewAlbums = (this._hideLabelsWithFewAlbums === 'true');
     }
     this._labelVisibilityThreshold = this._sanitizeLabelVisibilityThreshold(this.storage.getItem('labelVisibilityThreshold'));
+
+    this._writeFavoritesToAudioFiles = this.storage.getItem('writeFavoritesToAudioFiles');
+    this._writeFavoritesToAudioFiles = (this._writeFavoritesToAudioFiles === 'true');
   }
 
   get librarySearchType() {
@@ -415,6 +419,15 @@ class Settings {
       return 5;
     }
     return Math.min(parsed, 999);
+  }
+
+  get writeFavoritesToAudioFiles() {
+    return this._writeFavoritesToAudioFiles;
+  }
+
+  set writeFavoritesToAudioFiles(b) {
+    this._writeFavoritesToAudioFiles = b;
+    this.storage.setItem('writeFavoritesToAudioFiles', String(b));
   }
 }
 
