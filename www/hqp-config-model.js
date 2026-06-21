@@ -12,14 +12,43 @@ import Service from './service.js';
 class HqpConfigModel {
 
   MODE_PCM = 'PCM';
+  MODE_DSD = 'DSD';
+  MODE_SOURCE = 'source';
   PCM_MULTIPLE_A = 44100; // todo move this
   PCM_MULTIPLE_B = 48000;
+
+  /** Map of alternative mode names to canonical names */
+  MODE_ALIASES = { 'SDM': 'DSD', '[source]': 'source' };
 
   modesArray = [];
   filtersData = {};
   shapersData = {};
   ratesData = {};
   pcmFsMultiples = [1];
+
+  /** Returns the non-PCM mode name from modesArray, or 'DSD' as fallback */
+  get dsdModeName() {
+    if (this.modesArray) {
+      for (const m of this.modesArray) {
+        if (m['@_name'] !== 'PCM') return m['@_name'];
+      }
+    }
+    return 'DSD';
+  }
+
+  /** Returns true if the given mode name is the DSD/SDM mode */
+  isDsmMode(name) {
+    if (!name) return false;
+    return name !== this.MODE_PCM && name !== this.MODE_SOURCE;
+  }
+
+  /** Normalizes a mode name to its canonical form */
+  normalizeMode(name) {
+    if (!name) return this.MODE_PCM;
+    const m = String(name);
+    if (m.startsWith('SDM')) return this.MODE_DSD;
+    return this.MODE_ALIASES[m] || m;
+  }
 
   /** @returns index, which is a string */
   getModeIndex(modeName) {
@@ -50,6 +79,7 @@ class HqpConfigModel {
         return o[key2];
       }
     }
+    return null;
   };
 
   /**
@@ -69,11 +99,12 @@ class HqpConfigModel {
     }
     Service.queueCommandFront(Commands.getModes(), (data) => {
       const a = DataUtil.getArrayFrom(data, 'GetModes', 'ModesItem'); // note 'ModesItem' (plural)
-      // Special case: Not supporting '[source']
+      // Normalize alternative mode names
       for (let i = 0; i < a.length; i++) {
-        if (a[i]['@_name'] === '[source]') {
-          a.splice(i, 1);
-          break;
+        const n = a[i]['@_name'];
+        const normalizedName = this.normalizeMode(n);
+        if (normalizedName !== n) {
+          a[i]['@_name'] = normalizedName;
         }
       }
       this.modesArray = a;
@@ -89,15 +120,15 @@ class HqpConfigModel {
    */
   getFiltersShapersRates(callback) {
 
+    const modeFromStatus = () => this.normalizeMode(Model.status.data['@_active_mode']);
+
     const onGetFilters = (data) => {
       const a = DataUtil.getArrayFrom(data, 'GetFilters', 'FiltersItem');
-      const modeName = Model.status.data['@_active_mode'];
-      this.filtersData[modeName] = a;
+      this.filtersData[modeFromStatus()] = a;
     };
     const onGetShapers = (data) => {
       const a = DataUtil.getArrayFrom(data, 'GetShapers', 'ShapersItem');
-      const modeName = Model.status.data['@_active_mode'];
-      this.shapersData[modeName] = a;
+      this.shapersData[modeFromStatus()] = a;
     };
     const onGetRatesAndFinish = (data) => {
       const a = DataUtil.getArrayFrom(data, 'GetRates', 'RatesItem');
@@ -108,7 +139,7 @@ class HqpConfigModel {
           break;
         }
       }
-      const modeName = Model.status.data['@_active_mode'];
+      const modeName = modeFromStatus();
       this.ratesData[modeName] = a;
       if (modeName == this.MODE_PCM) {
         this.initPcmFsMultiples();
@@ -119,7 +150,7 @@ class HqpConfigModel {
 
     const step2 = () => {
 
-      const modeName = Model.status.data['@_active_mode'];
+      const modeName = modeFromStatus();
       let b = true;
       b = b && (this.filtersData[modeName] && this.filtersData[modeName].length > 0);
       b = b && (this.shapersData[modeName] && this.shapersData[modeName].length > 0);

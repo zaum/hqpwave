@@ -17,7 +17,7 @@ import SnackView from './snack-view.js';
 export default class HqpFiltersView {
 
   $el;
-  $modeSelect;
+  $modeSwitcher;
   $filterSelect;
   $shaperSelect;
   $info;
@@ -32,11 +32,11 @@ export default class HqpFiltersView {
   constructor($el) {
     this.$el = $el;
 
-    this.$modeToggle = this.$el.find('#modeToggle');
+    this.$modeSwitcher = this.$el.find('#modeSwitcher');
     this.$filterSelect = this.$el.find('#filterSelect');
     this.$shaperSelect = this.$el.find('#shaperSelect');
 
-    this.$modeToggle.on('change', this.onModeToggleChange);
+    this.$modeSwitcher.on('click', '.mode-btn', this.onModeBtnClick);
     this.$filterSelect.on('change', this.onSelectChange);
     this.$shaperSelect.on('change', this.onSelectChange);
 
@@ -45,11 +45,9 @@ export default class HqpFiltersView {
     this.$outputBitrateValue = this.$el.find('#outputBitrateValue');
 
 
-    this.presetsView = new HqpPresetsView(this.$el.find('#hqpPresetsView'));
-    this.presetsView.updateLoadPresetsText();
+    this.presetsView = new HqpPresetsView($('#hqpPresetsView'));
 
     Util.addAppListener(this, 'upscaling-data-updated', this.onUpscalingDataUpdated);
-    Util.addAppListener(this, 'save-hqp-preset-button', this.onSavePresetButton);
     Util.addAppListener(this, 'load-hqp-preset-button', this.onLoadPresetButton);
   }
 
@@ -71,9 +69,8 @@ export default class HqpFiltersView {
   }
   
   populateSelects = () => {
-    const mode = Model.status.data['@_active_mode'];
-    // Set toggle state based on current mode
-    this.$modeToggle.prop('checked', mode === 'DSD');
+    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
+    this.highlightActiveMode(mode);
 
     const filterName = Model.status.data['@_active_filter'];
     const filtersArray = HqpConfigModel.filtersData[mode];
@@ -123,7 +120,7 @@ export default class HqpFiltersView {
     const lastOutputBitrateString = this.outputBitrateString;
     const rate = Model.status.data['@_active_rate'] || '';
     const bits = Model.status.data['@_active_bits'] || '';
-    const mode = Model.status.data['@_active_mode'] || '';
+    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || '';
     this.outputBitrateString = '';
     let sampleRateUnit = '';
     let bitDepthText = '';
@@ -132,22 +129,20 @@ export default class HqpFiltersView {
     if (rate) {
       const rateInt = parseInt(rate);
       if (mode === 'PCM') {
-        // PCM rates are in Hz, convert to kHz
         sampleRateUnit = 'kHz';
         this.outputBitrateString = (rateInt / 1000).toString();
-      } else if (mode === 'DSD') {
-        // DSD rates are multiples, show as DSD64, DSD128, etc.
+      } else if (HqpConfigModel.isDsmMode(mode)) {
         sampleRateUnit = 'MHz';
         this.outputBitrateString = (rateInt / 1000000).toString();
-        // Add DSD format label (DSD64, DSD128, etc.)
         if (bits) {
           formatLabel = bits;
         }
       } else {
+        // source or unknown mode — could be either, show raw rate
         this.outputBitrateString = rate;
       }
       
-      if (bits && mode !== 'DSD') {
+      if (bits && !HqpConfigModel.isDsmMode(mode) && mode !== HqpConfigModel.MODE_SOURCE) {
         bitDepthText = bits + ' bit';
       }
     }
@@ -204,18 +199,10 @@ export default class HqpFiltersView {
     }, suppressHqpErrorToast: true }]);
   };
 
-  onSavePresetButton(index) {
-    const mode = Model.status.data['@_active_mode'];
-    const filter = Model.status.data['@_active_filter'];
-    const shaper = Model.status.data['@_active_shaper'];
-    const o = { mode: mode, filter: filter, shaper: shaper };
-    Settings.presetsArray[index] = o;
-    Settings.commitPresetsArray();
-    this.presetsView.updateLoadPresetsText();
-  }
-
   onLoadPresetButton(index) {
-    const preset = Settings.presetsArray[index];
+    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
+    const arr = Settings.getPresetsArray(mode);
+    const preset = arr[index];
     PresetUtil.applyPreset(preset, () => {
       this.populateSelectsRedundant();
     });
@@ -228,12 +215,8 @@ export default class HqpFiltersView {
 
     this.updateOutputBitrate();
 
-    // Diff status vs lastStatus
-    const mode = Model.status.data['@_active_mode'];
-    if (Model.status.data['@_active_mode'] != Model.lastStatus.data['@_active_mode']) {
-      // Update toggle state based on current mode
-      this.$modeToggle.prop('checked', mode === 'DSD');
-    }
+    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
+    this.highlightActiveMode(mode);
     if (Model.status.data['@_active_filter'] != Model.lastStatus.data['@_active_filter']) {
       const filterName = Model.status.data['@_active_filter'];
       const filtersArray = HqpConfigModel.filtersData[mode];
@@ -246,21 +229,32 @@ export default class HqpFiltersView {
     }
   }
 
-  onModeToggleChange = (e) => {
-    const isChecked = e.currentTarget.checked;
-    const mode = isChecked ? 'DSD' : 'PCM';
-    
-    // Get the mode index from the modes array
-    const modeIndex = HqpConfigModel.getModeIndex(mode);
-    if (modeIndex === null) {
-      cl('warning no mode index found for', mode);
-      return;
-    }
+  highlightActiveMode(mode) {
+    this.$modeSwitcher.find('.mode-btn').each((i, el) => {
+      const btn = $(el);
+      const btnMode = btn.attr('data-mode');
+      if (btnMode === mode) {
+        btn.addClass('isActive');
+      } else {
+        btn.removeClass('isActive');
+      }
+    });
+  }
 
+  onModeBtnClick = (e) => {
+    const $btn = $(e.currentTarget);
+    const mode = $btn.attr('data-mode');
+    if ($btn.hasClass('isActive')) return;
+    const modeIndex = HqpConfigModel.getModeIndex(mode);
+    if (modeIndex == null) return;
+    this.$modeSwitcher.css('pointer-events', 'none');
     Service.queueCommandsFront([{ xml: Commands.setMode(modeIndex), callback: (data) => {
+      this.$modeSwitcher.css('pointer-events', '');
       const b = DataUtil.isResultOk(data);
       if (!b) {
         SnackView.show('set-error', 'HQPlayer response', `Couldn't set mode to ${mode}`, '');
+        const actualMode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
+        this.highlightActiveMode(actualMode);
       }
       HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()));
     }, suppressHqpErrorToast: true }]);

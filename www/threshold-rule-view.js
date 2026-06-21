@@ -9,6 +9,7 @@ import Settings from './settings.js';
 import SettingsInfoView from './settings-info-view.js';
 import HqpFiltersView from './hqp-filters-view.js';
 import HqpConfigModel from './hqp-config-model.js';
+import PresetUtil from './preset-util.js';
 
 /**
  *
@@ -44,7 +45,10 @@ export default class ThresholdRuleView {
   }
 
   init() {
+    const mode = HqpConfigModel.MODE_PCM;
     this.populateFsSelect();
+    PresetUtil.populateSelect(this.$presetASelect, mode);
+    PresetUtil.populateSelect(this.$presetBSelect, mode);
     this.applySettingsValues();
     this.$el.removeClass('isDisabled');
   }
@@ -96,8 +100,8 @@ export default class ThresholdRuleView {
     return {
       leastMost: 'most',
       fs: '1',
-      presetA: '1',
-      presetB: '2'
+      presetA: '0',
+      presetB: '1'
     };
   }
 }

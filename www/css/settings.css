@@ -229,49 +229,37 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════
-   MODE TOGGLE SWITCH
+   MODE SWITCHER BUTTONS
    ═══════════════════════════════════════════════════════════════ */
 
-.mode-toggle-input {
-  display: none;
-}
-
-.mode-labels {
+.mode-switcher {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
-  color: var(--text-2);
+}
+
+.mode-btn {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 300;
   letter-spacing: 0.02em;
-  margin-left: 12px;
-}
-
-.mode-label-pcm {
-  color: var(--text-2);
-  transition: color 0.25s;
-}
-
-.mode-label-dsd {
-  color: var(--text-2);
-  transition: color 0.25s;
-}
-
-.mode-toggle-input:not(:checked)~.mode-labels .mode-label-pcm {
-  color: var(--accent);
-}
-
-.mode-toggle-input:checked~.mode-labels .mode-label-dsd {
-  color: var(--accent);
-}
-
-.mode-toggle-input:checked~.mode-labels .mode-label-pcm {
   color: var(--text-3);
-  opacity: 0.6;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.2s;
+  user-select: none;
 }
 
-.mode-toggle-input:not(:checked)~.mode-labels .mode-label-dsd {
-  color: var(--text-3);
-  opacity: 0.6;
+.mode-btn.isActive {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.mode-btn:not(.isActive):hover {
+  color: var(--text-2);
+  border-color: var(--border-md);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -588,9 +576,17 @@
 
 #settingsInfoView .info-block .hqp-link {
   grid-column: 3;
-  grid-row: 2; /* Put link into the same "lamp" row (right side). */
+  grid-row: 2;
   margin-top: 0;
   justify-self: end;
+}
+
+#settingsInfoView .info-block .hqp-ip-address {
+  grid-column: 2;
+  grid-row: 3;
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
 }
 
 .connection-led.led-connected {
@@ -931,100 +927,359 @@
 
 /* Presets */
 #hqpPresetsView {
-  display: flex;
-  gap: 32px;
-}
-
-.savePresets,
-.loadPresets {
-  flex: 1;
-}
-
-.presetLabel {
-  font-size: 10px;
-  color: var(--text-3);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-
-.savePresetLine,
-.loadPresetLine {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.loadPresetButton {
-  width: 32px;
-  height: 32px;
   padding: 0;
 }
 
-.loadPresetLabel {
-  font-size: 12px;
-  color: var(--text-2);
-}
-
-.hqpPresetRulesInner {
+.hqpPresetsList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
-.ruleItem {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-
-.ruleCheckbox {
-  flex-shrink: 0;
-}
-
-.ruleItemInner {
-  flex: 1;
-}
-
-.ruleLine {
-  font-size: 12px;
-  color: var(--text-2);
-  margin-bottom: 8px;
+.presetItem {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+  cursor: default;
+  user-select: none;
 }
 
-.ruleLine:last-child {
-  margin-bottom: 0;
+.presetItem:last-child {
+  border-bottom: none;
 }
 
-.ruleLineSmall {
+.presetItem:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.presetItem.isDragging {
+  opacity: 0.4;
+}
+
+.presetDragGhost {
+  opacity: 0.85;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.presetDragHandle {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: grab;
+  background: transparent;
+  border: none;
+  position: relative;
+}
+
+.presetDragHandle:before {
+  content: " ";
+  display: block;
+  position: absolute;
+  opacity: 0.5;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url("./../img/icons/drag_handle_thin_white_24dp.svg");
+  background-size: 18px 18px;
+  pointer-events: none;
+}
+
+.presetDragHandle:hover:before {
+  opacity: 1;
+}
+
+.presetMain {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.presetName {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.presetName:hover {
+  color: var(--accent);
+}
+
+.presetDesc {
   font-size: 10px;
   color: var(--text-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.ruleLine select {
-  padding: 4px 8px;
-  background: var(--bg);
-  border: 1px solid var(--border-md);
-  border-radius: 4px;
+.presetNameInput {
+  font-size: 12px;
   color: var(--text);
-  font-size: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 2px 6px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+.presetRenameBtn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  position: relative;
   cursor: pointer;
 }
 
-.ruleLine select:focus {
+.presetItem:hover .presetRenameBtn {
+  opacity: 0.6;
+}
+
+.presetItem .presetRenameBtn:hover {
+  opacity: 1;
+  background: var(--raised);
+}
+
+.presetRenameBtn:before {
+  content: " ";
+  display: block;
+  position: absolute;
+  opacity: 0.7;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url("./../img/icons/edit_thin_white_24dp.svg");
+  background-size: 16px 16px;
+  filter: brightness(var(--icon-brightness));
+  pointer-events: none;
+}
+
+.presetDeleteBtn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  position: relative;
+  cursor: pointer;
+}
+
+.presetItem:hover .presetDeleteBtn {
+  opacity: 0.6;
+}
+
+.presetItem .presetDeleteBtn:hover {
+  opacity: 1;
+  background: var(--raised);
+}
+
+.presetDeleteBtn:before {
+  content: " ";
+  display: block;
+  position: absolute;
+  opacity: 0.7;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url("./../img/icons/delete_outline_thin_white_24dp.svg");
+  background-size: 16px 16px;
+  filter: brightness(var(--icon-brightness));
+  pointer-events: none;
+}
+
+.presetAddRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.presetFooterBtn {
+  cursor: pointer;
+  border: 1px solid var(--border-md);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+  padding: 7px 14px;
+}
+
+.presetFooterBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.presetAddBtn {
+  flex: 2;
+  padding: 7px 0;
+}
+
+.presetDefaultsBtn {
+  flex: 0 0 auto;
+}
+
+.iconPlus2 {
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg>');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  flex-shrink: 0;
+}
+
+#hqpPresetRulesView {
+  padding: 0;
+}
+
+#genreRulesList.isDisabled,
+#genreRulesList.isDisabled + .presetAddRow,
+.presetAddRow.isDisabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.ruleToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ruleToggleLabel {
+  font-size: 12px;
+  color: var(--text);
+}
+
+/* Genre rule rows */
+#genreRulesList {
+  display: flex;
+  flex-direction: column;
+}
+
+.genreRuleItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.genreRuleItem:last-child {
+  border-bottom: none;
+}
+
+.genreRuleItem .genreRuleText {
+  color: var(--text-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.genreRuleItem select {
+  padding: 5px 22px 5px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-md);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>');
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 10px;
+  min-width: 80px;
+}
+
+.genreRuleItem select:focus {
   outline: none;
   border-color: var(--accent);
 }
 
-.ruleLine span {
-  font-size: 12px;
+.genreRuleDeleteBtn {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  position: relative;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.genreRuleItem:hover .genreRuleDeleteBtn {
+  opacity: 0.6;
+}
+
+.genreRuleItem .genreRuleDeleteBtn:hover {
+  opacity: 1;
+  background: var(--raised);
+}
+
+.genreRuleDeleteBtn:before {
+  content: " ";
+  display: block;
+  position: absolute;
+  opacity: 0.7;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url("./../img/icons/delete_outline_thin_white_24dp.svg");
+  background-size: 14px 14px;
+  filter: brightness(var(--icon-brightness));
+  pointer-events: none;
 }
 
 /* Color Presets */

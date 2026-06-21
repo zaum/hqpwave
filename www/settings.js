@@ -1,5 +1,20 @@
-import ThresholdRuleView from './threshold-rule-view.js';
-import AbRuleView from './ab-rule-view.js';
+const DEFAULT_PRESETS_PCM = [
+  { name: 'Jazz', mode: 'PCM', filter: 'sinc-M', shaper: 'NS5' },
+  { name: 'Classical', mode: 'PCM', filter: 'sinc-L', shaper: 'NS9' },
+  { name: 'Rock', mode: 'PCM', filter: 'poly-sinc-short-mp', shaper: 'LNS15' },
+  { name: 'Blues', mode: 'PCM', filter: 'poly-sinc-lp', shaper: 'NS5' },
+  { name: 'Electronic', mode: 'PCM', filter: 'poly-sinc-short-mp', shaper: 'NS9' },
+  { name: 'Pop', mode: 'PCM', filter: 'sinc-M', shaper: 'LNS15' }
+];
+
+const DEFAULT_PRESETS_DSD = [
+  { name: 'Jazz', mode: 'DSD', filter: 'poly-sinc-lp', shaper: 'ASDM7' },
+  { name: 'Classical', mode: 'DSD', filter: 'poly-sinc-ext2', shaper: 'ASDM7' },
+  { name: 'Rock', mode: 'DSD', filter: 'poly-sinc-short-mp', shaper: 'DSD5' },
+  { name: 'Blues', mode: 'DSD', filter: 'poly-sinc-lp', shaper: 'ASDM7' },
+  { name: 'Electronic', mode: 'DSD', filter: 'poly-sinc-hb-lp', shaper: 'DSD7' },
+  { name: 'Pop', mode: 'DSD', filter: 'sinc-M', shaper: 'ASDM7' }
+];
 
 /**
  * User settings, backed by local storage.
@@ -23,10 +38,13 @@ class Settings {
   _artistReleaseLimit;
   _artistImageLimit;
   _artistBioLimit;
-  _presetsArray;
+  _presetsArrayPCM;
+  _presetsArrayDSD;
   _currentRule;
   _thresholdRule;
   _abRule;
+  _enableRules;
+  _genreRules;
   _hideLabelsWithFewAlbums;
   _labelVisibilityThreshold;
   _writeFavoritesToAudioFiles;
@@ -68,14 +86,75 @@ class Settings {
     this._artistBioLimit = this._sanitizeArtistBioLimit(this.storage.getItem('artistBioLimit'));
 
     s = this.storage.getItem('presetsArray');
-    try {
-      this._presetsArray = JSON.parse(s) || [];
-    } catch (exc) {
-      cl('warning', s, exc);
-      this._presetsArray = [];
+    if (s) {
+      try {
+        const oldArr = JSON.parse(s) || [];
+        this._presetsArrayPCM = [];
+        this._presetsArrayDSD = [];
+        for (const p of oldArr) {
+          if (p && p.mode === 'DSD') {
+            this._presetsArrayDSD.push(p);
+          } else {
+            this._presetsArrayPCM.push(p);
+          }
+        }
+        this.storage.removeItem('presetsArray');
+      } catch (exc) {
+        cl('warning', s, exc);
+        this._presetsArrayPCM = [];
+        this._presetsArrayDSD = [];
+      }
+    } else {
+      try {
+        s = this.storage.getItem('presetsArrayPCM');
+        this._presetsArrayPCM = JSON.parse(s) || [];
+      } catch (exc) {
+        cl('warning', s, exc);
+        this._presetsArrayPCM = [];
+      }
+      try {
+        s = this.storage.getItem('presetsArrayDSD');
+        this._presetsArrayDSD = JSON.parse(s) || [];
+      } catch (exc) {
+        cl('warning', s, exc);
+        this._presetsArrayDSD = [];
+      }
+    }
+
+    if (this._presetsArrayPCM.length === 0) {
+      this._presetsArrayPCM = JSON.parse(JSON.stringify(DEFAULT_PRESETS_PCM));
+    }
+    if (this._presetsArrayDSD.length === 0) {
+      this._presetsArrayDSD = JSON.parse(JSON.stringify(DEFAULT_PRESETS_DSD));
+    }
+
+    // Ensure all presets have a name field
+    for (let i = 0; i < this._presetsArrayPCM.length; i++) {
+      const p = this._presetsArrayPCM[i];
+      if (p && !p.name) {
+        p.name = 'Preset ' + (i + 1);
+      }
+    }
+    for (let i = 0; i < this._presetsArrayDSD.length; i++) {
+      const p = this._presetsArrayDSD[i];
+      if (p && !p.name) {
+        p.name = 'Preset ' + (i + 1);
+      }
     }
 
     this._currentRule = this.storage.getItem('currentRule') || '';
+
+    this._enableRules = this.storage.getItem('enableRules') === 'true';
+
+    s = this.storage.getItem('genreRules');
+    try {
+      this._genreRules = JSON.parse(s);
+    } catch (exc) {
+      cl('warning', s, exc);
+    }
+    if (!this._genreRules || !Array.isArray(this._genreRules)) {
+      this._genreRules = [];
+    }
 
     s = this.storage.getItem('thresholdRule');
     try {
@@ -84,7 +163,7 @@ class Settings {
       cl('warning', s, exc);
     }
     if (!this._thresholdRule) {
-      this._thresholdRule = ThresholdRuleView.getDefaultValues();
+      this._thresholdRule = { leastMost: 'most', fs: '1', presetA: '0', presetB: '1' };
     }
 
     s = this.storage.getItem('abRule');
@@ -94,7 +173,7 @@ class Settings {
       cl('warning', s, exc);
     }
     if (!this._abRule) {
-      this._abRule = AbRuleView.getDefaultValues();
+      this._abRule = { a: '0', b: '1' };
     }
 
     this._hideLabelsWithFewAlbums = this.storage.getItem('hideLabelsWithFewAlbums');
@@ -342,13 +421,26 @@ class Settings {
     $(document).trigger('settings-artist-bio-limit-changed');
   }
 
-  get presetsArray() {
-    return this._presetsArray;
+  getPresetsArray(mode) {
+    return (mode !== 'PCM' && mode !== 'source') ? this._presetsArrayDSD : this._presetsArrayPCM;
   }
 
-  commitPresetsArray() {
-    const s = JSON.stringify(this._presetsArray);
-    this.storage.setItem('presetsArray', s);
+  get presetsArrayPCM() {
+    return this._presetsArrayPCM;
+  }
+
+  commitPresetsArrayPCM() {
+    const s = JSON.stringify(this._presetsArrayPCM);
+    this.storage.setItem('presetsArrayPCM', s);
+  }
+
+  get presetsArrayDSD() {
+    return this._presetsArrayDSD;
+  }
+
+  commitPresetsArrayDSD() {
+    const s = JSON.stringify(this._presetsArrayDSD);
+    this.storage.setItem('presetsArrayDSD', s);
   }
 
   get currentRule() {
@@ -390,6 +482,24 @@ class Settings {
   commitAbRule() {
     const s = JSON.stringify(this._abRule);
     this.storage.setItem('abRule', s);
+  }
+
+  get enableRules() {
+    return this._enableRules;
+  }
+
+  set enableRules(b) {
+    this._enableRules = b;
+    this.storage.setItem('enableRules', String(b));
+  }
+
+  get genreRules() {
+    return this._genreRules;
+  }
+
+  commitGenreRules() {
+    const s = JSON.stringify(this._genreRules);
+    this.storage.setItem('genreRules', s);
   }
 
   get hideLabelsWithFewAlbums() {

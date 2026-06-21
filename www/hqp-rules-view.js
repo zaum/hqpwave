@@ -1,69 +1,189 @@
 import Settings from './settings.js';
-import ThresholdRuleView from './threshold-rule-view.js';
-import AbRuleView from './ab-rule-view.js';
+import Model from './model.js';
+import PresetUtil from './preset-util.js';
+import HqpConfigModel from './hqp-config-model.js';
+import Util from './util.js';
 
-/**
- * Preset rules section of the upscaler settings view.
- */
 export default class HqpRulesView {
 
   $el;
-  thresholdRuleView;
-  abRuleView;
-  
-  $checkboxThreshold;
-  $checkboxAb;
-  checkboxes$;
+  $toggle;
+  $list;
+  $addBtn;
+  $defaultsBtn;
 
   constructor($el) {
     this.$el = $el;
-    this.$checkboxThreshold = this.$el.find('#ruleThresholdCheckbox');
-    this.$checkboxAb = this.$el.find('#ruleAbCheckbox');
-    this.checkboxes$ = [this.$checkboxThreshold, this.$checkboxAb];
+    this.$toggle = this.$el.find('#rulesEnableToggle');
+    this.$list = this.$el.find('#genreRulesList');
+    this.$addBtn = this.$el.find('#genreRuleAddBtn');
+    this.$defaultsBtn = this.$el.find('#genreRuleDefaultsBtn');
 
-    this.thresholdRuleView = new ThresholdRuleView(this.$el.find('#ruleThreshold'));
-    this.abRuleView = new AbRuleView(this.$el.find('#ruleAb'));
+    this.$toggle.on('change', this.onToggleChange);
+    this.$addBtn.on('click tap', this.onAddRule);
+    this.$defaultsBtn.on('click tap', this.onAddDefaults);
 
-    this.$checkboxThreshold.on('click tap', this.onCheckboxThreshold);
-    this.$checkboxAb.on('click tap', this.onCheckboxAb);
+    $(document).on('model-library-updated', this.render);
+    $(document).on('model-status-updated', this.render);
+    $(document).on('upscaling-data-updated', this.render);
 
-    this.selectCheckboxBySettingsValue(Settings.currentRule);
+    this.render();
   }
 
   onShow() { }
 
   onHide() { }
 
-  onCheckboxThreshold = () => {
-    const b = this.$checkboxThreshold.hasClass('isChecked');
-    this.selectCheckboxById(b ? '' : 'ruleThresholdCheckbox');
+  onToggleChange = () => {
+    Settings.enableRules = this.$toggle.prop('checked');
+    this.$list.toggleClass('isDisabled', !Settings.enableRules);
+    this.$addBtn.closest('.presetAddRow').toggleClass('isDisabled', !Settings.enableRules);
   };
 
-  onCheckboxAb = () => {
-    const b = this.$checkboxAb.hasClass('isChecked');
-    this.selectCheckboxById(b ? '' : 'ruleAbCheckbox');
-  };
-  
-  selectCheckboxById(id) {
-    let settingsValue = '';
-    for (const $item of this.checkboxes$) {
-      if ($item.attr('id') == id) {
-        $item.addClass('isChecked');
-        settingsValue = $item.attr('data-settings-value');
-      } else {
-        $item.removeClass('isChecked');
-      }
-    }
-    Settings.currentRule = settingsValue;
+  getGenreNames() {
+    return Model.library.genreNames || [];
   }
 
-  selectCheckboxBySettingsValue(value) {
-    for (const $item of this.checkboxes$) {
-      if ($item.attr('data-settings-value') == value) {
-        $item.addClass('isChecked')
-      } else {
-        $item.removeClass('isChecked');
+  getPresetNames(mode) {
+    const arr = Settings.getPresetsArray(mode);
+    return arr.map((p, i) => ({ name: p.name || 'Preset ' + (i + 1), index: i }));
+  }
+
+  getUsedGenres(excludeIndex) {
+    const rules = Settings.genreRules;
+    const used = new Set();
+    for (let i = 0; i < rules.length; i++) {
+      if (i !== excludeIndex && rules[i].genre) {
+        used.add(rules[i].genre);
       }
     }
+    return used;
   }
+
+  findMatchingPresetIndex(genre, presets) {
+    const g = genre.toLowerCase();
+    for (let i = 0; i < presets.length; i++) {
+      const pName = presets[i].name;
+      if (pName && g.includes(pName.toLowerCase())) {
+        return String(i);
+      }
+    }
+    return '0';
+  }
+
+  render = () => {
+    this.$toggle.prop('checked', Settings.enableRules);
+
+    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || 'PCM';
+    const genres = this.getGenreNames();
+    const presets = this.getPresetNames(mode);
+
+    // Auto-populate defaults if rules are empty and genres are available
+    if (Settings.genreRules.length === 0 && genres.length > 0) {
+      this.autoPopulateDefaults(genres, Settings.getPresetsArray(mode));
+    }
+
+    const rules = Settings.genreRules;
+    const usedGenres = this.getUsedGenres(-1);
+
+    let html = '';
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      html += this.buildRuleRow(i, rule, genres, presets, usedGenres);
+    }
+    this.$list.html(html);
+
+    this.$list.toggleClass('isDisabled', !Settings.enableRules);
+    this.$addBtn.closest('.presetAddRow').toggleClass('isDisabled', !Settings.enableRules);
+
+    this.$list.find('.genreRuleItem').each((i, el) => {
+      const $el = $(el);
+      const index = parseInt($el.attr('data-index'));
+      const $genreSelect = $el.find('.genreRuleGenreSelect');
+      const $presetSelect = $el.find('.genreRulePresetSelect');
+      const $deleteBtn = $el.find('.genreRuleDeleteBtn');
+
+      $genreSelect.on('change', () => {
+        Settings.genreRules[index].genre = $genreSelect.val();
+        Settings.commitGenreRules();
+        this.render();
+      });
+
+      $presetSelect.on('change', () => {
+        Settings.genreRules[index].presetIndex = $presetSelect.val();
+        Settings.commitGenreRules();
+      });
+
+      $deleteBtn.on('click tap', () => {
+        Settings.genreRules.splice(index, 1);
+        Settings.commitGenreRules();
+        this.render();
+      });
+    });
+  };
+
+  autoPopulateDefaults(genres, presetArray) {
+    const usedGenres = new Set();
+    for (const genre of genres) {
+      if (!usedGenres.has(genre)) {
+        const presetIndex = this.findMatchingPresetIndex(genre, presetArray);
+        Settings.genreRules.push({ genre: genre, presetIndex: presetIndex });
+        usedGenres.add(genre);
+      }
+    }
+    Settings.commitGenreRules();
+  }
+
+  buildRuleRow(index, rule, genres, presets, usedGenres) {
+    const genreOptions = genres.map(g => {
+      const disabled = usedGenres.has(g) && rule.genre !== g;
+      const selected = rule.genre === g ? 'selected' : '';
+      return `<option value="${Util.escapeHtml(g)}" ${selected} ${disabled ? 'disabled' : ''}>${Util.escapeHtml(g)}</option>`;
+    }).join('');
+
+    const presetOptions = presets.map(p => {
+      const selected = String(p.index) === String(rule.presetIndex) ? 'selected' : '';
+      return `<option value="${p.index}" ${selected}>${Util.escapeHtml(p.name)}</option>`;
+    }).join('');
+
+    return `
+      <div class="genreRuleItem" data-index="${index}">
+        <span class="genreRuleText">If playing genre is</span>
+        <select class="genreRuleGenreSelect">${genreOptions}</select>
+        <span class="genreRuleText">apply preset</span>
+        <select class="genreRulePresetSelect">${presetOptions}</select>
+        <button class="genreRuleDeleteBtn" title="Delete rule"></button>
+      </div>`;
+  }
+
+  onAddRule = () => {
+    const genres = this.getGenreNames();
+    const usedGenres = this.getUsedGenres(-1);
+    const available = genres.filter(g => !usedGenres.has(g));
+    if (available.length === 0) return;
+
+    Settings.genreRules.push({ genre: available[0], presetIndex: '0' });
+    Settings.commitGenreRules();
+    this.render();
+  };
+
+  onAddDefaults = () => {
+    const genres = this.getGenreNames();
+    const usedGenres = new Set(Settings.genreRules.map(r => r.genre).filter(Boolean));
+    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || 'PCM';
+    const presets = Settings.getPresetsArray(mode);
+
+    let added = 0;
+    for (const genre of genres) {
+      if (!usedGenres.has(genre)) {
+        const presetIndex = this.findMatchingPresetIndex(genre, presets);
+        Settings.genreRules.push({ genre: genre, presetIndex: presetIndex });
+        added++;
+      }
+    }
+    if (added > 0) {
+      Settings.commitGenreRules();
+      this.render();
+    }
+  };
 }

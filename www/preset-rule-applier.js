@@ -6,10 +6,8 @@ import Model from './model.js';
 import Commands from './commands.js';
 import Service from './service.js';
 import Statuser from './statuser.js';
+import AppUtil from './app-util.js';
 
-/**
- *
- */
 class PresetRuleApplier {
 
   abCounter = 0;
@@ -21,94 +19,49 @@ class PresetRuleApplier {
   noop() { }
 
   onNewTrackDetected() {
-    switch (Settings.currentRule) {
-      case 'threshold':
-        this.doThresholdIfNecessary();
-        break;
-      case 'ab':
-        this.doAb();
-        break;
-    }
-  };
-
-  doThresholdIfNecessary() {
-    if (!Settings.isThresholdRuleValid()) {
+    if (!Settings.enableRules) {
       return;
     }
-
-    const isSourcePCM = true; // todo
-    if (!isSourcePCM) {
+    const rule = this.findMatchingGenreRule();
+    if (!rule) {
       return;
     }
-
-    let trackRate = 0;
-    const metadata = Model.status.data['metadata'];
-    if (metadata) {
-      trackRate = parseInt(metadata['@_samplerate']);
-    }
-    if (!trackRate) {
-      cl(`warning bad track samplerate info, skipping`, metadata['@_samplerate']);
-      return;
-    }
-
-    const multiple = parseInt(Settings.thresholdRule.fs);
-    let value;
-    if (Settings.thresholdRule.leastMost == 'least') {
-      const thresholdRateLower = multiple * HqpConfigModel.PCM_MULTIPLE_A;
-      value = (trackRate >= thresholdRateLower)
-          ? Settings.thresholdRule.presetA
-          : Settings.thresholdRule.presetB;
-    } else { // 'at most'
-      const thresholdRateUpper = multiple * HqpConfigModel.PCM_MULTIPLE_B;
-      value = (trackRate <= thresholdRateUpper)
-          ? Settings.thresholdRule.presetA
-          : Settings.thresholdRule.presetB;
-    }
-    let preset = this.getPresetByOptionValue(value);
-    if (!preset) {
-      cl('preset invalid, skipping');
-      return;
-    }
-
-    PresetUtil.applyPresetAndResume(preset, Model.playlist.currentIndex + 1);
-  }
-
-  doAb() {
-    this.abCounter++;
-    const value = (this.abCounter % 2 == 0) ? Settings.abRule['a'] : Settings.abRule['b'];
-    const preset = this.getPresetByOptionValue(value);
-    if (!preset) {
+    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || 'PCM';
+    const arr = Settings.getPresetsArray(mode);
+    const presetIndex = parseInt(rule.presetIndex);
+    const preset = arr[presetIndex];
+    if (!preset || !PresetUtil.doesPresetHaveValues(preset)) {
       return;
     }
     PresetUtil.applyPresetAndResume(preset, Model.playlist.currentIndex + 1);
   }
 
-  getPresetByOptionValue(value) {
-    if (!value) {
-      cl('bad value');
-      return null;
+  findMatchingGenreRule() {
+    const albumGenres = this.getCurrentTrackGenres();
+    if (!albumGenres || albumGenres.length === 0) return null;
+
+    const rules = Settings.genreRules;
+    for (const rule of rules) {
+      if (rule.genre) {
+        const ruleGenre = rule.genre.toLowerCase();
+        for (const ag of albumGenres) {
+          if (ag === ruleGenre) {
+            return rule;
+          }
+        }
+      }
     }
-    let preset;
-    switch (value) {
-      case '1':
-        preset = Settings.presetsArray[0];
-        break;
-      case '2':
-        preset = Settings.presetsArray[1];
-        break;
-      case '3':
-        preset = Settings.presetsArray[2];
-        break;
-    }
-    if (!preset) {
-      cl('warning no preset');
-      return null;
-    }
-    if (!PresetUtil.doesPresetHaveValues(preset)) {
-      cl('warning preset missing values', preset);
-      return null;
-    }
-    return preset;
+    return null;
+  }
+
+  getCurrentTrackGenres() {
+    const metadata = Model.status.metadata;
+    if (!metadata || !metadata['@_hash']) return null;
+
+    const album = Model.library.getAlbumByTrackHash(metadata['@_hash']);
+    if (!album) return null;
+
+    return AppUtil.splitGenreString(album['@_genre']);
   }
 }
 

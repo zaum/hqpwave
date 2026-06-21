@@ -70,6 +70,10 @@ export default class LibraryVo {
     return this._hqPlaylistItems
   }
 
+  get genreNames() {
+    return this._genreNames || [];
+  }
+
   // @Nullable
   getAlbumByAlbumHash(hash) {
     if (!this._albumHashToAlbum) {  // lazy init

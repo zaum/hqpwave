@@ -3,6 +3,7 @@
  */
 import Model from './model.js';
 import Statuser from './statuser.js';
+import Values from './values.js';
 
 export default class SettingsInfoView {
 
@@ -10,12 +11,14 @@ export default class SettingsInfoView {
   $hqpVersion;
   $hqpConnection;
   $connectionLed;
+  $hqpIpAddress;
 
   constructor($el) {
     this.$el = $el;
     this.$hqpVersion = this.$el.find("#hqpVersion");
     this.$hqpConnection = this.$el.find("#hqpConnection");
     this.$connectionLed = this.$el.find("#connectionLed");
+    this.$hqpIpAddress = this.$el.find("#hqpIpAddress");
   }
 
   update() {
@@ -39,6 +42,11 @@ export default class SettingsInfoView {
     
     // Update connection LED
     this.updateConnectionStatus();
+
+    // Update IP address
+    if (this.$hqpIpAddress) {
+      this.$hqpIpAddress.text(Values.hqplayerIp || '');
+    }
   }
   
   updateConnectionStatus() {

@@ -605,14 +605,10 @@
               <div class="settings-card-row">
                 <div class="row-label">Mode</div>
                 <div class="row-right">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="modeToggle" class="mode-toggle-input">
-                    <div class="toggle-track"></div>
-                    <div class="toggle-thumb"></div>
-                  </label>
-                  <div class="mode-labels">
-                    <span class="mode-label-pcm">PCM</span>
-                    <span class="mode-label-dsd">DSD</span>
+                  <div class="mode-switcher" id="modeSwitcher">
+                    <span class="mode-btn" data-mode="source">source</span>
+                    <span class="mode-btn" data-mode="PCM">PCM</span>
+                    <span class="mode-btn" data-mode="DSD">DSD</span>
                   </div>
                 </div>
               </div>
@@ -643,97 +639,30 @@
 
           <div class="settings-section">
             <div class="settings-label">Presets</div>
-            <div class="settings-card">
-              <div class="settings-card-row" id="hqpPresetsView">
-                <div class="savePresets">
-                  <div class="presetLabel">Save to preset</div>
-                  <div class="savePresetLine">
-                    <span id="savePreset1" class="textButton">1</span>
-                    <span id="savePreset2" class="textButton">2</span>
-                    <span id="savePreset3" class="textButton">3</span>
-                  </div>
-                </div>
-                <div class="loadPresets">
-                  <div class="presetLabel">Apply preset</div>
-                  <div class="loadPresetLine">
-                    <div id="loadPreset1" class="textButton loadPresetButton">1</div>
-                    <div id="loadPreset1Text" class="loadPresetLabel"></div>
-                  </div>
-                  <div class="loadPresetLine">
-                    <div id="loadPreset2" class="textButton loadPresetButton">2</div>
-                    <div id="loadPreset2Text" class="loadPresetLabel"></div>
-                  </div>
-                  <div class="loadPresetLine">
-                    <div id="loadPreset3" class="textButton loadPresetButton">3</div>
-                    <div id="loadPreset3Text" class="loadPresetLabel"></div>
-                  </div>
-                </div>
+            <div class="settings-card" id="hqpPresetsView">
+              <div class="hqpPresetsList" id="hqpPresetsList"></div>
+              <div class="presetAddRow">
+                <div class="presetFooterBtn presetAddBtn" id="presetAddBtn"><span class="iconPlus2"></span>Add preset</div>
+                <div class="presetFooterBtn presetDefaultsBtn" id="presetDefaultsBtn">Add defaults</div>
               </div>
             </div>
           </div>
 
           <div class="settings-section">
-            <div class="settings-label">Experimental</div>
+            <div class="settings-label">Rules</div>
             <div class="settings-card" id="hqpPresetRulesView">
-              <div class="hqpPresetRulesInner">
-                <div id="ruleThreshold" class="ruleItem">
-                  <div id="ruleThresholdCheckbox" class="checkbox ruleCheckbox" data-settings-value="threshold"></div>
-                  <div class="ruleItemInner">
-                    <div class="ruleLine">If PCM source samplerate is</div>
-                    <div class="ruleLine">
-                      <select name="ruleThresholdLeastMostSelect" id="ruleThresholdLeastMostSelect">
-                        <option value="least">at least</option>
-                        <option value="most">at most</option>
-                      </select>
-                      <select name="ruleThresholdFs" id="ruleThresholdFs"></select>
-                      <span>,</span>
-                    </div>
-                    <div class="ruleLine">
-                      <span>then apply preset</span>
-                      <select name="ruleThresholdPresetA" id="ruleThresholdPresetA">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                      </select>
-                      <span>.</span>
-                    </div>
-                    <div class="ruleLine">
-                      <span>Else, apply preset</span>
-                      <select name="ruleThresholdPresetB" id="ruleThresholdPresetB">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                      </select>
-                      <span>.</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div id="ruleAb" class="ruleItem">
-                  <div id="ruleAbCheckbox" class="checkbox ruleCheckbox" data-settings-value="ab"></div>
-                  <div class="ruleItemInner">
-                    <div class="ruleLine">
-                      <span>Alternate between presets</span>
-                      <select name="ruleAbPresetA" id="ruleAbPresetA">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                      </select>
-                      <span>and</span>
-                      <select name="ruleAbPresetB" id="ruleAbPresetB">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                      </select>
-                    </div>
-                    <div class="ruleLine ruleLineSmall">
-                      <span>whenever a track is played or changed.</span>
-                    </div>
-                    <div class="ruleLine ruleLineSmall">
-                      <span>(Useful for A/B testing filters)</span>
-                    </div>
-                  </div>
-                </div>
+              <div class="ruleToggleRow">
+                <span class="ruleToggleLabel">Enable rules</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="rulesEnableToggle">
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+              <div class="genreRulesList" id="genreRulesList"></div>
+              <div class="presetAddRow">
+                <div class="presetFooterBtn presetAddBtn" id="genreRuleAddBtn"><span class="iconPlus2"></span>Add rule</div>
+                <div class="presetFooterBtn presetDefaultsBtn" id="genreRuleDefaultsBtn">Add defaults</div>
               </div>
             </div>
           </div>
@@ -1017,6 +946,7 @@
               <div class="connection-led" id="connectionLed"></div>
               <div class="hqp-name" id="hqpVersion">HQPlayer Desktop</div>
               <div class="hqp-version" id="hqpConnection">Connected</div>
+              <div class="hqp-ip-address" id="hqpIpAddress"></div>
               <a href="https://signalyst.com" class="hqp-link" id="hqpLink">signalyst.com ↗</a>
             </div>
           </div>

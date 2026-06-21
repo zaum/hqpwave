@@ -6,6 +6,7 @@ import Service from './service.js';
 import Statuser from './statuser.js';
 import ToastView from './toast-view.js';
 import ViewUtil from './view-util.js';
+import Settings from './settings.js';
 
 /**
  *
@@ -28,7 +29,7 @@ class PresetUtil {
   }
 
    isPresetSameAsStatus(preset) {
-    if (preset['mode'] !== Model.status.data['@_active_mode']) {
+    if (preset['mode'] !== HqpConfigModel.normalizeMode(Model.status.data['@_active_mode'])) {
       return false;
     }
     if (preset['filter'] !== Model.status.data['@_active_filter']) {
@@ -123,7 +124,7 @@ class PresetUtil {
     };
 
     // Set mode and then get filter/shaper data as needed
-    if (preset['mode'] == Model.status.data['@_active_mode']) {
+    if (preset['mode'] == HqpConfigModel.normalizeMode(Model.status.data['@_active_mode'])) {
       didSetMode = false;
       step2();
     } else {
@@ -157,6 +158,20 @@ class PresetUtil {
     Service.queueCommandsFront([
       { xml: filterXml},
       { xml: shapingXml, callback: () => callback(true) } ]); // <-- done
+  }
+
+  /**
+   * Populates a <select> element with options for each preset
+   * @param $select jQuery-wrapped <select> element
+   */
+  populateSelect($select, mode) {
+    $select.empty();
+    const arr = Settings.getPresetsArray(mode);
+    for (let i = 0; i < arr.length; i++) {
+      const p = arr[i];
+      const name = (p && p.name) ? p.name : 'Preset ' + (i + 1);
+      $select.append(`<option value="${i}">${Util.escapeHtml(name)}</option>`);
+    }
   }
 
   toString(preset) {
