@@ -6,6 +6,7 @@ applyTo: "**"
 
 # UI
 
+- mobile view means below 768px
 - use mobile first breakpoints, do not add more breakpoints, use only the existing breakpoints: 480, 768, 1024, 1600px
 - if you find different breakpoints convert it to the allowed values
 - do not add inline styles
@@ -18,6 +19,6 @@ applyTo: "**"
 
 - always use english in code
 
-"The terminal is awaiting input" - ez csak egy kilépési opció, figyelmen kívül hagyhatod, haladj tovább
+"The terminal is awaiting input" is just an exit option, you can ignore it and proceed
 
-ha elolvastad mindig ird meg a chat-be
+let me know when you've read the file

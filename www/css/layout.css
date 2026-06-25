@@ -27,9 +27,11 @@
 }
 
 @media (min-width: 768px) {
+
   .music-playing.isPlaying~.pb-cover::before {
     animation: none;
   }
+
 }
 
 /* (Search row styles were used by an older layout; keep the selector around
@@ -75,6 +77,7 @@
 }
 
 @media (min-width: 768px) {
+
   #page {
     grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
     grid-template-areas:
@@ -82,12 +85,15 @@
       "sidebar main"
       "playbar playbar";
   }
+
 }
 
 @media (min-width: 1024px) {
+
   #page {
     grid-template-rows: 80px 1fr 70px;
   }
+
 }
 
 
@@ -154,9 +160,11 @@
   transition: color 0.15s, background 0.15s;
 }
 
+@media (min-width: 769px) {
 .search-toggle-btn:hover {
   color: var(--text);
   background: var(--raised);
+}
 }
 
 .search-toggle-btn.active {
@@ -197,7 +205,6 @@
     visibility: hidden;
     padding: 0;
     margin: 0;
-    transition: max-height 200ms ease, opacity 200ms ease, visibility 0s linear 200ms;
   }
 
   /* Show when search-open class is on topbar */
@@ -206,9 +213,8 @@
     opacity: 1;
     visibility: visible;
     overflow: visible;
-    padding: 4px 0;
+    padding: 0 0 10px 0;
     margin: 0;
-    transition: max-height 200ms ease, opacity 200ms ease, visibility 0s linear 0s;
   }
 
   #topBar.search-open .search-wrap .search-input {
@@ -262,9 +268,11 @@
     fill: currentColor;
   }
 
+  @media (min-width: 769px) {
   .sort-icons-right .sort-icon:hover {
     color: var(--text);
     background: var(--raised);
+  }
   }
 
   .sort-icons-right .sort-icon.active {
@@ -274,6 +282,7 @@
 }
 
 @media (max-width: 767px) {
+
   .sort-icons-right .sort-icon {
     width: 26px;
     height: 26px;
@@ -283,6 +292,7 @@
     width: 16px;
     height: 16px;
   }
+
 }
 
 #topBar>.topbar-right {
@@ -309,8 +319,10 @@
   background: transparent;
 }
 
+@media (min-width: 769px) {
 #topBarButtons .iconButton:hover {
   background: var(--raised);
+}
 }
 
 /* Mobile topbar (default) */
@@ -321,7 +333,7 @@
   z-index: 300;
   height: auto;
   min-height: 0;
-  padding: 0px 20px 2px;
+    padding: 0px 20px 2px;
   border-bottom: none;
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -329,7 +341,7 @@
     "brand brand right"
     ". searchRow searchRow"
     "nav nav nav";
-  row-gap: 6px;
+  row-gap: 0;
   column-gap: 6px;
   transition: transform 150ms ease;
   will-change: transform;
@@ -352,6 +364,8 @@
   display: flex;
   align-items: center;
   gap: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 #topBar>.topbar-right {
@@ -425,6 +439,7 @@
 }
 
 @media (max-width: 767px) {
+
   #topBar {
     grid-template-areas:
       "brand brand right"
@@ -456,6 +471,7 @@
     box-sizing: border-box;
     text-align: center;
   }
+
 }
 
 /* Let the page grid allocate space (topbar auto, main 1fr, playbar fixed).
@@ -472,7 +488,7 @@
     grid-template-areas:
       "brand nav right"
       "searchRow searchRow searchRow";
-    row-gap: 16px;
+    row-gap: 8px;
     column-gap: 24px;
     height: auto;
     min-height: 100px;
@@ -543,6 +559,7 @@
 }
 
 @media (min-width: 1024px) {
+
   #topBar {
     grid-template-columns: calc(var(--sidebar-expanded) - 28px) auto 1fr auto;
     grid-template-areas: "brand nav searchRow right";
@@ -565,6 +582,7 @@
     max-width: 420px;
     justify-self: end;
   }
+
 }
 
 /* 1024-1600px: move nav left to make room for sort icons */
@@ -646,9 +664,11 @@
   white-space: nowrap;
 }
 
+@media (min-width: 769px) {
 .nav-pill:hover {
   color: var(--text-2);
   background: rgba(255, 255, 255, 0.04);
+}
 }
 
 
@@ -661,8 +681,10 @@
   opacity: 1 !important;
 }
 
+@media (min-width: 769px) {
 .lightTheme .nav-pill:hover:not(.isDisabled) {
   background: rgba(0, 0, 0, 0.04);
+}
 }
 
 .nav-pill.active {
@@ -732,9 +754,11 @@
   opacity: 0.7 !important;
 }
 
+@media (min-width: 769px) {
 /* Match hover background used by settings button */
 #hqpSettingsButton:hover {
   background-color: var(--raised) !important;
+}
 }
 
 #hqpSettingsButton.active:before {
@@ -742,8 +766,10 @@
   opacity: 1 !important;
 }
 
+@media (min-width: 769px) {
 #settingsButton:hover {
   background-color: var(--raised) !important;
+}
 }
 
 /* Acute kiemelés settings/hqpSettings gombokra */
@@ -858,8 +884,10 @@
   /* stable width: no layout jump */
 }
 
+@media (min-width: 769px) {
 .sidebar-scroll:hover::-webkit-scrollbar {
   width: var(--scrollbar-width);
+}
 }
 
 .sidebar-scroll::-webkit-scrollbar-track {
@@ -875,22 +903,30 @@
   background: var(--scrollbar-thumb);
 }
 
+@media (min-width: 769px) {
 .sidebar-scroll:hover {
   scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
   /* Firefox */
 }
+}
 
+@media (min-width: 769px) {
 .lightTheme .sidebar-scroll:hover {
   scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
   /* Firefox */
 }
+}
 
+@media (min-width: 769px) {
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb-hover);
 }
+}
 
+@media (min-width: 769px) {
 .lightTheme .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb-hover);
+}
 }
 
 
@@ -966,6 +1002,7 @@
 }
 
 @media (min-width: 768px) {
+
   #sidebar {
     border-right: 1px solid var(--border);
     position: relative;
@@ -1037,6 +1074,7 @@
   #sidebarToggle.isMobileToggle::before {
     display: block;
   }
+
 }
 
 .sidebar-section {
@@ -1079,9 +1117,11 @@
   stroke: var(--accent);
 }
 
+@media (min-width: 769px) {
 .sidebar-reset:hover {
   opacity: 1;
   color: var(--text);
+}
 }
 
 .sidebar-reset svg {
@@ -1129,8 +1169,10 @@
   visibility: visible;
 }
 
+@media (min-width: 769px) {
 .sidebar-label-reset:hover {
   opacity: 1;
+}
 }
 
 .sidebar-label-reset svg {
@@ -1152,8 +1194,10 @@
   letter-spacing: 0.01em;
 }
 
+@media (min-width: 769px) {
 .sidebar-item:hover {
   color: var(--text);
+}
 }
 
 .sidebar-item.active {
@@ -1224,9 +1268,11 @@
   min-width: calc(50% - 3px);
 }
 
+@media (min-width: 769px) {
 .fchip:hover {
   border-color: var(--border-hi);
   color: var(--text-2);
+}
 }
 
 .fchip.active {
@@ -1253,8 +1299,10 @@
   letter-spacing: 0.01em;
 }
 
+@media (min-width: 769px) {
 .genre-item:hover {
   color: var(--text);
+}
 }
 
 .genre-item.active {
@@ -1296,8 +1344,10 @@
   letter-spacing: 0.01em;
 }
 
+@media (min-width: 769px) {
 .label-item:hover {
   color: var(--text);
+}
 }
 
 .label-item.active {
@@ -1345,12 +1395,16 @@
   color: var(--text-2);
 }
 
+@media (min-width: 769px) {
 .period-item:hover {
   color: var(--text);
 }
+}
 
+@media (min-width: 769px) {
 .period-item:hover .period-name {
   color: var(--text);
+}
 }
 
 .period-item.active {
@@ -1481,9 +1535,11 @@
   will-change: opacity, transform;
 }
 
+@media (min-width: 769px) {
 .pb-cover:hover {
   opacity: 0.85;
   border-color: var(--border-hi);
+}
 }
 
 .pb-cover img {
@@ -1519,8 +1575,10 @@
   width: 120px;
 }
 
+@media (min-width: 769px) {
 #playingText:hover {
   opacity: 0.8;
+}
 }
 
 #playingText .playingArtist {
@@ -1543,9 +1601,11 @@
 }
 
 @media (min-width: 480px) {
+
   #playingText {
     width: auto;
   }
+
 }
 
 #playbarSystemMessage {
@@ -1574,9 +1634,11 @@
 }
 
 @media (max-width: 767px) {
+
   #playbarSystemMessage {
     max-width: calc(50vw - 100px);
   }
+
 }
 
 
@@ -1605,14 +1667,18 @@
   transition: all 0.15s ease;
 }
 
+@media (min-width: 769px) {
 #transportButtons .iconButton:hover {
   background: var(--raised);
   transform: scale(1.05);
 }
+}
 
+@media (min-width: 769px) {
 #transportButtons .iconButton:hover:before {
   opacity: 1 !important;
   filter: brightness(1.2);
+}
 }
 
 #playButton {
@@ -1737,6 +1803,7 @@
 }
 
 @media (min-width: 768px) {
+
   #playButton {
     margin-right: 4px;
     width: 36px;
@@ -1755,6 +1822,7 @@
   #transportButtons {
     gap: 4px;
   }
+
 }
 
 #playButton:before {
@@ -1794,17 +1862,21 @@
   opacity: 0.5;
 }
 
+@media (min-width: 769px) {
 #playButton:hover {
   background: var(--accent);
   transform: translate(-50%, -50%);
   outline: none;
   box-shadow: none;
 }
+}
 
+@media (min-width: 769px) {
 /* Ensure transport hover scale doesn't shift the centered play button: keep translate and add scale */
 #transportButtons .iconButton#playButton:hover,
 #playButton:hover {
   transform: translate(-50%, -50%) scale(1.05);
+}
 }
 
 /* On 480px and below: playButton retains circular layout (already default) */
@@ -1869,16 +1941,20 @@
   transition: all 0.15s ease;
 }
 
+@media (min-width: 769px) {
 #seekBackwardButton:hover,
 #seekForwardButton:hover {
   background: var(--raised);
   transform: scale(1.05);
 }
+}
 
+@media (min-width: 769px) {
 #seekBackwardButton:hover:before,
 #seekForwardButton:hover:before {
   opacity: 1 !important;
   filter: brightness(1.2);
+}
 }
 
 /* Hide 15s seek buttons on narrower views (below 1024px) */
@@ -2027,6 +2103,7 @@
 
 @media (min-width: 768px) {
 
+
   .playingTrackCurrentTime:not(.mobile-time-display),
   #playingTrackLength {
     display: block !important;
@@ -2040,6 +2117,7 @@
   .mobile-time-display {
     display: none !important;
   }
+
 }
 
 
@@ -2055,9 +2133,11 @@
 }
 
 @media (min-width: 768px) {
+
   #playProgressView {
     display: flex !important;
   }
+
 }
 
 
@@ -2104,11 +2184,13 @@
   z-index: 2;
 }
 
+@media (min-width: 769px) {
 #playProgressView:hover #playProgressThumb::after,
 #playProgressInner:hover #playProgressThumb::after,
 #playProgressThumb.isDragging::after {
   opacity: 1;
   transform: translateY(-50%) scale(1);
+}
 }
 
 #playProgressThumb.isAnimating {
@@ -2116,6 +2198,7 @@
 }
 
 @media (min-width: 480px) {
+
   #playProgressThumb {
     transition: width 0s linear;
   }
@@ -2123,6 +2206,7 @@
   #playProgressThumb.isAnimating {
     transition: width 1s linear;
   }
+
 }
 
 .isStopped #playProgressThumb {
@@ -2228,10 +2312,12 @@
   z-index: 20;
 }
 
+@media (min-width: 769px) {
 .volume-inline-track:hover .volume-inline-thumb::after,
 .volume-inline-thumb.isDragging::after {
   opacity: 1;
   transform: translateY(-50%) scale(1);
+}
 }
 
 /* <=1024px: when the *popup* (vertical) volume control is open, place the dot at the
@@ -2245,9 +2331,11 @@
     transform: translate(-50%, -50%) scale(0.9);
   }
 
+  @media (min-width: 769px) {
   #playbarView.isVolumePopupOpen #volumeInlineTrack:hover #volumeInlineThumb::after,
   #playbarView.isVolumePopupOpen #volumeInlineThumb.isDragging::after {
     transform: translate(-50%, -50%) scale(1);
+  }
   }
 }
 
@@ -2322,6 +2410,7 @@
 }
 
 @media (min-width: 1024px) {
+
   #playbarView .pb-right {
     position: static;
     padding-left: 0;
@@ -2372,6 +2461,7 @@
     text-align: right;
     font-size: 10px;
   }
+
 }
 
 .format-badge {
@@ -2443,9 +2533,11 @@
 }
 
 @media (min-width: 768px) {
+
   #musicPlaying {
     display: flex;
   }
+
 }
 
 #toast {
@@ -2580,19 +2672,23 @@
 }
 
 @media (min-width: 768px) {
+
   #playbarView {
     --system-message-side-margin: 48px;
     --system-message-side-gap: 96px;
     --transport-half-width: 66px;
   }
+
 }
 
 @media (min-width: 1024px) {
+
   #playbarView {
     --system-message-side-margin: 96px;
     --system-message-side-gap: 192px;
     --transport-half-width: 84px;
   }
+
 }
 
 #fullOverlayScreen {
@@ -2643,13 +2739,17 @@
   transition: opacity 180ms ease;
 }
 
+@media (min-width: 769px) {
 .fullOverlayArrow:hover {
   opacity: 1;
   color: var(--text);
 }
+}
 
+@media (min-width: 769px) {
 .fullOverlayArrow:hover::before {
   opacity: 0.28;
+}
 }
 
 .fullOverlayArrow.isDisabled {
@@ -2692,15 +2792,19 @@
 }
 
 @media (min-width: 480px) {
+
   #breakpointIndicator {
     width: 2px;
   }
+
 }
 
 @media (min-width: 768px) {
+
   #breakpointIndicator {
     width: 1px;
   }
+
 }
 
 #debug {

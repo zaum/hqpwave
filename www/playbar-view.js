@@ -41,6 +41,7 @@ export default class PlaybarView {
   ratio;
   isVolumePanelShowing = false;
   _coverUrl = '';
+  _lastTrackUri = '';
   isTransportFadeRunning = false;
   transportFadeUnlockTimeoutId = null;
   transportFadeStepTimeoutId = null;
@@ -757,6 +758,12 @@ export default class PlaybarView {
   }
 
   _updateCoverArt() {
+    const currentUri = Model.status.metadata['@_uri'] || '';
+    if (currentUri && currentUri === this._lastTrackUri) {
+      return;
+    }
+    this._lastTrackUri = currentUri;
+
     const album = this._getCurrentAlbum();
     if (!album) {
       if (this._coverUrl) {

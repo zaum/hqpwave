@@ -41,6 +41,7 @@
   font-size: 12px;
 }
 
+  @media (min-width: 769px) {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
@@ -110,11 +111,13 @@
     opacity: 0;
     transform: translateY(10px);
   }
+  }
 
   to {
     opacity: 1;
     transform: translateY(0);
   }
+@media (min-width: 769px) {
 }
 
 
@@ -182,7 +185,9 @@
 
 @keyframes pulse-accent-text {
   0%, 100% { color: var(--text-2); }
+}
   50% { color: var(--accent); }
+@media (min-width: 769px) {
 }
 
 .settings-card-row .row-label.pulse {
@@ -1357,6 +1362,7 @@
     padding-left: 20px;
     padding-right: 20px;
   }
+}
 
   #settingsProjectAnchor {
     padding-left: 20px;

@@ -40,9 +40,11 @@
   position: relative;
 }
 
+@media (min-width: 769px) {
 .dropdownItem:hover {
   color: var(--text);
   background: rgba(255,255,255,0.04);
+}
 }
 
 .dropdownItem.isSelected {
@@ -98,9 +100,11 @@
   transition: all 0.15s;
 }
 
+@media (min-width: 769px) {
 .contextItem:hover {
   color: var(--text);
   background: rgba(255,255,255,0.04);
+}
 }
 
 .contextItem:first-child {
@@ -210,9 +214,11 @@
   transition: all 0.15s;
 }
 
+@media (min-width: 769px) {
 .pill:hover {
   border-color: var(--border-hi);
   color: var(--text-2);
+}
 }
 
 .pill.active {
@@ -237,9 +243,11 @@
   transition: all 0.15s;
 }
 
+@media (min-width: 769px) {
 .chip:hover {
   border-color: var(--border-md);
   color: var(--text);
+}
 }
 
 .chip.active {

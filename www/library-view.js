@@ -144,7 +144,8 @@ export default class LibraryView extends Subview {
 
     // Search toggle button - show/hide search row
     if (this.$searchToggleBtn.length > 0) {
-      this.$searchToggleBtn.on('click', () => {
+      this.$searchToggleBtn.on('click', (e) => {
+        e.stopPropagation();
         const $topBar = $('#topBar');
         const isOpen = $topBar.hasClass('search-open');
         if (isOpen) {
@@ -156,7 +157,7 @@ export default class LibraryView extends Subview {
           this.$searchToggleBtn.toggleClass('active', this.$globalSearchInput.val().trim().length > 0);
           // Small delay for the transition to start, then focus
           setTimeout(() => {
-            this.$globalSearchInput.focus();
+            this.$globalSearchInput[0]?.focus({ preventScroll: true });
           }, 100);
         }
       });
@@ -759,12 +760,26 @@ export default class LibraryView extends Subview {
     const albumName = normalizeText(album['@_album']);
     const genre = normalizeText(album['@_genre']);
     const label = normalizeText(album['@_label']);
+    const performer = normalizeText(album['@_performer']);
+    const composer = normalizeText(album['@_composer']);
 
     if (artist.includes(searchValue) ||
       albumName.includes(searchValue) ||
       genre.includes(searchValue) ||
-      label.includes(searchValue)) {
+      label.includes(searchValue) ||
+      performer.includes(searchValue) ||
+      composer.includes(searchValue)) {
       return true;
+    }
+
+    // Check labels array
+    const labels = album['labels'];
+    if (labels && labels.length > 0) {
+      for (const lbl of labels) {
+        if (normalizeText(lbl).includes(searchValue)) {
+          return true;
+        }
+      }
     }
 
     // Check year with range support

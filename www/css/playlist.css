@@ -90,6 +90,7 @@
 }
 
 @media (min-width: 768px) {
+
   #playlistMainView {
     padding: 0 48px 80px !important;
     align-items: center !important;
@@ -151,6 +152,7 @@
   #playlistView .trackItemDurationCol {
     display: unset !important;
   }
+
 }
 
 #playlistMainView .viewHeader {
@@ -419,8 +421,10 @@
   pointer-events: none;
 }
 
+@media (min-width: 769px) {
 .trackItem:hover {
   background: rgba(255, 255, 255, 0.04);
+}
 }
 
 .trackItem.selected,
@@ -443,12 +447,16 @@
   height: 20px;
 }
 
+@media (min-width: 769px) {
 .trackItem:hover .dragHandleButton {
   opacity: 1;
 }
+}
 
+@media (min-width: 769px) {
 .trackItem .dragHandleButton:hover {
   opacity: 1;
+}
 }
 
 .trackItem .left span,
@@ -538,8 +546,10 @@
   opacity: 0.6;
 }
 
+@media (min-width: 769px) {
 .trackItemMeta .favoriteButton:hover {
   opacity: 1;
+}
 }
 
 .trackItemMeta .favoriteButton.isSelected {
@@ -565,12 +575,16 @@
   background-size: 18px 18px;
 }
 
+@media (min-width: 769px) {
 .trackItem:hover .right .deleteButton {
   opacity: 0.85;
 }
+}
 
+@media (min-width: 769px) {
 .trackItem .right .deleteButton:hover {
   opacity: 1;
+}
 }
 
 /* Album header in playlist */
@@ -680,8 +694,10 @@
   gap: 12px;
 }
 
+@media (min-width: 769px) {
 .playlistItem:hover {
   background: rgba(255, 255, 255, 0.02);
+}
 }
 
 .playlistItem.isPlaying {
@@ -698,12 +714,16 @@
   cursor: grab;
 }
 
+@media (min-width: 769px) {
 .playlistItem:hover .dragHandleButton {
   opacity: 1;
 }
+}
 
+@media (min-width: 769px) {
 .playlistItem .dragHandleButton:hover {
   opacity: 1;
+}
 }
 
 .playlistItemNum {
@@ -735,8 +755,10 @@
   opacity: 0;
 }
 
+@media (min-width: 769px) {
 .playlistItem:hover .moreButton {
   opacity: 1;
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -801,8 +823,10 @@
   gap: 12px;
 }
 
+@media (min-width: 769px) {
 .historyItem:hover {
   background: rgba(255, 255, 255, 0.02);
+}
 }
 
 .historyItemInfo {
@@ -1033,8 +1057,10 @@
   gap: 12px;
 }
 
+@media (min-width: 769px) {
 .loadItem:hover {
   background: rgba(255, 255, 255, 0.02);
+}
 }
 
 .loadItem .loadItemName {
@@ -1072,6 +1098,7 @@
 }
 
 @media (max-width: 768px) {
+
   #historyView .viewHeader,
   #loadPlaylistView .viewHeader {
     padding-left: 20px;
@@ -1084,4 +1111,5 @@
     padding-left: 20px;
     padding-right: 20px;
   }
+
 }

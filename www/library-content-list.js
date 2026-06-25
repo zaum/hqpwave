@@ -328,7 +328,6 @@ export default class LibraryContentList {
     const formatHtml = formatParts.length ? formatParts.join('<span class="libraryStatsDot" aria-hidden="true">•</span>') : '';
 
     const dateHtml = date ? `<div class="libraryItemYear">${date}</div>` : '';
-    const formatRuleHtml = formatHtml ? '<div class="libraryItemMetaRule" aria-hidden="true"></div>' : '';
     const dateAndFormatHtml = formatHtml ? `<div class="libraryItemText3">${formatHtml}</div>` : '';
     const hasLibraryMeta = !!(date || formatHtml);
 
@@ -344,10 +343,9 @@ export default class LibraryContentList {
                </div>`;
     s += `<div class="libraryItemTexts">
                   <div class="libraryItemFavorite" title="Toggle Favorite" role="button" aria-label="Toggle Favorite"></div>
-                  ${dateHtml}
                   <div class="libraryItemText1">${artist}</div>
                   <div class="libraryItemText2">${albumText}</div>
-                  ${formatRuleHtml}
+                  ${dateHtml}
                   ${dateAndFormatHtml}
                 </div>`;
     s += `</div>`;

@@ -412,7 +412,10 @@ hide() {
       if (hasLabels) {
         const $line = $('<div class="albumPerformerLine"></div>');
         $line.append($('<span class="metaCaption"></span>').text('Record label'));
-        const $value = $('<span class="metaValue"></span>').text(labels.join(', '));
+        const $value = $('<span class="metaValue"></span>');
+        for (const label of labels) {
+          $value.append(this.makeCreditButton(label, 'label'));
+        }
         $line.append($value);
         $performerBlock.append($line);
       }
@@ -423,12 +426,53 @@ hide() {
     this.updateHighlightedTrack();
   }
 
+  getCreditMatchCount(value, type) {
+    const albums = (Model && Model.library && Array.isArray(Model.library.albums)) ? Model.library.albums : [];
+    const searchVal = value.toLowerCase();
+    let count = 0;
+    for (const album of albums) {
+      let values;
+      if (type === 'performer') {
+        values = splitAlbumCreditItems(album['@_performer']);
+      } else if (type === 'composer') {
+        values = splitAlbumCreditItems(album['@_composer']);
+      } else if (type === 'label') {
+        values = album['labels'] || [];
+      }
+      if (values) {
+        for (const v of values) {
+          if (v.toLowerCase() === searchVal) {
+            count++;
+            if (count > 1) return count;
+            break;
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  makeCreditButton(value, type) {
+    const clickable = this.getCreditMatchCount(value, type) > 1;
+    if (!clickable) {
+      return $('<span class="creditText"></span>').text(value);
+    }
+    const $btn = $('<button type="button" class="creditButton"></button>');
+    $btn.text(value);
+    $btn.attr('data-value', value);
+    $btn.on('click tap', () => {
+      $(document).trigger('album-credit-button', { value, type });
+    });
+    return $btn;
+  }
+
   appendAlbumCreditBlock($holder, label, value) {
     const items = splitAlbumCreditItems(value);
     if (!items.length) {
       return;
     }
 
+    const type = label === 'Performed by' ? 'performer' : 'composer';
     const $line = $('<div class="albumPerformerLine"></div>');
     $line.append($('<span class="metaCaption"></span>').text(label));
     const $value = $('<span class="metaValue"></span>');
@@ -438,7 +482,9 @@ hide() {
       const musician = match ? match[1].trim() : item;
       const role = match ? match[2].trim() : '';
       const $item = $('<span class="albumPerformerValueItem"></span>');
-      $item.append($('<span class="albumPerformerMusician"></span>').text(musician));
+      const $musician = $('<span class="albumPerformerMusician"></span>');
+      $musician.append(this.makeCreditButton(musician, type));
+      $item.append($musician);
       $item.append($('<span class="albumPerformerRole"></span>').text(role));
       $value.append($item);
     }
@@ -503,13 +549,13 @@ hide() {
     if (performer) {
       $performer.empty();
       $performer.append($('<span class="metaCaption">Performed by </span>'));
-      $performer.append($('<span class="metaValue"></span>').html(Util.formatMetaHtml(this.album['@_performer'])));
-      ViewUtil.setDisplayed($performer, true);
-      if ($performer[0].scrollHeight > $performer[0].clientHeight) {
-        $performer.addClass('pseudoEllipse');
-      } else {
-        $performer.removeClass('pseudoEllipse');
+      const $value = $('<span class="metaValue"></span>');
+      const performerItems = splitAlbumCreditItems(performer);
+      for (const item of performerItems) {
+        $value.append(this.makeCreditButton(item, 'performer'));
       }
+      $performer.append($value);
+      ViewUtil.setDisplayed($performer, true);
     } else {
       $performer.text('');
       ViewUtil.setDisplayed($performer, false);
@@ -520,13 +566,13 @@ hide() {
     if (composer) {
       $composer.empty();
       $composer.append($('<span class="metaCaption">Composed by </span>'));
-      $composer.append($('<span class="metaValue"></span>').html(Util.formatMetaHtml(this.album['@_composer'])));
-      ViewUtil.setDisplayed($composer, true);
-      if ($composer[0].scrollHeight > $composer[0].clientHeight) {
-        $composer.addClass('pseudoEllipse');
-      } else {
-        $composer.removeClass('pseudoEllipse');
+      const $value = $('<span class="metaValue"></span>');
+      const composerItems = splitAlbumCreditItems(composer);
+      for (const item of composerItems) {
+        $value.append(this.makeCreditButton(item, 'composer'));
       }
+      $composer.append($value);
+      ViewUtil.setDisplayed($composer, true);
     } else {
       $composer.text('');
       ViewUtil.setDisplayed($composer, false);
@@ -637,6 +683,7 @@ hide() {
       }
 
       this.$similarBlock.toggleClass('isAfterRelated', hasArtistAlbums);
+      this.$similarBlock.removeClass('cover-bg-extend');
       this.$similarList.empty();
       this._similarAlbums = this.getSimilarAlbums(16);
       const matches = this._similarAlbums;
@@ -683,8 +730,11 @@ hide() {
     });
     const lum = 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
     $block
-      .removeClass('cover-is-light cover-is-dark')
+      .removeClass('cover-is-light cover-is-dark cover-bg-extend')
       .addClass(lum > 0.4 ? 'cover-is-light' : 'cover-is-dark');
+    if ($block.hasClass('isAfterRelated')) {
+      $block.addClass('cover-bg-extend');
+    }
   }
 
   getSimilarAlbums(limit = 16) {

@@ -39,14 +39,18 @@
   border-radius: 4px;
 }
 
+@media (min-width: 769px) {
 .library-main::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
+}
 
 @media (min-width: 768px) {
+
   .library-main {
     padding: 0 36px 80px 36px;
   }
+
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -100,9 +104,11 @@
   letter-spacing: 0.01em;
 }
 
+@media (min-width: 769px) {
 .sort-btn:hover {
   color: var(--text);
   border-color: var(--border-hi);
+}
 }
 
 .view-toggle {
@@ -131,9 +137,11 @@
   border-right: none;
 }
 
+@media (min-width: 769px) {
 .vt-btn:hover {
   color: var(--text-2);
   background: rgba(255, 255, 255, 0.04);
+}
 }
 
 .vt-btn.active {
@@ -215,9 +223,11 @@
   fill: currentColor;
 }
 
+@media (min-width: 769px) {
 .sort-icon:hover {
   color: var(--text);
   background: var(--raised);
+}
 }
 
 .sort-icon.active {
@@ -248,10 +258,12 @@
   fill: currentColor;
 }
 
+@media (min-width: 769px) {
 .sort-cycle-btn:hover {
   border-color: var(--border-hi);
   color: var(--text);
   background: var(--raised);
+}
 }
 
 .sort-cycle-btn.active {
@@ -337,22 +349,29 @@
 }
 
 @media (min-width: 1024px) {
+
+  @media (min-width: 769px) {
   .search-wrap .search-icon:hover ~ .search-help-tooltip,
   .search-wrap .search-icon:focus ~ .search-help-tooltip {
     opacity: 1;
     transform: translateY(0);
   }
+  }
+
 }
 
 @media (min-width: 1024px) {
+
 
 /*  .search-help,
   .search-help-tooltip {
     display: inline-flex;
   } */
+
 }
 
 @media (max-width: 1023px) {
+
   .search-help,
   .search-help-tooltip {
     display: none;
@@ -362,8 +381,10 @@
     cursor: default;
   }
 
+  @media (min-width: 769px) {
   .search-icon:hover {
     background-color: var(--text-2);
+  }
   }
 
   /* Hide sort icons in search-wrap on small screens */
@@ -381,6 +402,7 @@
   .search-wrap .search-input {
     padding-left: 12px;
   }
+
 }
 
 .search-icon {
@@ -406,9 +428,13 @@
 }
 
 @media (min-width: 1024px) {
+
+  @media (min-width: 769px) {
   .search-icon:hover {
     background-color: var(--text);
   }
+  }
+
 }
 
 .search-input {
@@ -445,8 +471,9 @@
   color: var(--text-3);
   cursor: pointer;
   transition: color 0.15s;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -454,15 +481,18 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+  background-origin: content-box;
   opacity: 0.8;
   z-index: 3;
   pointer-events: auto;
   display: none;
 }
 
+@media (min-width: 769px) {
 .search-clear:hover {
   color: var(--text-2);
   opacity: 1;
+}
 }
 
 
@@ -510,8 +540,10 @@
   transition: color 0.14s;
 }
 
+@media (min-width: 769px) {
 .libraryGroupLabel:hover {
   color: var(--text-2);
+}
 }
 
 .libraryGroupLabel::before {
@@ -588,17 +620,21 @@
 }
 
 @media (min-width: 480px) {
+
   .libraryAlbumGroup {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 16px;
   }
+
 }
 
 @media (min-width: 768px) {
+
   .libraryAlbumGroup {
     grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
     gap: 36px;
   }
+
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -691,11 +727,13 @@
   object-fit: cover;
 }
 
+@media (min-width: 769px) {
 .album-card:hover .album-art,
 .libraryItem:hover .libraryItemPicture {
   transform: translateY(-3px) scale(1.015);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   border-color: var(--border-md);
+}
 }
 
 /* Hover Overlay */
@@ -711,9 +749,11 @@
   border-radius: 8px;
 }
 
+@media (min-width: 769px) {
 .album-card:hover .art-overlay,
 .libraryItem:hover .art-overlay {
   opacity: 1;
+}
 }
 
 /* Play Button Overlay */
@@ -745,12 +785,15 @@
   /* Visual center for play icon */
 }
 
+@media (min-width: 769px) {
 .libraryItem:hover .libraryItemPlayBtn {
   opacity: 1;
   transform: scale(1);
 }
+}
 
 @media (max-width: 1599px) {
+
   .libraryItem.show-play-button .libraryItemPlayBtn {
     opacity: 1;
     transform: scale(1);
@@ -758,31 +801,44 @@
   .libraryItem.show-format-overlay .libraryItemBits {
     opacity: 1;
   }
+  @media (min-width: 769px) {
   .album-card:hover .album-art,
   .libraryItem:hover .libraryItemPicture {
     transform: none;
     box-shadow: none;
     border-color: var(--border);
   }
+  }
+  @media (min-width: 769px) {
   .album-card:hover .art-overlay,
   .libraryItem:hover .art-overlay {
     opacity: 0;
   }
+  }
+  @media (min-width: 769px) {
   .libraryItem:not(.show-play-button):hover .libraryItemPlayBtn {
     opacity: 0;
     transform: scale(0.9);
   }
+  }
+  @media (min-width: 769px) {
   .album-card:hover .fav-dot {
     opacity: 0;
   }
+  }
+  @media (min-width: 769px) {
   .libraryItem:hover .libraryItemFavorite {
     opacity: 0.72;
   }
+  }
+
 }
 
+@media (min-width: 769px) {
 .libraryItemPlayBtn:hover {
   transform: scale(1.1) !important;
   background: var(--accent-hover, var(--accent));
+}
 }
 
 /* Hide play button when setting is disabled */
@@ -824,9 +880,11 @@
   transform: scale(1.02);
 }
 
+@media (min-width: 769px) {
 .album-card:hover .fav-dot,
 .libraryItem:hover .libraryItemFavorite {
   opacity: 0.7;
+}
 }
 
 .libraryItemFavorite {
@@ -837,8 +895,10 @@
   opacity: 0.72;
 }
 
+@media (min-width: 769px) {
 .libraryItem:hover .libraryItemFavorite {
   opacity: 0.9;
+}
 }
 
 .isMetaEnabled .libraryItem.isFavorite .libraryItemFavorite {
@@ -872,9 +932,11 @@
   text-align: left;
 }
 
+@media (min-width: 769px) {
 .album-card:hover .format-pill,
 .libraryItem:hover .libraryItemBits {
   opacity: 1;
+}
 }
 
 /* Album Info */
@@ -886,8 +948,7 @@
   grid-template-areas:
     "fav text1"
     "fav text2"
-    "year rule"
-    ". text3";
+    "year text3";
   column-gap: 10px;
   row-gap: 0;
   align-items: start;
@@ -909,7 +970,11 @@
   font-size: 10px;
   font-weight: 400;
   line-height: 1.2;
-  padding-top: 5px;
+  margin-top: 8px;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--border-hi);
+  width: 100%;
+  text-align: center;
 }
 
 .libraryItemText1 {
@@ -918,14 +983,6 @@
 
 .libraryItemText2 {
   grid-area: text2;
-}
-
-.libraryItemMetaRule {
-  grid-area: rule;
-  width: 100%;
-  height: 1px;
-  background: var(--border-hi);
-  margin-top: 8px;
 }
 
 .libraryItemText1 {
@@ -953,7 +1010,6 @@
 }
 
 .libraryItem:not(.show-library-date) .libraryItemYear,
-.libraryItem:not(.show-library-date) .libraryItemMetaRule,
 .libraryItem:not(.show-library-date) .libraryItemText3 {
   display: none;
 }
@@ -970,7 +1026,9 @@
   display: flex;
   align-items: center;
   gap: 0.35em;
-  padding: 2px 0 0;
+  margin-top: 8px;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--border-hi);
 }
 
 .libraryItemText3 .libraryFormatText {
@@ -1050,8 +1108,10 @@
   font-weight: 400;
 }
 
+@media (min-width: 769px) {
 .libraryNoneAction:hover {
   color: var(--text);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1161,9 +1221,11 @@
   z-index: 2;
 }
 
+@media (min-width: 769px) {
 .minimapYearLabel:hover {
   color: var(--accent);
   background: var(--accent-bg);
+}
 }
 
 .minimapLine {
@@ -1192,10 +1254,12 @@
   transition: all 0.15s;
 }
 
+@media (min-width: 769px) {
 .minimapDot:hover {
   transform: translateX(-50%) scale(1.2);
   background: var(--accent);
   border-color: var(--accent);
+}
 }
 
 .minimapDot:active {

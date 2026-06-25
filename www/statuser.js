@@ -11,6 +11,9 @@ import MetaUtil from './meta-util.js';
 const INTERVAL_FAST = 500;
 const INTERVAL_PLAYING = 1000;
 const INTERVAL_NOT_PLAYING = 10000;
+const INTERVAL_MOBILE_FAST = 1000;
+const INTERVAL_MOBILE_PLAYING = 2000;
+const INTERVAL_MOBILE_NOT_PLAYING = 15000;
 const VIEW_DETECT_DURATION_MS = 5 * 1000;
 
 /**
@@ -51,16 +54,22 @@ class Statuser {
     clearTimeout(this.timeoutId);
   }
 
+  _isMobile() {
+    return window.innerWidth < 768;
+  }
+
   doNext() {
     clearTimeout(this.timeoutId);
     Service.queueCommandFront(Commands.status());
 
+    const mobile = this._isMobile();
     let duration;
     if (Busyer.isBusy) {
-      duration = INTERVAL_FAST;
+      duration = mobile ? INTERVAL_MOBILE_FAST : INTERVAL_FAST;
     } else {
-      // Had to simplify this :/
-      duration = !Model.status.isStopped ? INTERVAL_PLAYING : INTERVAL_NOT_PLAYING;
+      duration = !Model.status.isStopped
+        ? (mobile ? INTERVAL_MOBILE_PLAYING : INTERVAL_PLAYING)
+        : (mobile ? INTERVAL_MOBILE_NOT_PLAYING : INTERVAL_NOT_PLAYING);
     }
     this.timeoutId = setTimeout(() => this.doNext(), duration);
   }

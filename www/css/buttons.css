@@ -49,10 +49,12 @@
   font-size: 12px;
 }
 
+@media (min-width: 769px) {
 .iconButton:hover {
   color: var(--text);
   border-color: var(--border-md);
   background: var(--raised);
+}
 }
 
 .iconButton.isDisabled {
@@ -75,8 +77,10 @@
   opacity: 0.5;
 }
 
+@media (min-width: 769px) {
 .toggleButton:hover {
   background: var(--raised);
+}
 }
 
 .toggleButton.isSelected {
@@ -89,8 +93,10 @@
   opacity: 1;
 }
 
+@media (min-width: 769px) {
 .toggleButton.isSelected:hover {
   background: var(--accent-hi);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -151,8 +157,10 @@
   border: none;
 }
 
+@media (min-width: 769px) {
 .favoriteButton:hover {
   background: transparent;
+}
 }
 
 .favoriteButton .favoriteIcon {
@@ -171,9 +179,11 @@
   transition: opacity 0.2s ease, background-color 0.2s ease;
 }
 
+@media (min-width: 769px) {
 .favoriteButton:hover .favoriteIcon {
   opacity: 1;
   background-color: var(--accent);
+}
 }
 
 .favoriteButton.isSelected {
@@ -185,8 +195,10 @@
   background-color: var(--accent);
 }
 
+@media (min-width: 769px) {
 .favoriteButton.isSelected:hover {
   background: transparent;
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -201,8 +213,10 @@
   background-image: url("./../img/icons/more_horiz_white_24dp.svg");
 }
 
+@media (min-width: 769px) {
 .moreButton:hover {
   background: var(--raised);
+}
 }
 
 .deleteButton {
@@ -225,8 +239,10 @@
   background-color: var(--text-2);
 }
 
+@media (min-width: 769px) {
 .deleteButton:hover {
   background-color: var(--accent);
+}
 }
 
 .dragHandleButton {
@@ -239,8 +255,10 @@
 }
 
 
+@media (min-width: 769px) {
 .dragHandleButton:hover {
   background: var(--raised);
+}
 }
 
 .closeButton {
@@ -281,9 +299,11 @@
   text-decoration: none;
 }
 
+@media (min-width: 769px) {
 .textButton:hover {
   border-color: var(--border-hi);
   color: var(--text);
+}
 }
 
 .textButton.isDisabled {
@@ -317,10 +337,12 @@
     color: var(--red-btn);
   }
 
+  @media (min-width: 769px) {
   #metaDelete:hover {
     border-color: var(--red-btn);
     color: var(--red-btn);
     background: var(--red-btn-bg);
+  }
   }
 
 /* Primary Button */
@@ -340,9 +362,11 @@
   transition: all 0.18s;
 }
 
+@media (min-width: 769px) {
 .btn-primary:hover {
   background: var(--accent-hi);
   transform: translateY(-1px);
+}
 }
 
 .btn-primary:active {
@@ -366,9 +390,11 @@
   transition: all 0.18s;
 }
 
+@media (min-width: 769px) {
 .btn-secondary:hover {
   border-color: var(--border-hi);
   color: var(--text);
+}
 }
 
 .buttonBlink:after {
@@ -438,10 +464,12 @@
 }
 
 @media (min-width: 480px) {
+
   .tabButton {
     font-size: 12px;
     padding: 6px 14px;
   }
+
 }
 
 .tabBarSpacer {
@@ -486,8 +514,10 @@
   box-shadow: 0 4px 16px rgba(232, 200, 138, 0.35);
 }
 
+@media (min-width: 769px) {
 .album-card:hover .play-circle {
   transform: scale(1);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -514,9 +544,11 @@
   pointer-events: none;
 }
 
+@media (min-width: 769px) {
 .albumViewImageNavButton:hover {
   opacity: 1;
   background: var(--raised);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -538,13 +570,17 @@
 }
 
 @media (max-width: 1023px) {
+
   .albumStatsFolder {
     display: none;
   }
+
 }
 
+@media (min-width: 769px) {
 .albumStatsFolder:hover {
   color: var(--accent);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -579,9 +615,11 @@
   mask-position: center;
 }
 
+@media (min-width: 769px) {
 .albumItem:hover .albumItemPlaylistButton,
 .albumItemPlaylistButton:hover {
   opacity: 1;
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -601,9 +639,11 @@
   transition: color 0.15s, background-color 0.15s;
 }
 
+@media (min-width: 769px) {
 .delete-source-btn:hover {
   color: var(--red);
   background: rgba(255, 59, 48, 0.1);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -661,8 +701,10 @@
   transform: rotate(0deg);
 }
 
+@media (min-width: 769px) {
 #sidebarToggle:hover {
   color: var(--text);
+}
 }
 
 #sidebarToggle.hasActiveFilters,
@@ -673,9 +715,11 @@
   background: var(--accent-bg) !important;
 }
 
+@media (min-width: 769px) {
 #sidebarToggle.hasActiveFilters:hover,
 .hasSidebarFilters #sidebarToggle:hover {
   color: var(--accent);
+}
 }
 
 #sidebarToggle.hasActiveFilters::before,
@@ -687,8 +731,10 @@
   background: var(--surface);
 }
 
+@media (min-width: 769px) {
 .lightTheme #sidebarToggle:hover {
   background: var(--raised);
+}
 }
 
 .lightTheme #sidebarToggle.hasActiveFilters,
@@ -696,9 +742,11 @@
   color: var(--accent);
 }
 
+@media (min-width: 769px) {
 .lightTheme #sidebarToggle.hasActiveFilters:hover,
 .lightTheme .hasSidebarFilters #sidebarToggle:hover {
   color: var(--accent);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -721,11 +769,13 @@
   transition: background-color 0.15s, color 0.15s;
 }
 
+@media (min-width: 769px) {
 .settings-view .iconButton:hover,
 .iconButton.settings-icon:hover {
   background: var(--accent);
   color: var(--text);
   border-color: var(--accent);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -737,8 +787,10 @@
   background: transparent;
 }
 
+@media (min-width: 769px) {
 #topBarButtons .iconButton:hover {
   background: var(--raised);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -751,12 +803,16 @@
   transition: all 0.15s ease;
 }
 
+@media (min-width: 769px) {
 #transportButtons .iconButton:hover {
   background: var(--raised);
   transform: scale(1.05);
 }
+}
 
+@media (min-width: 769px) {
 #transportButtons .iconButton:hover:before {
   opacity: 1 !important;
   filter: brightness(1.2);
+}
 }

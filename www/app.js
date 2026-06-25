@@ -8,6 +8,7 @@ import FullAlbumOverlay from './full-album-overlay.js';
 import HqpConfigModel from './hqp-config-model.js';
 import HqpSettingsView from './hqp-settings-view.js';
 import LibraryView from './library-view.js';
+import LoadingProgress from './loading-progress.js';
 import MetaUtil from './meta-util.js';
 import Model from './model.js';
 import DataUtil from './data-util.js';
@@ -70,6 +71,7 @@ export default class App {
   brandLogoAnimationCooldownUntil = 0;
   isCompactViewport = false;
   lastViewedAlbum = null;
+  loadingProgress;
 
   constructor() {
     if (Util.isTouch) {
@@ -106,6 +108,7 @@ export default class App {
     Util.addAppListener(this, 'show-album', this.onShowAlbumEvent);
     Util.addAppListener(this, 'album-view-close-button', this.hideAlbumView);
     Util.addAppListener(this, 'album-genre-button', this.onAlbumGenreButton);
+    Util.addAppListener(this, 'album-credit-button', this.onAlbumCreditButton);
     Util.addAppListener(this, 'album-artist-button', this.onAlbumArtistButton);
     Util.addAppListener(this, 'playbar-show-playlist', this.togglePlaylistCompoundView);
     Util.addAppListener(this, 'playlist-close-button', this.hidePlaylist);
@@ -201,6 +204,23 @@ export default class App {
 
     PresetRuleApplier.noop();
     FullAlbumOverlay.noop();
+
+    this.loadingProgress = new LoadingProgress();
+    this.loadingProgress.setProgress(0, 'Connecting…');
+
+    Util.addAppListener(this, 'model-state-updated', () => {
+      if (!this.loadingProgress) return;
+      this.loadingProgress.setProgress(50, 'Connected');
+    });
+    Util.addAppListener(this, 'model-playlist-updated', () => {
+      if (!this.loadingProgress) return;
+      this.loadingProgress.setProgress(65, 'Loading playlist…');
+    });
+    Util.addAppListener(this, 'model-library-updated', () => {
+      if (!this.loadingProgress) return;
+      const extracting = Model.library && Model.library.labelsExtracting;
+      this.loadingProgress.setProgress(85, extracting ? 'Extracting labels…' : 'Building library…');
+    });
 
     this.init();
   }
@@ -648,6 +668,7 @@ export default class App {
   /** Performs a series of required asynchronous calls. */
   init() {
     this.libraryView.setSpinnerState(true);
+    if (this.loadingProgress) this.loadingProgress.setProgress(10, 'Loading config…');
 
     // These are done in parallel to the hqp service calls
     Native.getInfo(this.instanceId, (data) => {
@@ -660,6 +681,15 @@ export default class App {
         this.showFatalError(data.error);
         return;
       }
+      if (this.loadingProgress) {
+        this.loadingProgress.setProgress(100, 'Ready');
+        setTimeout(() => {
+          if (this.loadingProgress) {
+            this.loadingProgress.destroy();
+            this.loadingProgress = null;
+          }
+        }, 350);
+      }
       const duration = new Date().getTime() - startTime;
       cl(`init - async calls ${duration}ms`);
       this.updateMetaEnabledClass();
@@ -667,6 +697,7 @@ export default class App {
     };
 
     const step2 = () => {
+      if (this.loadingProgress) this.loadingProgress.setProgress(30, 'Loading player data…');
       Statuser.start(); // calls Status
       Service.queueCommandsFront([
         { xml: Commands.state() },
@@ -1258,6 +1289,10 @@ export default class App {
 
   onAlbumGenreButton(genre) {
     this.applyLibrarySearchFromAlbum(genre);
+  }
+
+  onAlbumCreditButton({ value, type }) {
+    this.applyLibrarySearchFromAlbum(value);
   }
 
   onGlobalSearchEnter = (value = '') => {

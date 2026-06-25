@@ -78,6 +78,7 @@
 }
 
 @media (min-width: 768px) {
+
   #albumView {
     grid-template-columns: 1fr 2fr;
     overflow-y: auto;
@@ -140,14 +141,22 @@
   .track-item>*:nth-child(4) {
     display: block;
   }
+
 }
 
 @media (min-width: 1024px) {
+
   #albumView {
     grid-template-columns: auto 1fr;
     gap: 48px;
     padding: 32px 0 0 52px;
   }
+
+  #similarAlbums.isAfterRelated.cover-bg-extend {
+    margin-top: -48px;
+    padding-top: 52px;
+  }
+
 }
 
 /* Make wrapper square and let image fill it (moved below to avoid being overridden) */
@@ -258,13 +267,16 @@
 }
 
 @media (max-width: 1023px) {
+
   .relatedAlbums {
     margin-left: -24px;
     padding-left: 24px;
   }
+
 }
 
 @media (min-width: 480px) {
+
 
   .albumViewPictureOuter,
   .cover-wrap {
@@ -279,6 +291,7 @@
     height: 280px;
     aspect-ratio: unset;
   }
+
 }
 
 #albumViewPictureBlur {
@@ -326,9 +339,11 @@
   pointer-events: none;
 }
 
+@media (min-width: 769px) {
 .albumViewImageNavButton:hover {
   opacity: 1;
   background: var(--raised);
+}
 }
 
 .albumViewImageNavIcon {
@@ -369,9 +384,11 @@
   z-index: 2;
 }
 
+@media (min-width: 769px) {
 .cover-favorite:hover {
   background: rgba(17, 17, 18, 0.9);
   transform: scale(1.05);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -399,6 +416,7 @@
 }
 
 @media (max-width: 767px) {
+
   #albumViewTextsInner {
     flex-wrap: wrap;
   }
@@ -437,6 +455,7 @@
     font-size: clamp(10px, 2.4vw, 12px);
     padding: 8px 12px;
   }
+
 }
 
 .hero-format {
@@ -487,9 +506,38 @@
   transition: color 0.15s;
 }
 
+@media (min-width: 769px) {
 #albumViewArtist .albumArtistPart:hover,
 #albumViewArtist .albumArtistPart:focus-visible {
   color: var(--text);
+}
+}
+
+.creditButton {
+  appearance: none;
+  border: 0;
+  background: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+#albumViewPerformer .creditButton + .creditButton::before,
+#albumViewComposer .creditButton + .creditButton::before,
+#albumViewLabel .creditButton + .creditButton::before,
+#albumList .albumPerformerAfterTrackList .creditButton + .creditButton::before {
+  content: ', ';
+  white-space: pre;
+}
+
+@media (min-width: 769px) {
+  .creditButton:hover,
+  .creditButton:focus-visible {
+    color: var(--accent);
+  }
 }
 
 /* Album hero title - uses shared .title-xl from base.css */
@@ -612,13 +660,17 @@
 }
 
 @media (min-width: 1024px) {
+
   .albumStatsFolder {
     display: inline-flex;
   }
+
 }
 
+@media (min-width: 769px) {
 .albumStatsFolder:hover {
   color: var(--accent);
+}
 }
 
 .iconFolder {
@@ -771,10 +823,12 @@
   text-transform: uppercase;
 }
 
+@media (min-width: 769px) {
 #albumViewGenreButtons .genre-tag:hover,
 .tag:hover {
   border-color: var(--border-hi);
   color: var(--text-2);
+}
 }
 
 #albumViewPathRow {
@@ -809,10 +863,12 @@
   transition: color 0.12s, opacity 0.12s, background 0.12s;
 }
 
+@media (min-width: 769px) {
 .albumPathAction:hover {
   color: var(--text-2);
   opacity: 1;
   background: var(--raised);
+}
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -855,8 +911,10 @@
   mask-position: center;
 }
 
+@media (min-width: 769px) {
 #albumPlayNowButton:hover {
   opacity: 0.9;
+}
 }
 
 #albumPlaylistButton {
@@ -886,9 +944,11 @@
   mask-position: center;
 }
 
+@media (min-width: 769px) {
 #albumPlaylistButton:hover {
   border-color: var(--border-hi);
   color: var(--text);
+}
 }
 
 /* Use default favorite button styles from buttons.css */
@@ -942,6 +1002,7 @@
 }
 
 @media (min-width: 768px) {
+
   .track-list-header {
     grid-template-columns: 36px 1fr 160px 80px 52px;
   }
@@ -950,6 +1011,7 @@
   .track-list-header>*:nth-child(4) {
     display: block;
   }
+
 
 }
 
@@ -978,6 +1040,7 @@
 
 @media (min-width: 1600px) {
 
+
   .albumViewPictureColumn {
     min-height: 640px;
   }
@@ -996,6 +1059,7 @@
     max-height: none;
     max-width: none;
   }
+
 }
 
 /* Track Item */
@@ -1135,9 +1199,11 @@
   cursor: pointer;
 }
 
+@media (min-width: 769px) {
 .track-item:hover .track-more {
   opacity: 1;
   animation: moreButtonIn 0.2s ease-out;
+}
 }
 
 @keyframes moreButtonIn {
@@ -1164,9 +1230,11 @@
   transition: background 0.12s;
 }
 
+@media (min-width: 769px) {
 .albumItem:hover {
   background: rgba(255, 255, 255, 0.03);
   animation: albumItemHover 0.2s ease-out;
+}
 }
 
 @keyframes albumItemHover {
@@ -1217,13 +1285,17 @@
   mask-size: 16px 16px;
 }
 
+@media (min-width: 769px) {
 .albumItem:hover .albumItemLeft .playButton {
   opacity: 1;
   animation: playButtonIn 0.2s ease-out;
 }
+}
 
+@media (min-width: 769px) {
 .albumItem:hover .albumItemLeft .indexText {
   display: block;
+}
 }
 
 .albumItemLeft .indexText {
@@ -1236,9 +1308,11 @@
 }
 
 @media (max-width: 767px) {
+
   .albumItemLeft .indexText {
     display: block;
   }
+
 }
 
 .favoriteTrackCover {
@@ -1254,8 +1328,10 @@
   transition: opacity 0.15s;
 }
 
+@media (min-width: 769px) {
 .favoriteTrackCover:hover {
   opacity: 0.75;
+}
 }
 
 .favoriteTrackCoverImg,
@@ -1374,8 +1450,10 @@
   opacity: 0.6;
 }
 
+@media (min-width: 769px) {
 .trackItemMeta .favoriteButton:hover {
   opacity: 1;
+}
 }
 
 .trackItemMeta .favoriteButton.isSelected {
@@ -1415,17 +1493,21 @@
   mask-position: center;
 }
 
+@media (min-width: 769px) {
 .albumItem:hover .albumItemPlaylistButton,
 .albumItemPlaylistButton:hover {
   opacity: 1;
   color: var(--accent);
   background: var(--raised);
 }
+}
 
+@media (min-width: 769px) {
 .albumItem:hover .albumItemContext,
 .albumItemContext:hover {
   opacity: 1;
   animation: contextButtonIn 0.2s ease-out;
+}
 }
 
 @keyframes contextButtonIn {
@@ -1519,6 +1601,11 @@
   padding-top: 4px;
 }
 
+#similarAlbums.isAfterRelated.cover-bg-extend {
+  margin-top: -24px;
+  padding-top: 28px;
+}
+
 #appearsOnAlbums {
   background: var(--bg);
   margin-top: 0;
@@ -1571,6 +1658,7 @@
 }
 
 @media (min-width: 768px) {
+
   #albumList,
   .track-section {
     padding-bottom: 60px;
@@ -1602,4 +1690,5 @@
   #albumViewPictureBlur {
     display: block;
   }
+
 }
