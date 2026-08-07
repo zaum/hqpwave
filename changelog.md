@@ -1,6 +1,18 @@
 ```markdown
 # Changelog
 
+## 0.9.12 — Upcoming release
+
+- Improved library search and filters so the app is easier to browse.
+- Search now matches artist, album, genre, track, record label, format and year.
+- Use commas to combine search terms and year ranges like `1970-1980`, `1990-`, `-2000`.
+- Sidebar filters now cover browse mode, format chips, genre tags, historical periods and record labels.
+- Shift-click makes it easy to select multiple genres, periods or labels at once.
+- Library view, search and sort work together: filters narrow results, search refines them, and sort controls result order.
+- Web data is used for lyrics lookup and remote artist metadata import.
+- Album view includes a folder-open button and a lyrics overlay for quick access.
+- Favorite status can now be written into audio file tags.
+
 ## UI Improvements
 
 ### Playlist Panel
