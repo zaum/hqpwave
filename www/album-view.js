@@ -16,6 +16,7 @@ import Values from './values.js';
 import ViewUtil from './view-util.js'
 import Native from './native.js';
 import LibraryContentList from './library-content-list.js';
+import Settings from './settings.js';
 
 
 const splitAlbumArtists = (value) => {
@@ -89,7 +90,7 @@ const normalizeList = (items) => {
 };
 
 const getAlbumYear = (album) => {
-  const year = parseInt(album?.['year'] || album?.['@_year'] || (album?.['@_date'] ? album['@_date'].substring(0, 4) : ''));
+  const year = parseInt(album ? (album['year'] || album['@_year'] || (album['@_date'] ? album['@_date'].substring(0, 4) : '')) : '');
   return (year >= 1500 && year <= 2099) ? year : 0;
 };
 
@@ -156,24 +157,6 @@ function haveSharedBaseName(nameA, nameB) {
  */
 export default class AlbumView extends Subview {
 
-  $pictureHolder;
-  $picture;
-  $texts;
-  $artistButton;
-  $albumFavoriteButton;
-  listItems$;
-  trackMetaChangeHandler;
-
-  album = null;
-  tracks = null; // tracks array of album object
-
-  currentPlayingSong = null;
-  currentPlayingSongAlbumIndex = -1;
-  albumImageUrls = [];
-  albumImageIndex = 0;
-  albumImageLoadSessionId = 0;
-  albumCoverCount = 0;
-
   isWideAlbumLayout() {
     return window.innerWidth >= 768;
   }
@@ -190,10 +173,216 @@ export default class AlbumView extends Subview {
 
   constructor() {
     super($("#albumView"));
+    this.album = null;
+    this.tracks = null;
+    this.currentPlayingSong = null;
+    this.currentPlayingSongAlbumIndex = -1;
+    this.albumImageUrls = [];
+    this.albumImageIndex = 0;
+    this.albumImageLoadSessionId = 0;
+    this.albumCoverCount = 0;
+
+    this.onShowComplete = () => {
+      $(document).trigger('enable-user-input');
+    };
+
+    this.onArtistButton = (e) => {
+      try {
+        const $btn = $(e.currentTarget);
+        const artist = $btn.attr('data-artist') || $btn.text();
+        if (!artist) return;
+        $(document).trigger('show-artist', artist);
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    this.updateHighlightedTrack = () => {
+      if (!this.tracks) {
+        return;
+      }
+      const meta = Model.status.metadata;
+      const song = meta['@_song'] || '';
+      if (song === this.currentPlayingSong) {
+        return;
+      }
+      this.currentPlayingSong = song;
+      const isInAlbum = DataUtil.doesAlbumContainPlayingSong(this.album);
+      for (let i = 0; i < this.tracks.length; i++) {
+        const track = this.tracks[i];
+        let b;
+        if (!isInAlbum) {
+          b = false;
+        } else {
+          b = DataUtil.doesAlbumSongEqualPlayingSong(this.album, track);
+        }
+        const $listItem = this.listItems$[i];
+        if (b) {
+          $listItem.addClass('selected');
+        } else {
+          $listItem.removeClass('selected');
+        }
+      }
+    };
+
+    this.onArtistButton = (event) => {
+      const $button = $(event.currentTarget);
+      let s = ($button.attr('data-artist') || '').trim();
+      if (!s) {
+        const artists = splitAlbumArtists((this.album && this.album['@_artist']) || '');
+        s = (artists[0] || '').trim();
+      }
+      if (!s) {
+        return;
+      }
+      $(document).trigger('album-artist-button', s);
+    };
+
+    this.onPlayNowButton = (event) => {
+      const commands = Commands.playlistAddUsingAlbumAndIndices(this.album);
+      AppUtil.doPlaylistAdds(commands, true, true);
+    };
+
+    this.onPlaylistButton = (event) => {
+      const commands = Commands.playlistAddUsingAlbumAndIndices(this.album);
+      AppUtil.doPlaylistAdds(commands);
+    };
+
+    this.onSimilarAlbumsAddRandom = () => {
+      const matches = this._similarAlbums || this.getSimilarAlbums(16);
+      const commands = [];
+      for (const album of matches) {
+        const tracks = AlbumUtil.getTracksOf(album);
+        if (tracks && tracks.length > 0) {
+          const randomIndex = Math.floor(Math.random() * tracks.length);
+          const track = tracks[randomIndex];
+          const uri = DataUtil.makeUriUsingAlbumAndTrack(album, track);
+          if (uri) {
+            commands.push(Commands.playlistAdd(uri));
+          }
+        }
+      }
+      if (commands.length > 0) {
+        AppUtil.doPlaylistAdds(commands);
+      }
+    };
+
+    this.onAlbumFavoriteButton = (event) => {
+      const hash = this.getAlbumHash();
+      if (!hash) {
+        ToastView.show('Album favorite failed: missing album hash');
+        return;
+      }
+      const oldValue = MetaUtil.isAlbumFavoriteFor(hash);
+      const newValue = !oldValue;
+      if (newValue) {
+        this.$albumFavoriteButton.addClass('isSelected');
+      } else {
+        this.$albumFavoriteButton.removeClass('isSelected');
+      }
+      MetaUtil.setAlbumFavoriteFor(hash, newValue);
+    };
+
+    this.onLyricsButton = (event) => {
+      event.stopPropagation();
+      const meta = Model.status.metadata;
+      const artist = (meta['@_artist'] || '').trim();
+      const song = (meta['@_song'] || '').trim();
+      const uri = meta['@_uri'] || '';
+
+      if (!artist || !song) {
+        ToastView.show('No track currently playing');
+        return;
+      }
+
+      let trackHash = '';
+      if (this.album && uri) {
+        const track = Model.library && Model.library.getTrackByUri(uri);
+        if (track) {
+          trackHash = track['@_hash'] || '';
+        }
+      }
+
+      this.showLyricsOverlay(artist, song, trackHash);
+    };
+
+    this.onLyricsCloseButton = () => {
+      this.hideLyricsOverlay();
+    };
+
+    this.onLyricsDeleteButton = () => {
+      const trackHash = this._lyricsTrackHash;
+      if (!trackHash) return;
+      $.ajax({
+        url: Values.LYRICS_ENDPOINT + '?hash=' + encodeURIComponent(trackHash) + '&delete',
+        success: (data) => {
+          this.hideLyricsOverlay();
+          ToastView.show('Saved lyrics deleted');
+        }
+      });
+    };
+
+    this.onOpenFolderButtonClick = (event) => {
+      event.stopPropagation();
+      if (Util.isTouch) {
+        return;
+      }
+      const path = AlbumUtil.decodeAlbumPath((this.album && this.album['@_path']) || '');
+      if (!path) {
+        return;
+      }
+      Native.openFolder(path, (result) => {
+        if (!result || result.error) {
+          ToastView.show('Could not open folder');
+        }
+      });
+    };
+
+    this.onPrevAlbumImageClick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.setAlbumImageByIndex(this.albumImageIndex - 1);
+    };
+
+    this.onNextAlbumImageClick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.setAlbumImageByIndex(this.albumImageIndex + 1);
+    };
+
+    this.onNewTrack = (e, currentUri, lastUri) => {
+      if (!App || !App.instance) {
+        return;
+      }
+      if (App.instance.getTopSubview() != this) {
+        return;
+      }
+      const currentTrack = Model.library.getTrackByUri(currentUri);
+      const currentAlbumIndex = this.tracks.indexOf(currentTrack);
+      const lastTrack = Model.library.getTrackByUri(lastUri);
+      const lastAlbumIndex = this.tracks.indexOf(lastTrack);
+      if (currentAlbumIndex > -1) {
+        if (currentAlbumIndex > lastAlbumIndex) {
+          const $listItem = this.listItems$[currentAlbumIndex];
+          Util.autoScrollListItem($listItem, this.$el);
+        }
+      }
+    };
+
+    this.setTransformUsing = ($el, r1, r2) => {
+      const dx = r2[0] - r1[0];
+      const dy = r2[1] - r1[1];
+      const sx = r2[2] / r1[2];
+      const sy = r2[3] / r1[3];
+      const value = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      $el.css('transform', value);
+    };
+
     this.$pictureHolder = this.$el.find('.albumViewPictureOuter');
     this.$picture = this.$el.find('#albumViewPicture');
     this.$pictureBlur = this.$el.find('#albumViewPictureBlur');
     this.$albumFavoriteButton = this.$el.find('#albumFavoriteButton');
+    this.$albumLyricsButton = this.$el.find('#albumLyricsButton');
     this.$list = this.$el.find('#albumList');
     this.$artistButton = this.$el.find('#albumViewArtist');
     this.$texts = this.$el.find('#albumViewTexts');
@@ -216,6 +405,9 @@ export default class AlbumView extends Subview {
     $("#albumPlaylistButton").on("click tap", this.onPlaylistButton);
     $("#similarAlbumsAddRandomButton").on("click tap", this.onSimilarAlbumsAddRandom);
     this.$albumFavoriteButton.on('click tap', this.onAlbumFavoriteButton);
+    this.$albumLyricsButton.on('click tap', this.onLyricsButton);
+    $('#lyricsCloseButton').on('click tap', this.onLyricsCloseButton);
+    $('#lyricsDeleteButton').on('click tap', this.onLyricsDeleteButton);
     $("#albumCloseButton").on("click tap", () => $(document).trigger('album-view-close-button', this.album, true));
     this.$el.on("click", "#artistBackToLibraryButton", () => $(document).trigger('album-view-close-button', null, true));
 
@@ -331,10 +523,6 @@ export default class AlbumView extends Subview {
     this.$list.css('opacity', 1);
     this.onShowComplete();
   }
-
-  onShowComplete = () => {
-    $(document).trigger('enable-user-input');
-  };
 
   fadeInContent() {
     ViewUtil.setCssSync(this.$texts, () => this.$texts.css('opacity', 0));
@@ -499,7 +687,9 @@ hide() {
     this.albumCoverCount = defaultImageUrl ? 1 : 0;
     this.setAlbumImageByIndex(0, [defaultImageUrl]);
 
-    const albumPath = AlbumUtil.decodeAlbumPath(this.album?.['@_path'] || '');
+    const albumPath = AlbumUtil.decodeAlbumPath((this.album && this.album['@_path']) || '');
+
+
     this.albumImageLoadSessionId += 1;
     const sessionId = this.albumImageLoadSessionId;
     if (albumPath) {
@@ -964,7 +1154,7 @@ hide() {
   }
 
   getAlbumHash() {
-    return this.album?.['@_hash'] || this.album?.['hash'] || '';
+    return (this.album && this.album['@_hash']) || (this.album && this.album['hash']) || '';
   }
 
   renderAlbumArtists(artistValue) {
@@ -981,18 +1171,6 @@ hide() {
       $artistPart.text(artist);
       $artistPart.attr('data-artist', artist);
       this.$artistButton.append($artistPart);
-    }
-  }
-
-  onArtistButton = (e) => {
-    try {
-      const $btn = $(e.currentTarget);
-      const artist = $btn.attr('data-artist') || $btn.text();
-      if (!artist) return;
-      // Trigger app-level event to show artist view with artist name
-      $(document).trigger('show-artist', artist);
-    } catch (err) {
-      // ignore
     }
   }
 
@@ -1041,36 +1219,6 @@ hide() {
     return $(s);
     // also: [$]["name"] is filename; [$]["hash"];
   }
-
-  updateHighlightedTrack = () => {
-    if (!this.tracks) {
-      return;
-    }
-    const meta = Model.status.metadata;
-    const song = meta['@_song'] || '';
-    if (song === this.currentPlayingSong) {
-      return;
-    }
-    this.currentPlayingSong = song;
-
-    const isInAlbum = DataUtil.doesAlbumContainPlayingSong(this.album);
-
-    for (let i = 0; i < this.tracks.length; i++) {
-      const track = this.tracks[i];
-      let b;
-      if (!isInAlbum) {
-        b = false;
-      } else {
-        b = DataUtil.doesAlbumSongEqualPlayingSong(this.album, track);
-      }
-      const $listItem = this.listItems$[i];
-      if (b) {
-        $listItem.addClass('selected');
-      } else {
-        $listItem.removeClass('selected');
-      }
-    }
-  };
 
   getLibraryItemImageRect() {
     const r1 = this.$libraryItemImage[0].getBoundingClientRect();
@@ -1134,66 +1282,6 @@ hide() {
     return [overlayX, overlayY, overlayW, overlayH];
   }
 
-  onArtistButton = (event) => {
-    const $button = $(event.currentTarget);
-    let s = ($button.attr('data-artist') || '').trim();
-    if (!s) {
-      const artists = splitAlbumArtists(this.album?.['@_artist'] || '');
-      s = (artists[0] || '').trim();
-    }
-    if (!s) {
-      return;
-    }
-    $(document).trigger('album-artist-button', s);
-  };
-
-  onPlayNowButton = (event) => {
-    const commands = Commands.playlistAddUsingAlbumAndIndices(this.album);
-    AppUtil.doPlaylistAdds(commands, true, true);
-  };
-
-  onPlaylistButton = (event) => {
-    const commands = Commands.playlistAddUsingAlbumAndIndices(this.album);
-    AppUtil.doPlaylistAdds(commands);
-  };
-
-  onSimilarAlbumsAddRandom = () => {
-    const matches = this._similarAlbums || this.getSimilarAlbums(16);
-    const commands = [];
-    for (const album of matches) {
-      const tracks = AlbumUtil.getTracksOf(album);
-      if (tracks && tracks.length > 0) {
-        const randomIndex = Math.floor(Math.random() * tracks.length);
-        const track = tracks[randomIndex];
-        const uri = DataUtil.makeUriUsingAlbumAndTrack(album, track);
-        if (uri) {
-          commands.push(Commands.playlistAdd(uri));
-        }
-      }
-    }
-    if (commands.length > 0) {
-      AppUtil.doPlaylistAdds(commands);
-    }
-  };
-
-  onAlbumFavoriteButton = (event) => {
-    const hash = this.getAlbumHash();
-    if (!hash) {
-      ToastView.show('Album favorite failed: missing album hash');
-      return;
-    }
-    const oldValue = MetaUtil.isAlbumFavoriteFor(hash);
-    const newValue = !oldValue;
-    // update button
-    if (newValue) {
-      this.$albumFavoriteButton.addClass('isSelected');
-    } else {
-      this.$albumFavoriteButton.removeClass('isSelected');
-    }
-    // update model
-    MetaUtil.setAlbumFavoriteFor(hash, newValue);
-  }
-
   onItemClick(event) {
     const index = $(event.currentTarget).attr("data-index");
     const item = this.tracks[index];
@@ -1228,22 +1316,6 @@ hide() {
     AppUtil.doPlaylistAdds(commands, false, false);
   }
 
-  onOpenFolderButtonClick = (event) => {
-    event.stopPropagation();
-    if (Util.isTouch) {
-      return;
-    }
-    const path = AlbumUtil.decodeAlbumPath(this.album?.['@_path'] || '');
-    if (!path) {
-      return;
-    }
-    Native.openFolder(path, (result) => {
-      if (!result || result.error) {
-        ToastView.show('Could not open folder');
-      }
-    });
-  }
-
   setAlbumImageByIndex(index, initialUrls = null) {
     if (Array.isArray(initialUrls)) {
       this.albumImageUrls = [...initialUrls];
@@ -1270,7 +1342,7 @@ hide() {
       const color = await this.extractDominantColor(this.$picture[0]);
       if (color) this.applyCoverColor(color.r, color.g, color.b);
     });
-    if (this.$picture[0]?.complete && this.$picture[0]?.naturalWidth > 0) {
+    if (this.$picture[0] && this.$picture[0].complete && this.$picture[0].naturalWidth > 0) {
       this.$picture.trigger('load.coverColor');
     }
   }
@@ -1285,36 +1357,50 @@ hide() {
     this.$nextImageButton.toggleClass('isGhost', !canGoNext);
   }
 
-  onPrevAlbumImageClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    this.setAlbumImageByIndex(this.albumImageIndex - 1);
-  }
+  showLyricsOverlay(artist, song, trackHash) {
+    this._lyricsTrackHash = trackHash || '';
 
-  onNextAlbumImageClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    this.setAlbumImageByIndex(this.albumImageIndex + 1);
-  }
+    const $overlay = $('#lyricsOverlay');
+    const $text = $('#lyricsOverlayText');
+    const $status = $('#lyricsOverlayStatus');
+    const $deleteBtn = $('#lyricsDeleteButton');
 
-  onNewTrack = (e, currentUri, lastUri) => {
-    if (!App || !App.instance) {
-      return;
-    }
-    if (App.instance.getTopSubview() != this) {
-      return;
-    }
-    const currentTrack = Model.library.getTrackByUri(currentUri);
-    const currentAlbumIndex = this.tracks.indexOf(currentTrack);
-    const lastTrack = Model.library.getTrackByUri(lastUri);
-    const lastAlbumIndex = this.tracks.indexOf(lastTrack);
-    if (currentAlbumIndex > -1) {
-      if (currentAlbumIndex > lastAlbumIndex) {
-        const $listItem = this.listItems$[currentAlbumIndex];
-        Util.autoScrollListItem($listItem, this.$el);
+    ToastView.show('Searching for lyrics…', 0);
+
+    const url = Values.LYRICS_ENDPOINT
+      + '?hash=' + encodeURIComponent(this._lyricsTrackHash)
+      + '&artist=' + encodeURIComponent(artist)
+      + '&title=' + encodeURIComponent(song)
+      + '&save=' + (Settings.saveLyricsToAudioFiles ? 'true' : 'false');
+
+    $.ajax({
+      url: url,
+      success: (data) => {
+        if (data && data.lyrics) {
+          ToastView.hide();
+          $text.text(data.lyrics);
+          $status.css('display', 'none');
+          $deleteBtn.css('display', 'none');
+          if (this._lyricsTrackHash) {
+            $deleteBtn.css('display', '');
+          }
+          $overlay.addClass('isVisible');
+        } else {
+          ToastView.show('No lyrics found', 3000);
+        }
+      },
+      error: () => {
+        ToastView.show('Failed to load lyrics', 3000);
       }
-    }
-  };
+    });
+  }
+
+  hideLyricsOverlay() {
+    $('#lyricsOverlay').removeClass('isVisible');
+    $('#lyricsOverlayStatus').css('display', '');
+    $('#lyricsDeleteButton').css('display', 'none');
+    this._lyricsTrackHash = '';
+  }
 
   /**
    * Given an abs el whose left/top/width/height are already set to `r1`,
@@ -1325,13 +1411,4 @@ hide() {
    * @param r1 an array with [x,y,w,h]
    * @param r2
    */
-  setTransformUsing = ($el, r1, r2) => {
-    const dx = r2[0] - r1[0];
-    const dy = r2[1] - r1[1];
-    const sx = r2[2] / r1[2];
-    const sy = r2[3] / r1[3];
-    const value = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
-    $el.css('transform', value);
-  };
-
 }

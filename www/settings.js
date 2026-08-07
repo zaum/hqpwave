@@ -21,35 +21,8 @@ const DEFAULT_PRESETS_DSD = [
  */
 class Settings {
 
-  storage = window.localStorage; // todo handle disabledness
-
-  _librarySearchType;
-  _librarySearchValue;
-  _librarySortType;
-  _librarySortOrder;
-  _librarySortDirection;
-  _libraryGroupType;
-  _libraryFilterType;
-  _libraryCollapsedGroups;
-  _colorTheme;
-  _showPlayButton;
-  _showFormatOverlay;
-  _showLogoAnimation;
-  _artistReleaseLimit;
-  _artistImageLimit;
-  _artistBioLimit;
-  _presetsArrayPCM;
-  _presetsArrayDSD;
-  _currentRule;
-  _thresholdRule;
-  _abRule;
-  _enableRules;
-  _genreRules;
-  _hideLabelsWithFewAlbums;
-  _labelVisibilityThreshold;
-  _writeFavoritesToAudioFiles;
-
   constructor() {
+    this.storage = window.localStorage;
     this.initFromLocalStorage();
   }
 
@@ -186,6 +159,15 @@ class Settings {
 
     this._writeFavoritesToAudioFiles = this.storage.getItem('writeFavoritesToAudioFiles');
     this._writeFavoritesToAudioFiles = (this._writeFavoritesToAudioFiles === 'true');
+
+    this._saveLyricsToAudioFiles = this.storage.getItem('saveLyricsToAudioFiles');
+    if (this._saveLyricsToAudioFiles === null) {
+      this._saveLyricsToAudioFiles = true;
+    } else {
+      this._saveLyricsToAudioFiles = (this._saveLyricsToAudioFiles === 'true');
+    }
+
+    this._performanceMode = this.storage.getItem('performanceMode') === 'true';
   }
 
   get librarySearchType() {
@@ -538,6 +520,25 @@ class Settings {
   set writeFavoritesToAudioFiles(b) {
     this._writeFavoritesToAudioFiles = b;
     this.storage.setItem('writeFavoritesToAudioFiles', String(b));
+  }
+
+  get saveLyricsToAudioFiles() {
+    return this._saveLyricsToAudioFiles;
+  }
+
+  set saveLyricsToAudioFiles(b) {
+    this._saveLyricsToAudioFiles = b;
+    this.storage.setItem('saveLyricsToAudioFiles', String(b));
+  }
+
+  get performanceMode() {
+    return this._performanceMode;
+  }
+
+  set performanceMode(b) {
+    this._performanceMode = b;
+    this.storage.setItem('performanceMode', String(b));
+    $(document).trigger('settings-performance-mode-changed');
   }
 }
 

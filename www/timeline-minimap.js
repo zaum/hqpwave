@@ -19,6 +19,12 @@ export function initTimelineMinimap(containerId = 'timelineMinimapContainer') {
   let dot = null;
   let lineEl = null;
 
+  // Cached layout values, recomputed only on resize, not on every scroll.
+  let cachedScrollRange = 0;
+  let cachedContainerHeight = 0;
+  let rafPending = false;
+  let pendingScrollContainer = null;
+
   function clearMinimap() {
     while (minimap.firstChild) minimap.removeChild(minimap.firstChild);
   }
@@ -58,19 +64,42 @@ export function initTimelineMinimap(containerId = 'timelineMinimapContainer') {
     scrollContainer.scrollTop = percent * scrollHeight;
   }
 
+  function recacheLayout() {
+    const scrollContainer = document.getElementById('libraryView');
+    if (!scrollContainer || !minimap) return;
+    cachedScrollRange = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    const rect = minimap.getBoundingClientRect();
+    cachedContainerHeight = rect.height;
+  }
+
   function updateDotPosition() {
     if (!years || !dot || !minimap) return;
     const scrollContainer = document.getElementById('libraryView');
     if (!scrollContainer) return;
-    const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    // Recompute cached values lazily if stale (e.g. first call or after resize).
+    if (cachedContainerHeight === 0) {
+      recacheLayout();
+    }
+    const scrollHeight = cachedScrollRange;
+    const containerHeight = cachedContainerHeight;
     const scrollProgress = scrollHeight > 0 ? scrollContainer.scrollTop / scrollHeight : 0;
-    const rect = minimap.getBoundingClientRect();
-    const containerHeight = rect.height;
     const dotSize = 14;
     const margin = 50;
     const availableHeight = Math.max(1, containerHeight - dotSize - (margin * 2));
     const dotTop = margin + (scrollProgress * availableHeight);
     dot.style.top = Math.max(margin, Math.min(containerHeight - dotSize - margin, dotTop)) + 'px';
+  }
+
+  function scheduleUpdateDotPosition() {
+    const scrollContainer = document.getElementById('libraryView');
+    if (!scrollContainer) return;
+    if (rafPending) return;
+    rafPending = true;
+    pendingScrollContainer = scrollContainer;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      updateDotPosition();
+    });
   }
 
   function makeDotDraggable() {
@@ -134,8 +163,9 @@ export function initTimelineMinimap(containerId = 'timelineMinimapContainer') {
     container.addEventListener('click', onContainerClick);
     const scrollContainer = document.getElementById('libraryView');
     if (scrollContainer) {
-      scrollContainer.removeEventListener('scroll', updateDotPosition);
-      scrollContainer.addEventListener('scroll', updateDotPosition);
+      scrollContainer.removeEventListener('scroll', scheduleUpdateDotPosition);
+      scrollContainer.addEventListener('scroll', scheduleUpdateDotPosition);
+      recacheLayout();
       updateDotPosition();
     }
     makeDotDraggable();
@@ -144,14 +174,19 @@ export function initTimelineMinimap(containerId = 'timelineMinimapContainer') {
   function dispose() {
     container.removeEventListener('click', onContainerClick);
     const scrollContainer = document.getElementById('libraryView');
-    if (scrollContainer) scrollContainer.removeEventListener('scroll', updateDotPosition);
+    if (scrollContainer) scrollContainer.removeEventListener('scroll', scheduleUpdateDotPosition);
     clearMinimap();
   }
 
+  function onResize() {
+    recacheLayout();
+    updateDotPosition();
+  }
+
   // Listen to debounced resize if available (supports both native and jQuery triggers)
-  document.addEventListener('debounced-window-resize', updateDotPosition);
+  document.addEventListener('debounced-window-resize', onResize);
   if (window.$) {
-    $(document).on('debounced-window-resize.timelineMinimap', updateDotPosition);
+    $(document).on('debounced-window-resize.timelineMinimap', onResize);
   }
 
   return { update, dispose };

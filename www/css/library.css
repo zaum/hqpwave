@@ -39,7 +39,7 @@
   border-radius: 4px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .library-main::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
@@ -104,7 +104,7 @@
   letter-spacing: 0.01em;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sort-btn:hover {
   color: var(--text);
   border-color: var(--border-hi);
@@ -137,7 +137,7 @@
   border-right: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .vt-btn:hover {
   color: var(--text-2);
   background: rgba(255, 255, 255, 0.04);
@@ -223,7 +223,7 @@
   fill: currentColor;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sort-icon:hover {
   color: var(--text);
   background: var(--raised);
@@ -258,7 +258,7 @@
   fill: currentColor;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sort-cycle-btn:hover {
   border-color: var(--border-hi);
   color: var(--text);
@@ -350,7 +350,7 @@
 
 @media (min-width: 1024px) {
 
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .search-wrap .search-icon:hover ~ .search-help-tooltip,
   .search-wrap .search-icon:focus ~ .search-help-tooltip {
     opacity: 1;
@@ -370,7 +370,7 @@
 
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1024px) {
 
   .search-help,
   .search-help-tooltip {
@@ -381,7 +381,7 @@
     cursor: default;
   }
 
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .search-icon:hover {
     background-color: var(--text-2);
   }
@@ -429,7 +429,7 @@
 
 @media (min-width: 1024px) {
 
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .search-icon:hover {
     background-color: var(--text);
   }
@@ -488,7 +488,7 @@
   display: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .search-clear:hover {
   color: var(--text-2);
   opacity: 1;
@@ -540,7 +540,7 @@
   transition: color 0.14s;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .libraryGroupLabel:hover {
   color: var(--text-2);
 }
@@ -727,7 +727,7 @@
   object-fit: cover;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .album-card:hover .album-art,
 .libraryItem:hover .libraryItemPicture {
   transform: translateY(-3px) scale(1.015);
@@ -749,7 +749,7 @@
   border-radius: 8px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .album-card:hover .art-overlay,
 .libraryItem:hover .art-overlay {
   opacity: 1;
@@ -785,7 +785,7 @@
   /* Visual center for play icon */
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .libraryItem:hover .libraryItemPlayBtn {
   opacity: 1;
   transform: scale(1);
@@ -801,7 +801,7 @@
   .libraryItem.show-format-overlay .libraryItemBits {
     opacity: 1;
   }
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .album-card:hover .album-art,
   .libraryItem:hover .libraryItemPicture {
     transform: none;
@@ -809,24 +809,24 @@
     border-color: var(--border);
   }
   }
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .album-card:hover .art-overlay,
   .libraryItem:hover .art-overlay {
     opacity: 0;
   }
   }
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .libraryItem:not(.show-play-button):hover .libraryItemPlayBtn {
     opacity: 0;
     transform: scale(0.9);
   }
   }
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .album-card:hover .fav-dot {
     opacity: 0;
   }
   }
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .libraryItem:hover .libraryItemFavorite {
     opacity: 0.72;
   }
@@ -834,7 +834,7 @@
 
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .libraryItemPlayBtn:hover {
   transform: scale(1.1) !important;
   background: var(--accent-hover, var(--accent));
@@ -880,7 +880,7 @@
   transform: scale(1.02);
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .album-card:hover .fav-dot,
 .libraryItem:hover .libraryItemFavorite {
   opacity: 0.7;
@@ -895,7 +895,7 @@
   opacity: 0.72;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .libraryItem:hover .libraryItemFavorite {
   opacity: 0.9;
 }
@@ -932,7 +932,7 @@
   text-align: left;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .album-card:hover .format-pill,
 .libraryItem:hover .libraryItemBits {
   opacity: 1;
@@ -1108,7 +1108,7 @@
   font-weight: 400;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .libraryNoneAction:hover {
   color: var(--text);
 }
@@ -1221,7 +1221,7 @@
   z-index: 2;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .minimapYearLabel:hover {
   color: var(--accent);
   background: var(--accent-bg);
@@ -1254,7 +1254,7 @@
   transition: all 0.15s;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .minimapDot:hover {
   transform: translateX(-50%) scale(1.2);
   background: var(--accent);

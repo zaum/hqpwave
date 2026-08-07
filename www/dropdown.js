@@ -8,11 +8,6 @@ import Service from './service.js';
  */
 export default class Dropdown {
 
-  $el;
-  $items;
-  selectedIndex = -1;
-  isMulti = false;
-
   /**
    * $el is expected to have the following structure:
    *
@@ -25,9 +20,21 @@ export default class Dropdown {
   constructor($el, isMulti) {
     this.$el = $el;
     this.isMulti = isMulti;
+    this.selectedIndex = -1;
 
     this.$items = $el.find('.dropdownItem');
-    this.$items.on('click tap', this. onItemClick);
+    this.$items.on('click tap', this.onItemClick);
+    this.onItemClick = (e) => {
+      if (!this.isMulti && $(e.currentTarget).hasClass('isSelected')) {
+        return;
+      }
+      const value = $(e.currentTarget).attr('data-value');
+      if (!value) {
+        cl('warning dropdown item missing data-value');
+        return;
+      }
+      $(document).trigger('dropdown-item-select', [this.$el.attr('id'), value]);
+    };
   }
 
   selectItems(arrayOfValues) {
@@ -61,15 +68,4 @@ export default class Dropdown {
     ViewUtil.setDisplayed(this.$el, false);
   }
 
-  onItemClick = (e) => {
-    if (!this.isMulti && $(e.currentTarget).hasClass('isSelected')) {
-      return;
-    }
-    const value = $(e.currentTarget).attr('data-value');
-    if (!value) {
-      cl('warning dropdown item missing data-value');
-      return;
-    }
-    $(document).trigger('dropdown-item-select', [this.$el.attr('id'), value]);
-  }
 }

@@ -16,18 +16,28 @@ import PresetUtil from './preset-util.js';
  */
 export default class ThresholdRuleView {
 
-  $el;
-  $leastMostSelect;
-  $fsSelect;
-  $presetASelect;
-  $presetBSelect;
-
   constructor($el) {
     this.$el = $el;
     this.$leastMostSelect = this.$el.find('#ruleThresholdLeastMostSelect');
     this.$fsSelect = this.$el.find('#ruleThresholdFs');
     this.$presetASelect = this.$el.find('#ruleThresholdPresetA');
     this.$presetBSelect = this.$el.find('#ruleThresholdPresetB');
+
+    this.onLeastMostChange = (e) => {
+      this.commitValues();
+    };
+
+    this.onFsChange = (e) => {
+      this.commitValues();
+    };
+
+    this.onPresetAChange = (e) => {
+      this.commitValues();
+    };
+
+    this.onPresetBChange = (e) => {
+      this.commitValues();
+    };
 
     this.$leastMostSelect.on('change', this.onLeastMostChange);
     this.$fsSelect.on('change', this.onFsChange);
@@ -78,22 +88,6 @@ export default class ThresholdRuleView {
     Settings.thresholdRule.presetB = this.$presetBSelect[0].value;
     Settings.commitThresholdRule();
   }
-
-  onLeastMostChange = (e) => {
-    this.commitValues();
-  };
-
-  onFsChange = (e) => {
-    this.commitValues();
-  };
-
-  onPresetAChange = (e) => {
-    this.commitValues();
-  };
-
-  onPresetBChange = (e) => {
-    this.commitValues();
-  };
 
   /** Returns default settings object. */
   static getDefaultValues() {

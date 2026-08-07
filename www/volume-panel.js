@@ -11,17 +11,6 @@ import ViewUtil from './view-util.js'
  */
 export default class VolumePanel {
 
-  $el;
-  $inner;
-  $text;
-  $plus3;
-  $plus1;
-  $minus1;
-  $minus3;
-  $track;
-  $fill;
-  volume = null;
-
   constructor($el) {
     this.$el = $el;
     this.$inner = this.$el.find('#volumePanelInner');
@@ -36,6 +25,10 @@ export default class VolumePanel {
       this.$fill = $('<div class="volume-inline-fill"></div>');
       this.$track.append(this.$fill);
     }
+    this.volume = null;
+    this.onModelStatus = () => {
+      this.update();
+    };
     this.$plus3.on('click tap', (e) => this.adjustVolume(3));
     this.$plus1.on('click tap', (e) => this.adjustVolume(1));
     this.$minus1.on('click tap', (e) => this.adjustVolume(-1));
@@ -96,7 +89,4 @@ export default class VolumePanel {
     Service.queueCommandsFront(commands);
   }
 
-  onModelStatus = () => {
-    this.update();
-  }
 }

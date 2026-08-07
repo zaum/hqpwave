@@ -6,43 +6,32 @@ import ViewUtil from './view-util.js';
  */
 class TopBarUtil {
 
-  VIEW_HEADER_HEIGHT = 52; // must match scss $view-header-height
-  THRESHOLD;
-
-  $libraryView = $('#libraryView');
-  $libraryHeader;
-
-  $subview;
-  $header;
-
-  // Track state to prevent unnecessary operations
-  isHeaderTaken = false;
-  // Animation lock to prevent double animations
-  isAnimating = false;
-  // Track whether topbar is currently collapsed to avoid redundant class toggles
-  isTopbarCollapsed = false;
-  // rAF debounce state
-  _pendingRaf = false;
-  _lastScrollY = 0;
-
-  COLLAPSE_THRESHOLD = 80; // px - scroll distance to collapse topbar first-row
-
-  _mq1024 = window.matchMedia('(max-width: 1024px)');
-
   constructor() {
     this.VIEW_HEADER_HEIGHT = window.innerWidth <= 480 ? 120 : 52;
     this.THRESHOLD = this.VIEW_HEADER_HEIGHT * 0.5;
     this.$libraryView = $('#libraryView');
     this.$libraryHeader = this.$libraryView.find('.viewHeader');
+    this.isHeaderTaken = false;
+    this.isAnimating = false;
+    this.isTopbarCollapsed = false;
+    this._pendingRaf = false;
+    this._lastScrollY = 0;
+    this.COLLAPSE_THRESHOLD = 80;
+    this._mq1024 = window.matchMedia('(max-width: 1024px)');
     // Set initial padding to accommodate the visible header
     this.$libraryView.css('padding-top', '');
 
     // Reset topbar-scrolled when leaving small viewport
-    this._mq1024.addEventListener('change', () => {
+    const handleMq1024Change = () => {
       if (!this._mq1024.matches) {
         TopBar.$el.removeClass('topbar-scrolled');
       }
-    });
+    };
+    if (this._mq1024.addEventListener) {
+      this._mq1024.addEventListener('change', handleMq1024Change);
+    } else {
+      this._mq1024.addListener(handleMq1024Change);
+    }
   }
 
   /**

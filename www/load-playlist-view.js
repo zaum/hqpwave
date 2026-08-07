@@ -20,24 +20,38 @@ const PLAYLIST_LOAD_TIMEOUT_MS = 12000;
  */
 export default class LoadPlaylistView  extends Subview {
 
-  $customList;
-  $hqpList;
-
-  items;
-  contextMenu;
-
-  customPlaylistPaths;
-  hqpPlaylistItems;
-  loadTimeoutId = null;
-  loadSessionId = 0;
-  isLoading = false;
-
   constructor($el) {
-  	super($el);
-  	this.$customList = this.$el.find("#loadCustomList");
+    super($el);
+    this.loadTimeoutId = null;
+    this.loadSessionId = 0;
+    this.isLoading = false;
+   	this.$customList = this.$el.find("#loadCustomList");
     this.$hqpList = this.$el.find("#loadHqpList");
   	this.$el.find("#loadCloseButton").on("click tap", () => $(document).trigger('load-playlist-close'));
     this.contextMenu = new LoadPlaylistContextMenu();
+    this.onCustomItemClick = (e) => {
+      const $item = $(e.currentTarget);
+      const index = parseInt($item.attr('data-index'));
+      const path = this.customPlaylistPaths[index];
+      this.doPlaylistLoad(path);
+    };
+    this.onHqpItemClick = (e) => {
+      const $item = $(e.currentTarget);
+      const index = parseInt($item.attr('data-index'));
+      const item = this.hqpPlaylistItems[index];
+      const path = this.decodePlaylistPath(item['@_path']);
+      this.doPlaylistLoad(path);
+    };
+    this.onServerErrors = () => {
+      this.finishLoad(false, 'Server not responding');
+    };
+    this.onProxyErrors = () => {
+      this.finishLoad(false, 'Server error');
+    };
+    this.onMetaPlaylistsChanged = () => {
+      this.contextMenu.hide();
+      this.populate();
+    };
 	}
 
   onShow() {
@@ -127,7 +141,7 @@ export default class LoadPlaylistView  extends Subview {
 
   makeHqpListItem(hqpPlaylistItem, index) {
     let s = '';
-    s += `<div class="trackItem loadItem" data-index="${index}" style="padding-right:12px; overflow:hidden;">`;
+    s += `<div class="trackItem loadItem" data-index="${index}">`;
     s += `<span>${hqpPlaylistItem['@_album']}</span>`;
     s += `</div>`;
     return $(s);
@@ -194,21 +208,6 @@ export default class LoadPlaylistView  extends Subview {
 
     return values;
   }
-
-	onCustomItemClick = (e) => {
-    const $item = $(e.currentTarget);
-    const index = parseInt($item.attr('data-index'));
-    const path = this.customPlaylistPaths[index];
-    this.doPlaylistLoad(path);
-  };
-
-  onHqpItemClick = (e) => {
-    const $item = $(e.currentTarget);
-    const index = parseInt($item.attr('data-index'));
-    const item = this.hqpPlaylistItems[index];
-    const path = this.decodePlaylistPath(item['@_path']);
-    this.doPlaylistLoad(path);
-  };
 
   // ---
 
@@ -321,14 +320,6 @@ export default class LoadPlaylistView  extends Subview {
     }
   }
 
-  onServerErrors = () => {
-    this.finishLoad(false, 'Server not responding');
-  };
-
-  onProxyErrors = () => {
-    this.finishLoad(false, 'Server error');
-  };
-
   onItemContextButtonClick(event) {
     event.stopPropagation(); // prevent listitem from responding to same event
     const $button = $(event.currentTarget);
@@ -336,11 +327,6 @@ export default class LoadPlaylistView  extends Subview {
     const playlistUri = this.customPlaylistPaths[index];
     this.contextMenu.show(this.$el, $button, playlistUri, index);
   }
-
-  onMetaPlaylistsChanged = () => {
-    this.contextMenu.hide();
-    this.populate();
-  };
 
   // ---
 

@@ -97,8 +97,6 @@ export default class AppUtil {
     const doc = AppUtil.htmlDecodeDomParser.parseFromString(s, "text/html");
     return doc.documentElement.textContent;
   }
-  static htmlDecodeDomParser = new DOMParser();
-
   static updateColorTheme() {
     const $html = $('html');
     switch (Settings.colorTheme) {
@@ -211,3 +209,5 @@ export default class AppUtil {
   }
 
 }
+
+AppUtil.htmlDecodeDomParser = new DOMParser();

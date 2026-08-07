@@ -22,19 +22,12 @@ const META_RETRY_DELAY_MS = 1200;
  */
 class MetaUtil {
 
-  isServerEnabled;
-  serverMainFilepath;
-
-  isLoading;
-  isFailed;
-  isReady;
-
-  _tracks = {};
-  _albums = {};
-  _history = [];
-  _initAttempt = 0;
-  
-  constructor() {}
+  constructor() {
+    this._tracks = {};
+    this._albums = {};
+    this._history = [];
+    this._initAttempt = 0;
+  }
 
   init() {
     this.isReady = false;

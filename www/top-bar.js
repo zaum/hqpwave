@@ -6,12 +6,10 @@ import ViewUtil from './view-util.js';
  */
 class TopBar {
 
-  $el = $("#topBar");
-  $appTitle = this.$el.find('#appTitle');
-  $topBarButtons = $('#topBarButtons');
-
   constructor() {
-    // appTitle visible from start
+    this.$el = $("#topBar");
+    this.$appTitle = this.$el.find('#appTitle');
+    this.$topBarButtons = $('#topBarButtons');
   }
 
   showButtons() {

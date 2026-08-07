@@ -13,17 +13,6 @@ import ModalPointerUtil from './modal-pointer-util.js';
  */
 export default class LibraryAlbumOptionsView {
 
-  $el;
-  $buttonsHolder;
-  $expandCollapseButton;
-  $sortButton;
-  $filterButton;
-
-  sortDropdown;
-  filterDropdown;
-  dropdowns;
-  pointerUtil;
-
   constructor($el) {
     this.$el = $el;
 
@@ -45,6 +34,19 @@ export default class LibraryAlbumOptionsView {
     this.$expandCollapseButton.on('click tap', () => this.onExpandCollapseClick());
     this.$sortButton.on('click tap', e => this.toggleDropdown(this.sortDropdown));
     this.$filterButton.on('click tap', e => this.toggleDropdown(this.filterDropdown));
+    this.onDropdownItemSelect = (e, dropdownId, value) => {
+      this.hideDropdowns();
+      switch (dropdownId) {
+        case 'librarySortDropdown':
+          Settings.librarySortType = value;
+          setTimeout(() => $(document).trigger('library-albums-sort-changed'), 16);
+          break;
+        case 'libraryFilterDropdown':
+          Settings.libraryFilterType = value;
+          setTimeout(() => $(document).trigger('library-albums-filter-changed'), 16);
+          break;
+      }
+    };
     $(document).on('dropdown-item-select', this.onDropdownItemSelect);
 
     // Hide the expand/collapse button since we don't have groups anymore
@@ -150,17 +152,4 @@ export default class LibraryAlbumOptionsView {
     this.pointerUtil.clear();
   }
 
-  onDropdownItemSelect = (e, dropdownId, value) => {
-    this.hideDropdowns();
-    switch (dropdownId) {
-      case 'librarySortDropdown':
-        Settings.librarySortType = value;
-        setTimeout(() => $(document).trigger('library-albums-sort-changed'), 16);
-        break;
-      case 'libraryFilterDropdown':
-        Settings.libraryFilterType = value;
-        setTimeout(() => $(document).trigger('library-albums-filter-changed'), 16);
-        break;
-    }
-  };
 }

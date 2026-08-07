@@ -11,20 +11,27 @@ import Service from './service.js';
  */
 class HqpConfigModel {
 
-  MODE_PCM = 'PCM';
-  MODE_DSD = 'DSD';
-  MODE_SOURCE = 'source';
-  PCM_MULTIPLE_A = 44100; // todo move this
-  PCM_MULTIPLE_B = 48000;
-
-  /** Map of alternative mode names to canonical names */
-  MODE_ALIASES = { 'SDM': 'DSD', '[source]': 'source' };
-
-  modesArray = [];
-  filtersData = {};
-  shapersData = {};
-  ratesData = {};
-  pcmFsMultiples = [1];
+  constructor() {
+    this.MODE_PCM = 'PCM';
+    this.MODE_DSD = 'DSD';
+    this.MODE_SOURCE = 'source';
+    this.PCM_MULTIPLE_A = 44100;
+    this.PCM_MULTIPLE_B = 48000;
+    this.MODE_ALIASES = { 'SDM': 'DSD', '[source]': 'source' };
+    this.modesArray = [];
+    this.filtersData = {};
+    this.shapersData = {};
+    this.ratesData = {};
+    this.pcmFsMultiples = [1];
+    this._lookup = (array, key1, value, key2) => {
+      for (let o of array ) {
+        if (o[key1] == value) {
+          return o[key2];
+        }
+      }
+      return null;
+    };
+  }
 
   /** Returns the non-PCM mode name from modesArray, or 'DSD' as fallback */
   get dsdModeName() {
@@ -72,15 +79,6 @@ class HqpConfigModel {
     }
     return this._lookup(a, '@_name', shaperName, '@_index');
   }
-
-  _lookup = (array, key1, value, key2) => {
-    for (let o of array ) {
-      if (o[key1] == value) {
-        return o[key2];
-      }
-    }
-    return null;
-  };
 
   /**
    * Updates modes array plus filters/shapers/rates arrays (as needed).

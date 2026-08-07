@@ -18,24 +18,64 @@ import ViewUtil from './view-util.js';
  */
 export default class LibraryContentList {
 
-  $el;
-
-  albums;
-  labels;
-  groups;
-
-  intersectionObs;
-  preloadedImageUrls;
-  emptyStateContext;
-
   constructor($el) {
     this.$el = $el;
     this.preloadedImageUrls = new Set();
     this.emptyStateContext = null;
-    const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0 };
-    this.intersectionObs = new IntersectionObserver(this.onIntersection, config);
+    this.onIntersection = (entries, self) => {
+
+      for (const entry of entries) {
+        const $img = $(entry.target);
+        if (entry.isIntersecting) {
+          const src = $img.attr('data-src');
+          if (src && $img.attr('src') !== src) {
+            $img.attr('src', src);
+          }
+          this.preloadNearbyImages(entry.target);
+        }
+      }
+    };
+    this.onItemKeydown = (event) => {
+      if (event.keyCode == 13) {
+        this.onItemClick(event);
+      }
+    };
+    // Delegated listeners on the container instead of per-item binding,
+    // so re-rendering the whole list does not re-bind thousands of handlers.
+    this.onContainerClick = (event) => {
+      const $item = $(event.target).closest('.libraryItem');
+      if ($item.length > 0) {
+        this.onItemClick({ currentTarget: $item[0] });
+      }
+    };
+    this.onContainerKeydown = (event) => {
+      const $item = $(event.target).closest('.libraryItem');
+      if ($item.length > 0) {
+        this.onItemKeydown({ keyCode: event.keyCode, currentTarget: $item[0] });
+      }
+    };
+    this.onAlbumFavoriteChanged = (event, hash, isFavorite) => {
+      const selector = `[data-hash="${hash}"]`;
+      const $item = this.$el.find(selector);
+      if ($item.length > 0) {
+        if (isFavorite) {
+          $item.addClass('isFavorite');
+        } else {
+          $item.removeClass('isFavorite');
+        }
+      }
+    };
+    this.onSettingsChanged = () => {
+      this.updateOverlayVisibility();
+    };
+    if (window.IntersectionObserver) {
+      const config = { root: $('#libraryView')[0], rootMargin: (window.screen.height * 0.66) + 'px', threshold: 0 };
+      this.intersectionObs = new IntersectionObserver(this.onIntersection, config);
+    }
     $(document).on('album-favorite-changed', this.onAlbumFavoriteChanged);
     $(document).on('settings-show-play-button-changed settings-show-format-overlay-changed settings-show-library-date-and-format-changed', this.onSettingsChanged);
+    this.$el.on('click tap', this.onContainerClick);
+    this.$el.on('keydown', this.onContainerKeydown);
   }
 
   show(type = null, value = null) {
@@ -68,7 +108,9 @@ export default class LibraryContentList {
    * Removes all children, plus cleanup.
    */
   clear() {
-    this.intersectionObs.disconnect();
+    if (this.intersectionObs) {
+      this.intersectionObs.disconnect();
+    }
     this.preloadedImageUrls.clear();
     this.$el.removeClass('isEmptyState');
     this.$el.empty();
@@ -118,10 +160,8 @@ export default class LibraryContentList {
     for (let i = 0; i < array.length; i++) {
       const item = array[i];
       const $item = this.makeListItem(item, i);
-      $item.on("click tap", e => this.onItemClick(e));
-      $item.on("keydown", this.onItemKeydown);
       const img = $item.find('img')[0];
-      if (img) {
+      if (img && this.intersectionObs) {
         this.intersectionObs.observe(img);
       }
       $group.append($item);
@@ -215,20 +255,6 @@ export default class LibraryContentList {
   /**
    * Has special logic to fade in visible images on first batch only.
    */
-  onIntersection = (entries, self) => {
-
-    for (const entry of entries) {
-      const $img = $(entry.target);
-      if (entry.isIntersecting) {
-        const src = $img.attr('data-src');
-        if (src && $img.attr('src') !== src) {
-          $img.attr('src', src);
-        }
-        this.preloadNearbyImages(entry.target);
-      }
-    }
-  };
-
   preloadNearbyImages(imgEl) {
     const $imgs = this.$el.find('.libraryItemPicture img[data-src]');
     const currentIndex = $imgs.index(imgEl);
@@ -282,24 +308,6 @@ export default class LibraryContentList {
       return;
     }
     $(document).trigger('library-item-click', [album, $item]);
-  };
-
-  onItemKeydown = (event) => {
-    if (event.keyCode == 13) {
-      this.onItemClick(event);
-    }
-  };
-
-  onAlbumFavoriteChanged = (event, hash, isFavorite) => {
-    const selector = `[data-hash="${hash}"]`;
-    const $item = this.$el.find(selector);
-    if ($item.length > 0) {
-      if (isFavorite) {
-        $item.addClass('isFavorite');
-      } else {
-        $item.removeClass('isFavorite');
-      }
-    }
   };
 
   /**
@@ -397,30 +405,10 @@ export default class LibraryContentList {
     const showLibraryDateAndFormat = Settings.showLibraryDateAndFormat;
     const $items = this.$el.find('.libraryItem');
 
-    $items.each((index, item) => {
-      const $item = $(item);
-      if (showPlayButton) {
-        $item.addClass('show-play-button');
-      } else {
-        $item.removeClass('show-play-button');
-      }
-
-      if (showFormatOverlay) {
-        $item.addClass('show-format-overlay');
-      } else {
-        $item.removeClass('show-format-overlay');
-      }
-
-      if (showLibraryDateAndFormat) {
-        $item.addClass('show-library-date');
-      } else {
-        $item.removeClass('show-library-date');
-      }
-    });
+    // Batch class toggles in a single pass per class to minimize reflows.
+    $items.toggleClass('show-play-button', showPlayButton);
+    $items.toggleClass('show-format-overlay', showFormatOverlay);
+    $items.toggleClass('show-library-date', showLibraryDateAndFormat);
   }
 
-  onSettingsChanged = () => {
-    // Update all existing items in the library view
-    this.updateOverlayVisibility();
-  }
 }

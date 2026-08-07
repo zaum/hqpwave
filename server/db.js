@@ -75,6 +75,10 @@ const init = () => {
   tryAlter(`ALTER TABLE images ADD COLUMN thumbnail_url TEXT`);
   tryAlter(`ALTER TABLE images ADD COLUMN license TEXT`);
 
+  // Indexes to avoid full table scans on lookup-heavy queries.
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_artists_name ON artists(name)'); } catch (e) { /* ignore */ }
+  try { db.exec('CREATE INDEX IF NOT EXISTS idx_images_artist ON images(artist_id)'); } catch (e) { /* ignore */ }
+
   // Prepare & cache statements
   selectArtistByIdStmt = db.prepare('SELECT * FROM artists WHERE id = ?');
   selectArtistByNameStmt = db.prepare('SELECT * FROM artists WHERE name = ?');

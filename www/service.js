@@ -18,26 +18,137 @@ import Values from './values.js';
  */
 class Service {
 
-	queue = [];
-	currentItem = null;
+  constructor() {
+    this._queue = [];
+    this._currentItem = null;
+    this.queueTimestamp = 0;
+    this.itemTimestamp = 0;
+    this.proxyErrorStartTime = 0;
+    this.proxyErrorCounter = 0;
+    this.hasSentProxyErrorEvent = false;
+    this.serverErrorStartTime = 0;
+    this.serverErrorCounter = 0;
+    this.hasSentServerErrorEvent = false;
+    this._isConnected = true;
 
-  queueTimestamp = 0;
-	itemTimestamp = 0;
-  proxyErrorStartTime = 0;
-  proxyErrorCounter = 0;
-  hasSentProxyErrorEvent = false;
-  serverErrorStartTime = 0;
-  serverErrorCounter = 0;
-  hasSentServerErrorEvent = false;
-  _isConnected = true;
+    this.onError = (jqXHR, textStatus, errorThrown ) => {
+      this._isConnected = false;
+      if (!this.hasSentServerErrorEvent) {
+        if (this.serverErrorCounter == 0) {
+          this.serverErrorStartTime = new Date().getTime();
+        }
+        this.serverErrorCounter++;
+        const timespan = (new Date().getTime() - this.serverErrorStartTime);
+        if (this.serverErrorCounter >= 3 || timespan > 10000) {
+          // Rem, status of 0 means unreachable
+          cl('sending event proxy-errors');
+          $(document).trigger('server-errors', jqXHR.status);
+          this.hasSentServerErrorEvent = true;
+        }
+      }
+      this.doNextItem();
+    };
+    this.onSuccess = (data, textStatus, jqXHR) => {
+      this._isConnected = true;
+      this.serverErrorCounter = 0;
+      this.serverErrorStartTime = 0;
+
+      // Normalize responses that include an XML declaration node produced by the parser
+      // e.g. { "?xml": {...}, "LibraryGet": {...} } -> strip the "?xml" key so
+      // callers see a single-root payload as expected elsewhere in the app.
+      try {
+        if (data && data['?xml'] !== undefined) {
+          const keys = Object.keys(data || {});
+          if (keys.length > 1) {
+            const cleaned = {};
+            for (const k of keys) {
+              if (k === '?xml') continue;
+              cleaned[k] = data[k];
+            }
+            data = cleaned;
+          } else {
+            // only ?xml present — treat as empty payload
+            data = {};
+          }
+        }
+      } catch (e) {
+        // ignore normalization failures
+      }
+
+      // First, show toast on hqp-reported error
+      const errorText = DataUtil.isResultError(data);
+      if (errorText) {
+        if (errorText != DataUtil.NO_ERROR_TEXT_TEXT) {
+          // hqp will report error w/o error text if doing next-track from last-track (ie, more like a warning)
+          // which make me suspect it may do likewise in similarly non-error-like situations
+          // Allow callers to suppress the global HQPlayer-reported toast (they may show their own SnackView).
+          const shouldSuppress = this.currentItem && this.currentItem.suppressHqpErrorToast === true;
+          if (!shouldSuppress) {
+            ToastView.show(`<span class="colorAccent">HQPlayer-reported error: ${errorText}</span>`, 3000);
+          }
+        }
+      }
+
+      // Store model data if applicable;
+      // model will send event that it's been updated.
+      if (data['Status'] != undefined) {
+        Model.setStatusUsingResponseObject(data['Status']);
+      } else if (data['State'] != undefined) {
+        Model.setStateUsingResponseObject(data);
+      } else if (data['PlaylistGet'] != undefined) {
+        Model.setPlaylistDataUsingResponseObject(data);
+      } else if (data['LibraryGet'] != undefined) {
+        Model.setLibraryDataUsingResponseObject(data);
+      } else if (data['GetInfo']!= undefined) {
+        Model.setInfoUsingResponseObject(data);
+      }
+
+      // Do callback associated with the item
+      if (this.currentItem.callback) {
+        this.currentItem.callback(data); 
+      }
+
+      // Send event about the type of response that was handled, plus payload
+      const a = Object.keys(data);
+      let type = null;
+      if (a.length != 1) {
+        cl('warning unexpected, wrong number of keys:', data);
+      } else {
+        type = a[0];
+      }
+      $(document).trigger('service-response-handled', [type, data]);
+
+      if (data['error']) {
+        // Rem, this is an error coming from the hqpwv server, not hqp.
+        if (!this.hasSentProxyErrorEvent) {
+          // If too many consecutive 'proxy errors', send event (just 1).
+          if (this.proxyErrorCounter == 0) {
+            this.proxyErrorStartTime = new Date().getTime();
+          }
+          this.proxyErrorCounter++;
+          const timespan = (new Date().getTime() - this.proxyErrorStartTime);
+          if (this.proxyErrorCounter >= 3 || timespan > 10000) {
+            cl('sending event proxy-errors')
+            $(document).trigger('proxy-errors', data['error']);
+            this.hasSentProxyErrorEvent = true;
+          }
+        } else {
+          this.proxyErrorCounter = 0;
+          this.proxyErrorStartTime = 0;
+        }
+      }
+
+      this.doNextItem();
+    };
+  }
 
 	/** The currently active command 'item', which is an object with an xml and callback properties. */
-	get currentItem() { return this.currentItem; }
+	get currentItem() { return this._currentItem; }
 
-	get isBusy() { return !!this.currentItem }
+	get isBusy() { return !!this._currentItem }
 
 	/** Queued 'commands' waiting to be processed. */
-	get queue() { return this.queue; }
+	get queue() { return this._queue; }
 	
 	/** Returns true if connected to HQPlayer */
 	get isConnected() { 
@@ -97,15 +208,15 @@ class Service {
 		this.queueCommandsFront(a);
 	}
 
-	doNextItem() {
-		if (this.queue.length == 0) {
-			///cl(`service - queue complete ${new Date().getTime() - this.queueTimestamp}ms`);
-			this.currentItem = null;
-			return;
-		}
+  doNextItem() {
+    if (this.queue.length == 0) {
+      ///cl(`service - queue complete ${new Date().getTime() - this.queueTimestamp}ms`);
+      this._currentItem = null;
+      return;
+    }
 
-		this.itemTimestamp = new Date().getTime();
-		this.currentItem = this.queue.shift();
+    this.itemTimestamp = new Date().getTime();
+    this._currentItem = this.queue.shift();
 
     /*
     // somehow this optimization causes problem when new track activates apply-preset sequence.
@@ -144,126 +255,8 @@ class Service {
       success: this.onSuccess}); // todo timeout?
   }
 
-  /**
-   * If too many consecutive errors, send an event (just once).
-   */
-  onError = (jqXHR, textStatus, errorThrown ) => {
-    this._isConnected = false;
-    if (!this.hasSentServerErrorEvent) {
-      if (this.serverErrorCounter == 0) {
-        this.serverErrorStartTime = new Date().getTime();
-      }
-      this.serverErrorCounter++;
-      const timespan = (new Date().getTime() - this.serverErrorStartTime);
-      if (this.serverErrorCounter >= 3 || timespan > 10000) {
-        // Rem, status of 0 means unreachable
-        cl('sending event proxy-errors');
-        $(document).trigger('server-errors', jqXHR.status);
-        this.hasSentServerErrorEvent = true;
-      }
-    }
-    this.doNextItem();
-  };
 
-	/**
-	 * Invokes the current item's callback with the response data, 
-	 * and does next item in queue, if any. 
-	 *
-	 * @param data is json (converted from xml, using `fast-xml-parser`)
-	 *     Errors are represented like this: `{ error: "some_error" }`
-	 */
-	onSuccess = (data, textStatus, jqXHR) => {
-    this._isConnected = true;
-    this.serverErrorCounter = 0;
-    this.serverErrorStartTime = 0;
 
-    // Normalize responses that include an XML declaration node produced by the parser
-    // e.g. { "?xml": {...}, "LibraryGet": {...} } -> strip the "?xml" key so
-    // callers see a single-root payload as expected elsewhere in the app.
-    try {
-      if (data && data['?xml'] !== undefined) {
-        const keys = Object.keys(data || {});
-        if (keys.length > 1) {
-          const cleaned = {};
-          for (const k of keys) {
-            if (k === '?xml') continue;
-            cleaned[k] = data[k];
-          }
-          data = cleaned;
-        } else {
-          // only ?xml present — treat as empty payload
-          data = {};
-        }
-      }
-    } catch (e) {
-      // ignore normalization failures
-    }
-
-    // First, show toast on hqp-reported error
-    const errorText = DataUtil.isResultError(data);
-    if (errorText) {
-      if (errorText != DataUtil.NO_ERROR_TEXT_TEXT) {
-        // hqp will report error w/o error text if doing next-track from last-track (ie, more like a warning)
-        // which make me suspect it may do likewise in similarly non-error-like situations
-        // Allow callers to suppress the global HQPlayer-reported toast (they may show their own SnackView).
-        const shouldSuppress = this.currentItem && this.currentItem.suppressHqpErrorToast === true;
-        if (!shouldSuppress) {
-          ToastView.show(`<span class="colorAccent">HQPlayer-reported error: ${errorText}</span>`, 3000);
-        }
-      }
-    }
-
-    // Store model data if applicable;
-		// model will send event that it's been updated.
-		if (data['Status'] != undefined) {
-      Model.setStatusUsingResponseObject(data['Status']);
-    } else if (data['State'] != undefined) {
-      Model.setStateUsingResponseObject(data);
-		} else if (data['PlaylistGet'] != undefined) {
-			Model.setPlaylistDataUsingResponseObject(data);
-		} else if (data['LibraryGet'] != undefined) {
-      Model.setLibraryDataUsingResponseObject(data);
-		} else if (data['GetInfo']!= undefined) {
-      Model.setInfoUsingResponseObject(data);
-    }
-
-		// Do callback associated with the item
-		if (this.currentItem.callback) {
-			this.currentItem.callback(data); 
-		}
-
-    // Send event about the type of response that was handled, plus payload
-    const a = Object.keys(data);
-    let type = null;
-    if (a.length != 1) {
-      cl('warning unexpected, wrong number of keys:', data);
-    } else {
-      type = a[0];
-    }
-    $(document).trigger('service-response-handled', [type, data]);
-
-    if (data['error']) {
-      // Rem, this is an error coming from the hqpwv server, not hqp.
-      if (!this.hasSentProxyErrorEvent) {
-        // If too many consecutive 'proxy errors', send event (just 1).
-        if (this.proxyErrorCounter == 0) {
-          this.proxyErrorStartTime = new Date().getTime();
-        }
-        this.proxyErrorCounter++;
-        const timespan = (new Date().getTime() - this.proxyErrorStartTime);
-        if (this.proxyErrorCounter >= 3 || timespan > 10000) {
-          cl('sending event proxy-errors')
-          $(document).trigger('proxy-errors', data['error']);
-          this.hasSentProxyErrorEvent = true;
-        }
-      } else {
-        this.proxyErrorCounter = 0;
-        this.proxyErrorStartTime = 0;
-      }
-    }
-
-    this.doNextItem();
-	}
 }
 
 export default new Service()

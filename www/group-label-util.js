@@ -24,25 +24,21 @@ export default class GroupLabelUtil {
     return $label;
   }
 
-  static onClick = (event) => {
-    // Get the label element
-    const $label = $(event.currentTarget);
-    
-    // Toggle states of both the 'label' el and the 'group' el that follows it
-    const $group = $label.next();
-    const shouldCollapse = !$label.hasClass('isCollapsed');
-    if (shouldCollapse) {
-      $label.addClass('isCollapsed');
-      $group.addClass('isCollapsed');
-    } else {
-      $label.removeClass('isCollapsed');
-      $group.removeClass('isCollapsed');
-    }
-
-    // Update settings
-    let key = $label.attr('data-collapsekey');
-    if (key) {
-      Settings.setLibraryGroupCollapsed(key, shouldCollapse);
-    }
-  };
 }
+
+GroupLabelUtil.onClick = (event) => {
+  const $label = $(event.currentTarget);
+  const $group = $label.next();
+  const shouldCollapse = !$label.hasClass('isCollapsed');
+  if (shouldCollapse) {
+    $label.addClass('isCollapsed');
+    $group.addClass('isCollapsed');
+  } else {
+    $label.removeClass('isCollapsed');
+    $group.removeClass('isCollapsed');
+  }
+  let key = $label.attr('data-collapsekey');
+  if (key) {
+    Settings.setLibraryGroupCollapsed(key, shouldCollapse);
+  }
+};

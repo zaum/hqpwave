@@ -1,4 +1,11 @@
 /* Timeline minimap is implemented in timeline-minimap.js module. */
+
+// Compatibility target: Safari 12+ / iOS 12+
+// Do NOT use: class fields, optional chaining (?.),
+// CSS :has(), CSS clamp()
+// OK: class, import/export, async/await, destructuring,
+// spread, Set/Map, CSS Grid, CSS variables, fetch()
+
 import AlbumView from './album-view.js';
 import AppUtil from './app-util.js';
 import Busyer from './busyer.js';
@@ -38,44 +45,43 @@ import ArtistView from './artist-view.js';
  */
 export default class App {
 
-  static instance;
-
-  playbarView = new PlaybarView();
-  libraryView = new LibraryView();
-  albumView = new AlbumView();
-  artistView = new ArtistView();
-  playlistView = new PlaylistCompoundView();
-  settingsView = new SettingsView();
-  hqpSettingsView = new HqpSettingsView();
-  subviews = [this.libraryView, this.albumView, this.artistView, this.playlistView, this.settingsView, this.hqpSettingsView];
-
-
-  sidebarView = SidebarView;
-
-  $pageHolder = $('#page');
-  $settingsButton = $('#settingsButton');
-  $hqpSettingsButton = $('#hqpSettingsButton');
-  $brandLogo = $('#brandLogo');
-  $navPills = $('.nav-pill');
-
-  instanceId = Math.floor(Math.random() * 99999999);
-  lastKeyTime = 0;
-  minKeyDuration = 350;
-  resizeTimeoutId = 0;
-  subviewZ = 100;
-  transitionDurationMs = 350;
-  metaRetryTimeoutId = 0;
-  metaRetryCount = 0;
-  metaRetryMax = 3;
-  isBrandLogoAnimationRunning = false;
-  brandLogoAnimationCooldownUntil = 0;
-  isCompactViewport = false;
-  lastViewedAlbum = null;
-  loadingProgress;
-
   constructor() {
+    this.instanceId = Math.floor(Math.random() * 99999999);
+    this.lastKeyTime = 0;
+    this.minKeyDuration = 350;
+    this.resizeTimeoutId = 0;
+    this.subviewZ = 100;
+    this.transitionDurationMs = 350;
+    this.metaRetryTimeoutId = 0;
+    this.metaRetryCount = 0;
+    this.metaRetryMax = 3;
+    this.isBrandLogoAnimationRunning = false;
+    this.brandLogoAnimationCooldownUntil = 0;
+    this.isCompactViewport = false;
+    this.lastViewedAlbum = null;
+
+    this.playbarView = new PlaybarView();
+    this.libraryView = new LibraryView();
+    this.albumView = new AlbumView();
+    this.artistView = new ArtistView();
+    this.playlistView = new PlaylistCompoundView();
+    this.settingsView = new SettingsView();
+    this.hqpSettingsView = new HqpSettingsView();
+    this.subviews = [this.libraryView, this.albumView, this.artistView, this.playlistView, this.settingsView, this.hqpSettingsView];
+
+    this.sidebarView = SidebarView;
+
+    this.$pageHolder = $('#page');
+    this.$settingsButton = $('#settingsButton');
+    this.$hqpSettingsButton = $('#hqpSettingsButton');
+    this.$brandLogo = $('#brandLogo');
+    this.$navPills = $('.nav-pill');
+
     if (Util.isTouch) {
       $('html').addClass('isTouch');
+    }
+    if (Settings.performanceMode) {
+      $('html').addClass('performanceMode');
     }
     AppUtil.updateColorTheme();
     // Initialize accent color CSS variables
@@ -83,6 +89,149 @@ export default class App {
     // Initialize player background color
     document.documentElement.style.setProperty('--player-bg', Settings.playerBackgroundColor);
     ViewUtil.setVisible($('html'), true);
+
+    this.onWindowResize = (e) => {
+      clearTimeout(this.resizeTimeoutId);
+      this.resizeTimeoutId = setTimeout(() => {
+        this.doWindowResize();
+      }, 100);
+    };
+    this.onKeydown = (e) => {
+      const isFocusInput = $(document.activeElement).is('input');
+      if (isFocusInput) {
+        return;
+      }
+
+      // Ignore keypresses if a modal popup is up (eg context menu, etc)
+      // except for the following cases:
+      if ($(document.body).css('pointer-events') == 'none') {
+        let isWhitelisted = false;
+        switch (e.key) {
+          case 'Escape':
+          case '+':
+          case '=':
+          case '-':
+            isWhitelisted = true;
+            break;
+        }
+        if (!isWhitelisted) {
+          return;
+        }
+      }
+
+      const elapsed = new Date().getTime() - this.lastKeyTime;
+      if (elapsed < this.minKeyDuration) {
+        return;
+      }
+
+      this.lastKeyTime = new Date().getTime();
+
+      const short = 100;
+      // should match or exceed $app-standard-duration
+      const long = 450;
+
+      switch (e.key) {
+        case 'Escape':
+          this.doEscape();
+          this.minKeyDuration = long;
+          break;
+        case 'q':
+          this.playbarView.$showPlaylistButton.click();
+          this.minKeyDuration = long;
+          break;
+        case 'u':
+          // Toggle hqp settings view
+          if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
+            this.hideHqpSettingsView();
+          } else {
+            this.showHqpSettingsView();
+          }
+          this.minKeyDuration = long;
+          break;
+        case 'f':
+          e.preventDefault();
+          // If we're already on the library and the albums list is visible,
+          // trigger the existing search button behavior.
+          if (this.getTopSubview() == this.libraryView
+            && ViewUtil.isDisplayed(this.libraryView.albumsList.$el) && Model.hasLibrary) {
+            this.libraryView.$searchButton.click();
+          } else {
+            // Otherwise, navigate to the library view and focus the global search input
+            // after the transition completes so the input receives the caret.
+            this.goToLibraryView();
+            setTimeout(() => {
+              try {
+                this.libraryView.openSearch();
+              } catch (err) {
+                // ignore focus errors
+              }
+            }, this.transitionDurationMs + 40);
+          }
+          this.minKeyDuration = long;
+          break;
+        case 's':
+          this.playbarView.$stopButton.click();
+          this.minKeyDuration = long;
+          break;
+        case 'p':
+          this.playbarView.$playButton.click();
+          this.minKeyDuration = long;
+          break;
+        case 'j':
+          this.playbarView.$previousButton.click();
+          this.minKeyDuration = long;
+          break;
+        case 'k':
+          this.playbarView.$nextButton.click();
+          this.minKeyDuration = long;
+          break;
+        case ',':
+          this.playbarView.$seekBackwardButton.click();
+          this.minKeyDuration = short;
+          break;
+        case '.':
+          this.playbarView.$seekForwardButton.click();
+          this.minKeyDuration = short;
+          break;
+        case '+':
+        case '=':
+          if (!ViewUtil.isVisible(this.playbarView.volumePanel.$el)) {
+            this.playbarView.$volumeToggle.click()
+          }
+          this.playbarView.volumePanel.$plus1.click();
+          this.minKeyDuration = short;
+          break;
+        case '-':
+          if (!ViewUtil.isVisible(this.playbarView.volumePanel.$el)) {
+            this.playbarView.$volumeToggle.click();
+          }
+          this.playbarView.volumePanel.$minus1.click();
+          this.minKeyDuration = short;
+          break;
+      }
+    };
+    this.onShowLogoAnimationChanged = () => {
+      this.updateBrandLogoAnimationState();
+    };
+    this.onPerformanceModeChanged = () => {
+      if (Settings.performanceMode) {
+        $('html').addClass('performanceMode');
+      } else {
+        $('html').removeClass('performanceMode');
+      }
+    };
+    this.onGlobalSearchEnter = (value = '') => {
+      if (this.getTopSubview() !== this.libraryView) {
+        this.goToLibraryView();
+      }
+
+      const searchValue = (value || '').trim();
+      if (searchValue.length === 0) {
+        this.libraryView.clearHeaderSearchFilter();
+      } else {
+        this.libraryView.applyHeaderSearchFilter(searchValue);
+      }
+    };
 
     $(window).on('resize', this.onWindowResize);
     this.doWindowResize();
@@ -102,6 +251,7 @@ export default class App {
     Util.addAppListener(this, 'server-errors', this.showServerErrorsSnack);
     Util.addAppListener(this, 'service-response-handled', this.onServiceResponseHandled);
     Util.addAppListener(this, 'settings-show-logo-animation-changed', this.onShowLogoAnimationChanged);
+    Util.addAppListener(this, 'settings-performance-mode-changed', this.onPerformanceModeChanged);
 
     Util.addAppListener(this, 'library-item-click', this.showAlbumView);
     Util.addAppListener(this, 'show-artist', this.showArtistView);
@@ -244,10 +394,6 @@ export default class App {
 
     this.isBrandLogoAnimationRunning = false;
     this.$brandLogo.removeClass('isStrokeAnimating');
-  }
-
-  onShowLogoAnimationChanged = () => {
-    this.updateBrandLogoAnimationState();
   }
 
   /**
@@ -582,7 +728,7 @@ export default class App {
       TopBarUtil.updateFor(this.libraryView.$el, true);
       ViewUtil.setFocus(this.libraryView.$el);
       this.setActiveNavPill('library');
-      if (this.libraryView?.albumsList?.updateOverlayVisibility) {
+      if (this.libraryView && this.libraryView.albumsList && this.libraryView.albumsList.updateOverlayVisibility) {
         this.libraryView.albumsList.updateOverlayVisibility();
       }
     });
@@ -626,7 +772,7 @@ export default class App {
   }
 
   getCurrentAlbum() {
-    const meta = Model.status?.metadata || {};
+    const meta = (Model.status && Model.status.metadata) || {};
     const uri = meta['@_uri'];
     if (uri && Model.hasLibrary) {
       const fromStatus = Model.library.getAlbumByTrackUri(uri);
@@ -635,20 +781,20 @@ export default class App {
       }
     }
 
-    const currentIndex = Model.playlist?.currentIndex;
+    const currentIndex = Model.playlist ? Model.playlist.currentIndex : undefined;
     const hasCurrentTrack = Number.isInteger(currentIndex)
       && currentIndex >= 0
-      && currentIndex < (Model.playlist?.array?.length || 0);
+      && currentIndex < ((Model.playlist && Model.playlist.array && Model.playlist.array.length) || 0);
     if (!hasCurrentTrack) {
       return null;
     }
 
     const currentTrack = Model.playlist.array[currentIndex];
-    if (currentTrack?.album) {
+    if (currentTrack && currentTrack.album) {
       return currentTrack.album;
     }
 
-    const trackUri = currentTrack?.['@_uri'];
+    const trackUri = currentTrack && currentTrack['@_uri'];
     if (trackUri && Model.hasLibrary) {
       return Model.library.getAlbumByTrackUri(trackUri) || null;
     }
@@ -661,7 +807,7 @@ export default class App {
     if (album) {
       return album['@_artist'] || album['@_performer'] || null;
     }
-    const meta = Model.status?.metadata || {};
+    const meta = (Model.status && Model.status.metadata) || {};
     return meta['@_artist'] || meta['@_performer'] || null;
   }
 
@@ -879,7 +1025,7 @@ export default class App {
 
   hideAlbumView() {
     this.hideSubview(this.albumView);
-    if (this.libraryView?.albumsList?.updateOverlayVisibility) {
+    if (this.libraryView && this.libraryView.albumsList && this.libraryView.albumsList.updateOverlayVisibility) {
       this.libraryView.albumsList.updateOverlayVisibility();
     }
   }
@@ -1012,7 +1158,7 @@ export default class App {
     // Album tab disabled state
     // Consider an album 'loaded' not only when we can resolve a library album,
     // but also when status metadata or the playbar cover URL is present.
-    const statusMeta = Model.status?.metadata || {};
+    const statusMeta = (Model.status && Model.status.metadata) || {};
     const hasCurrentAlbum = !!this.getCurrentAlbum()
       || Boolean(statusMeta['@_album'] || statusMeta['@_uri'])
       || (!!this.playbarView && !!this.playbarView._coverUrl)
@@ -1146,120 +1292,6 @@ export default class App {
    * which must elapse before a new keypress will be accepted.
    * 
    */
-  onKeydown = (e) => {
-    const isFocusInput = $(document.activeElement).is('input');
-    if (isFocusInput) {
-      return;
-    }
-
-    // Ignore keypresses if a modal popup is up (eg context menu, etc)
-    // except for the following cases:
-    if ($(document.body).css('pointer-events') == 'none') {
-      let isWhitelisted = false;
-      switch (e.key) {
-        case 'Escape':
-        case '+':
-        case '=':
-        case '-':
-          isWhitelisted = true;
-          break;
-      }
-      if (!isWhitelisted) {
-        return;
-      }
-    }
-
-    const elapsed = new Date().getTime() - this.lastKeyTime;
-    if (elapsed < this.minKeyDuration) {
-      return;
-    }
-
-    this.lastKeyTime = new Date().getTime();
-
-    const short = 100;
-    // should match or exceed $app-standard-duration
-    const long = 450;
-
-    switch (e.key) {
-      case 'Escape':
-        this.doEscape();
-        this.minKeyDuration = long;
-        break;
-      case 'q':
-        this.playbarView.$showPlaylistButton.click();
-        this.minKeyDuration = long;
-        break;
-      case 'u':
-        // Toggle hqp settings view
-        if (ViewUtil.isVisible(this.hqpSettingsView.$el)) {
-          this.hideHqpSettingsView();
-        } else {
-          this.showHqpSettingsView();
-        }
-        this.minKeyDuration = long;
-        break;
-      case 'f':
-        e.preventDefault();
-        // If we're already on the library and the albums list is visible,
-        // trigger the existing search button behavior.
-        if (this.getTopSubview() == this.libraryView
-          && ViewUtil.isDisplayed(this.libraryView.albumsList.$el) && Model.hasLibrary) {
-          this.libraryView.$searchButton.click();
-        } else {
-          // Otherwise, navigate to the library view and focus the global search input
-          // after the transition completes so the input receives the caret.
-          this.goToLibraryView();
-          setTimeout(() => {
-            try {
-              this.libraryView.openSearch();
-            } catch (err) {
-              // ignore focus errors
-            }
-          }, this.transitionDurationMs + 40);
-        }
-        this.minKeyDuration = long;
-        break;
-      case 's':
-        this.playbarView.$stopButton.click();
-        this.minKeyDuration = long;
-        break;
-      case 'p':
-        this.playbarView.$playButton.click();
-        this.minKeyDuration = long;
-        break;
-      case 'j':
-        this.playbarView.$previousButton.click();
-        this.minKeyDuration = long;
-        break;
-      case 'k':
-        this.playbarView.$nextButton.click();
-        this.minKeyDuration = long;
-        break;
-      case ',':
-        this.playbarView.$seekBackwardButton.click();
-        this.minKeyDuration = short;
-        break;
-      case '.':
-        this.playbarView.$seekForwardButton.click();
-        this.minKeyDuration = short;
-        break;
-      case '+':
-      case '=':
-        if (!ViewUtil.isVisible(this.playbarView.volumePanel.$el)) {
-          this.playbarView.$volumeToggle.click()
-        }
-        this.playbarView.volumePanel.$plus1.click();
-        this.minKeyDuration = short;
-        break;
-      case '-':
-        if (!ViewUtil.isVisible(this.playbarView.volumePanel.$el)) {
-          this.playbarView.$volumeToggle.click();
-        }
-        this.playbarView.volumePanel.$minus1.click();
-        this.minKeyDuration = short;
-        break;
-    }
-  };
 
   applyLibrarySearchFromAlbum(value) {
     const searchValue = (value || '').trim();
@@ -1294,19 +1326,6 @@ export default class App {
   onAlbumCreditButton({ value, type }) {
     this.applyLibrarySearchFromAlbum(value);
   }
-
-  onGlobalSearchEnter = (value = '') => {
-    if (this.getTopSubview() !== this.libraryView) {
-      this.goToLibraryView();
-    }
-
-    const searchValue = (value || '').trim();
-    if (searchValue.length === 0) {
-      this.libraryView.clearHeaderSearchFilter();
-    } else {
-      this.libraryView.applyHeaderSearchFilter(searchValue);
-    }
-  };
 
   onAlbumArtistButton(artist) {
     $(document).trigger('show-artist', artist);
@@ -1343,14 +1362,6 @@ export default class App {
       MetaUtil.init();
     }, 2500);
   }
-
-  /** Triggers custom resize event 100ms after last window resize event. */
-  onWindowResize = (e) => {
-    clearTimeout(this.resizeTimeoutId);
-    this.resizeTimeoutId = setTimeout(() => {
-      this.doWindowResize();
-    }, 100);
-  };
 
   onServiceResponseHandled(type, data) {
     // Hide snackbar if issue resolved

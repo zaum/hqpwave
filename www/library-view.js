@@ -25,23 +25,10 @@ import ViewUtil from './view-util.js';
  */
 export default class LibraryView extends Subview {
 
-  $title;
-  $itemCount;
-  $scrollEl;
-
-  albumOptionsView; // dropdowns + search button
-  $searchButton;
-  $searchCloseButton;
-
-  albumsList;
-  $searchList;
-  $timelineView;
-  trackMetaChangeHandler;
-  _resultMode = 'albums';
-  _resultCount = 0;
-
   constructor() {
     super($("#libraryView"));
+    this._resultMode = 'albums';
+    this._resultCount = 0;
     this.$scrollEl = this.$el.find('.library-main');
     // Throttled scroll handler for better performance on mobile
     // Increase throttle slightly to reduce work during fast scrolls and prevent jank
@@ -157,7 +144,7 @@ export default class LibraryView extends Subview {
           this.$searchToggleBtn.toggleClass('active', this.$globalSearchInput.val().trim().length > 0);
           // Small delay for the transition to start, then focus
           setTimeout(() => {
-            this.$globalSearchInput[0]?.focus({ preventScroll: true });
+            this.$globalSearchInput[0] && this.$globalSearchInput[0].focus({ preventScroll: true });
           }, 100);
         }
       });
@@ -177,6 +164,47 @@ export default class LibraryView extends Subview {
       });
     }
 
+    this.onAlbumFavoriteChanged = () => {
+      const { browse } = SidebarView.getFilterState();
+      if (browse === 'favorite-albums') {
+        this.applyAllFilters();
+      }
+    };
+    this.onTrackFavoriteChanged = () => {
+      const { browse } = SidebarView.getFilterState();
+      if (browse === 'favorite-tracks') {
+        this.applyAllFilters();
+      }
+    };
+    this.onMetaLoadResult = () => {
+      if (!Model.library || !Model.library.albums) {
+        return;
+      }
+      this.applyAllFilters();
+    };
+    this.onEmptyStateResetClick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const action = $(event.currentTarget).attr('data-action');
+      if (this._globalSearchDebounceTimer) {
+        clearTimeout(this._globalSearchDebounceTimer);
+        this._globalSearchDebounceTimer = null;
+      }
+      if (action === 'clear-filters') {
+        SidebarView.resetFilters();
+        return;
+      }
+      if (this.$globalSearchInput && this.$globalSearchInput.length > 0) {
+        this.$globalSearchInput.val('');
+      }
+      if (this.$globalSearchClear && this.$globalSearchClear.length > 0) {
+        this.$globalSearchClear.css('display', 'none');
+      }
+      if (this.$searchToggleBtn && this.$searchToggleBtn.length > 0) {
+        this.$searchToggleBtn.removeClass('active');
+      }
+      this.clearHeaderSearchFilter();
+    };
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
     Util.addAppListener(this, 'library-albums-filter-changed library-albums-list-populated',
       () => this.updateHeaderText(false));
@@ -612,27 +640,6 @@ export default class LibraryView extends Subview {
     this.applyAllFilters();
   }
 
-  onAlbumFavoriteChanged = () => {
-    const { browse } = SidebarView.getFilterState();
-    if (browse === 'favorite-albums') {
-      this.applyAllFilters();
-    }
-  }
-
-  onTrackFavoriteChanged = () => {
-    const { browse } = SidebarView.getFilterState();
-    if (browse === 'favorite-tracks') {
-      this.applyAllFilters();
-    }
-  }
-
-  onMetaLoadResult = () => {
-    if (!Model.library || !Model.library.albums) {
-      return;
-    }
-    this.applyAllFilters();
-  }
-
   /**
    * Get format key for album based on sample rate and bits.
  */
@@ -885,31 +892,5 @@ export default class LibraryView extends Subview {
     }
   }
 
-  onEmptyStateResetClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
 
-    const action = $(event.currentTarget).attr('data-action');
-
-    if (this._globalSearchDebounceTimer) {
-      clearTimeout(this._globalSearchDebounceTimer);
-      this._globalSearchDebounceTimer = null;
-    }
-
-    if (action === 'clear-filters') {
-      SidebarView.resetFilters();
-      return;
-    }
-
-    if (this.$globalSearchInput && this.$globalSearchInput.length > 0) {
-      this.$globalSearchInput.val('');
-    }
-    if (this.$globalSearchClear && this.$globalSearchClear.length > 0) {
-      this.$globalSearchClear.css('display', 'none');
-    }
-    if (this.$searchToggleBtn && this.$searchToggleBtn.length > 0) {
-      this.$searchToggleBtn.removeClass('active');
-    }
-    this.clearHeaderSearchFilter();
-  }
 }

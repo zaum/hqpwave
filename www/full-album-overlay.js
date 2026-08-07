@@ -27,20 +27,65 @@ const decodeAlbumPath = (value) => {
  */
 class FullAlbumOverlay {
 
-  /** Overlay is above almost all other elements on the page */
-  $overlayScreen = $('#fullOverlayScreen');
-  /** The album image copy, which is actually one level above in the z-index. */
-  $overlayImage = $('#fullOverlayImage');
-  $prevButton = $('#fullOverlayPrevButton');
-  $nextButton = $('#fullOverlayNextButton');
-  $sourceImage;
-  imageUrls = [];
-  currentImageIndex = 0;
-  albumCoverCountHint = 0;
-  overlaySessionId = 0;
-  isZoomAnimating = false;
-
   constructor() {
+    this.$overlayScreen = $('#fullOverlayScreen');
+    this.$overlayImage = $('#fullOverlayImage');
+    this.$prevButton = $('#fullOverlayPrevButton');
+    this.$nextButton = $('#fullOverlayNextButton');
+    this.imageUrls = [];
+    this.currentImageIndex = 0;
+    this.albumCoverCountHint = 0;
+    this.overlaySessionId = 0;
+    this.isZoomAnimating = false;
+
+    this.onPrevButtonClick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.stepImage(-1);
+    };
+    this.onNextButtonClick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.stepImage(1);
+    };
+    this.onDocumentKeydown = (event) => {
+      if (!ViewUtil.isDisplayed(this.$overlayScreen)) {
+        return;
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        event.stopPropagation();
+        this.stepImage(-1);
+        return;
+      }
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        event.stopPropagation();
+        this.stepImage(1);
+        return;
+      }
+    };
+    this.onOverlayImageLoad = () => {
+      if (!this.$overlayImage.is(':visible')) {
+        return;
+      }
+      if (this.isZoomAnimating) {
+        return;
+      }
+      const r = this.getEndRect(this.$overlayImage);
+      ViewUtil.setCssSync(this.$overlayImage,
+        () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r));
+      this.updateNavRailsPosition(r);
+    };
+    this.onWindowResize = () => {
+      const r = this.getEndRect(this.$overlayImage);
+      ViewUtil.setCssSync(this.$overlayImage,
+          () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r));
+      this.updateNavRailsPosition(r);
+    };
+
     Util.addAppListener(this, 'album-picture-click', this.onAlbumPictureClick);
     this.$overlayScreen.on('click tap', () => this.animateOut());
     this.$overlayImage.on('click tap', () => this.animateOut());
@@ -58,14 +103,14 @@ class FullAlbumOverlay {
   noop() {}
 
   onAlbumPictureClick(payload) {
-    const $sourceImage = payload?.$sourceImage ? $(payload.$sourceImage) : $(payload);
+    const $sourceImage = payload && payload.$sourceImage ? $(payload.$sourceImage) : $(payload);
     this.$sourceImage = $sourceImage; // todo weird, revisit
-    this.albumCoverCountHint = Number.isFinite(payload?.coverCount) ? payload.coverCount : 0;
-    const albumPath = decodeAlbumPath(payload?.album?.['@_path'] || '');
+    this.albumCoverCountHint = Number.isFinite(payload && payload.coverCount) ? payload.coverCount : 0;
+    const albumPath = decodeAlbumPath(payload && payload.album ? (payload.album['@_path'] || '') : '');
     const sourceUrl = this.$sourceImage.attr('src');
     this.overlaySessionId += 1;
 
-    if (payload?.images && Array.isArray(payload.images)) {
+    if (payload && payload.images && Array.isArray(payload.images)) {
       this.imageUrls = payload.images.map(img => typeof img === 'string' ? img : img.proxyUrl || img.url);
       this.currentImageIndex = Number.isInteger(payload.currentIndex) ? payload.currentIndex : 0;
       this.updateNavButtons();
@@ -244,18 +289,6 @@ class FullAlbumOverlay {
     });
   }
 
-  onPrevButtonClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    this.stepImage(-1);
-  };
-
-  onNextButtonClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    this.stepImage(1);
-  };
-
   stepImage(delta) {
     if (!this.imageUrls.length) {
       return;
@@ -304,39 +337,6 @@ class FullAlbumOverlay {
     this.$nextButton.css(style);
   }
 
-  onDocumentKeydown = (event) => {
-    if (!ViewUtil.isDisplayed(this.$overlayScreen)) {
-      return;
-    }
-
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      event.stopPropagation();
-      this.stepImage(-1);
-      return;
-    }
-
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      event.stopPropagation();
-      this.stepImage(1);
-      return;
-    }
-  };
-
-  onOverlayImageLoad = () => {
-    if (!this.$overlayImage.is(':visible')) {
-      return;
-    }
-    if (this.isZoomAnimating) {
-      return;
-    }
-    const r = this.getEndRect(this.$overlayImage);
-    ViewUtil.setCssSync(this.$overlayImage,
-      () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r));
-    this.updateNavRailsPosition(r);
-  };
-
   hide() {
     this.isZoomAnimating = false;
     ViewUtil.setDisplayed(this.$overlayScreen, false);
@@ -354,13 +354,6 @@ class FullAlbumOverlay {
     this.currentImageIndex = 0;
     this.updateNavButtons();
   }
-
-  onWindowResize = () => {
-    const r = this.getEndRect(this.$overlayImage);
-    ViewUtil.setCssSync(this.$overlayImage,
-        () => ViewUtil.setLeftTopWidthHeight(this.$overlayImage, ...r));
-    this.updateNavRailsPosition(r);
-  };
 }
 
 export default new FullAlbumOverlay();

@@ -1,3 +1,10 @@
+/* Performance mode: disable all backdrop-filter effects */
+html.performanceMode,
+html.performanceMode * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 @keyframes pulse-glow {
   0% {
     opacity: 0;
@@ -160,7 +167,7 @@
   transition: color 0.15s, background 0.15s;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .search-toggle-btn:hover {
   color: var(--text);
   background: var(--raised);
@@ -192,7 +199,7 @@
 }
 
 /* Below 1024px: show search toggle and right sort icons */
-@media (max-width: 1023px) {
+@media (max-width: 1024px) {
   .search-toggle-btn {
     display: flex;
   }
@@ -268,7 +275,7 @@
     fill: currentColor;
   }
 
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   .sort-icons-right .sort-icon:hover {
     color: var(--text);
     background: var(--raised);
@@ -281,7 +288,7 @@
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
 
   .sort-icons-right .sort-icon {
     width: 26px;
@@ -319,7 +326,7 @@
   background: transparent;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #topBarButtons .iconButton:hover {
   background: var(--raised);
 }
@@ -438,7 +445,7 @@
   display: none;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
 
   #topBar {
     grid-template-areas:
@@ -664,7 +671,7 @@
   white-space: nowrap;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .nav-pill:hover {
   color: var(--text-2);
   background: rgba(255, 255, 255, 0.04);
@@ -681,7 +688,7 @@
   opacity: 1 !important;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .lightTheme .nav-pill:hover:not(.isDisabled) {
   background: rgba(0, 0, 0, 0.04);
 }
@@ -754,7 +761,7 @@
   opacity: 0.7 !important;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 /* Match hover background used by settings button */
 #hqpSettingsButton:hover {
   background-color: var(--raised) !important;
@@ -766,7 +773,7 @@
   opacity: 1 !important;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #settingsButton:hover {
   background-color: var(--raised) !important;
 }
@@ -884,7 +891,7 @@
   /* stable width: no layout jump */
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sidebar-scroll:hover::-webkit-scrollbar {
   width: var(--scrollbar-width);
 }
@@ -903,27 +910,27 @@
   background: var(--scrollbar-thumb);
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sidebar-scroll:hover {
   scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
   /* Firefox */
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .lightTheme .sidebar-scroll:hover {
   scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
   /* Firefox */
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb-hover);
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .lightTheme .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb-hover);
 }
@@ -1117,7 +1124,7 @@
   stroke: var(--accent);
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sidebar-reset:hover {
   opacity: 1;
   color: var(--text);
@@ -1169,7 +1176,7 @@
   visibility: visible;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sidebar-label-reset:hover {
   opacity: 1;
 }
@@ -1194,7 +1201,7 @@
   letter-spacing: 0.01em;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .sidebar-item:hover {
   color: var(--text);
 }
@@ -1268,7 +1275,7 @@
   min-width: calc(50% - 3px);
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .fchip:hover {
   border-color: var(--border-hi);
   color: var(--text-2);
@@ -1299,7 +1306,7 @@
   letter-spacing: 0.01em;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .genre-item:hover {
   color: var(--text);
 }
@@ -1344,7 +1351,7 @@
   letter-spacing: 0.01em;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .label-item:hover {
   color: var(--text);
 }
@@ -1395,13 +1402,13 @@
   color: var(--text-2);
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .period-item:hover {
   color: var(--text);
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .period-item:hover .period-name {
   color: var(--text);
 }
@@ -1535,7 +1542,7 @@
   will-change: opacity, transform;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .pb-cover:hover {
   opacity: 0.85;
   border-color: var(--border-hi);
@@ -1557,8 +1564,7 @@
   opacity: 0;
 }
 
-.pb-cover:has(img[src=""]),
-.pb-cover:has(img:not([src])) {
+.pb-cover.hasEmptyCover {
   border-color: transparent;
 }
 
@@ -1575,7 +1581,7 @@
   width: 120px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #playingText:hover {
   opacity: 0.8;
 }
@@ -1618,7 +1624,7 @@
   align-items: center;
   justify-content: flex-start;
   font-family: 'Doto', 'Geist', sans-serif;
-  font-size: clamp(16px, 1.6vw, 22px);
+  font-size: 16px;
   line-height: 1;
   color: var(--text-3);
   text-align: left;
@@ -1633,7 +1639,13 @@
   display: flex;
 }
 
-@media (max-width: 767px) {
+@media (min-width: 768px) {
+  #playbarSystemMessage {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
 
   #playbarSystemMessage {
     max-width: calc(50vw - 100px);
@@ -1667,14 +1679,14 @@
   transition: all 0.15s ease;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #transportButtons .iconButton:hover {
   background: var(--raised);
   transform: scale(1.05);
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #transportButtons .iconButton:hover:before {
   opacity: 1 !important;
   filter: brightness(1.2);
@@ -1862,7 +1874,7 @@
   opacity: 0.5;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #playButton:hover {
   background: var(--accent);
   transform: translate(-50%, -50%);
@@ -1871,7 +1883,7 @@
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 /* Ensure transport hover scale doesn't shift the centered play button: keep translate and add scale */
 #transportButtons .iconButton#playButton:hover,
 #playButton:hover {
@@ -1941,7 +1953,7 @@
   transition: all 0.15s ease;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #seekBackwardButton:hover,
 #seekForwardButton:hover {
   background: var(--raised);
@@ -1949,7 +1961,7 @@
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #seekBackwardButton:hover:before,
 #seekForwardButton:hover:before {
   opacity: 1 !important;
@@ -2184,7 +2196,7 @@
   z-index: 2;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #playProgressView:hover #playProgressThumb::after,
 #playProgressInner:hover #playProgressThumb::after,
 #playProgressThumb.isDragging::after {
@@ -2312,7 +2324,7 @@
   z-index: 20;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .volume-inline-track:hover .volume-inline-thumb::after,
 .volume-inline-thumb.isDragging::after {
   opacity: 1;
@@ -2331,7 +2343,7 @@
     transform: translate(-50%, -50%) scale(0.9);
   }
 
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   #playbarView.isVolumePopupOpen #volumeInlineTrack:hover #volumeInlineThumb::after,
   #playbarView.isVolumePopupOpen #volumeInlineThumb.isDragging::after {
     transform: translate(-50%, -50%) scale(1);
@@ -2739,14 +2751,14 @@
   transition: opacity 180ms ease;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .fullOverlayArrow:hover {
   opacity: 1;
   color: var(--text);
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .fullOverlayArrow:hover::before {
   opacity: 0.28;
 }
@@ -2866,4 +2878,110 @@
     max-width: 100%;
     border-radius: 14px 14px 0 0;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LYRICS OVERLAY
+   ═══════════════════════════════════════════════════════════════ */
+
+#lyricsOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(40px) saturate(1.5);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5);
+  align-items: stretch;
+  justify-content: center;
+  flex-direction: column;
+  padding: 60px 0;
+  box-sizing: border-box;
+}
+
+#lyricsOverlay.isVisible {
+  display: flex;
+}
+
+#lyricsOverlayContent {
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+#lyricsOverlayText {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  text-align: center;
+  word-break: break-word;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+#lyricsOverlayStatus {
+  font-size: 14px;
+  color: var(--text-2);
+  text-align: center;
+  padding: 40px 24px;
+  font-family: 'Geist', sans-serif;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+#lyricsCloseButton {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10002;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-md);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#lyricsCloseButton:hover {
+  background: var(--raised);
+  color: var(--text);
+}
+
+#lyricsDeleteButton {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 10002;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-md);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#lyricsDeleteButton:hover {
+  background: var(--raised);
+}
+
+#lyricsDeleteButton:before {
+  background-image: url("./../img/icons/delete_white_24dp.svg");
+}
+
+html.performanceMode #lyricsOverlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }

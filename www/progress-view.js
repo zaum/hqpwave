@@ -9,19 +9,50 @@ import Service from './service.js';
  */
 export default class ProgressView {
 
-  $el;
-  $inner;
-  $thumb;
-  isDragging = false;
-
-  ratio = 0;
-  seconds = -1;
-  updateVisState;
-
   constructor() {
-    this.$el = $('#playProgressView');
-    this.$inner = this.$el.find('#playProgressInner');
-    this.$thumb = this.$el.find('#playProgressThumb');
+    this.isDragging = false;
+    this.ratio = 0;
+    this.seconds = -1;
+    this.dragRatio = 0;
+    this._$el = $('#playProgressView');
+    this.$inner = this._$el.find('#playProgressInner');
+    this.$thumb = this._$el.find('#playProgressThumb');
+
+    this.startDrag = (e) => {
+      this.isDragging = true;
+      if (this.$thumb && this.$thumb.length) this.$thumb.addClass('isDragging');
+      $(window).on("mousemove touchmove", this.onDrag);
+      $(window).on("mouseup touchend touchcancel", this.endDrag);
+      const ratio = this.eventToRatioX(e);
+      this.update(ratio, -1);
+      $(document).trigger('progress-thumb-drag', ratio);
+    };
+    this.onDrag = (e) => {
+      this.dragRatio = this.eventToRatioX(e);
+      this.update(this.dragRatio, -1);
+      $(document).trigger('progress-thumb-drag', this.dragRatio);
+    };
+    this.endDrag = (e) => {
+      this.isDragging = false;
+      if (this.$thumb && this.$thumb.length) this.$thumb.removeClass('isDragging');
+      $(window).off("mouseup touchend touchcancel");
+      $(window).off("mousemove touchmove");
+
+      this.$el.off('click tap');
+      setTimeout(() => this.$el.on('click tap', this.onTrackClick), 500);
+
+      const seconds = Model.status.getSecondsFromRatio(this.dragRatio);
+      if (seconds != -1) {
+        Service.queueCommandFrontAndGetStatus(Commands.seek(seconds));
+      }
+    };
+    this.onTrackClick = (e) => {
+      const ratio = this.eventToRatioX(e);
+      const seconds = Model.status.getSecondsFromRatio(ratio);
+      if (seconds != -1) {
+        Service.queueCommandFrontAndGetStatus(Commands.seek(seconds));
+      }
+    };
 
     this.$thumb.on('mousedown touchstart', this.startDrag);
     this.$inner.on('mousedown touchstart', this.startDrag);
@@ -31,7 +62,7 @@ export default class ProgressView {
   }
 
   get $el() {
-    return this.$el;
+    return this._$el;
   }
 
   /**
@@ -64,49 +95,6 @@ export default class ProgressView {
       this.$thumb.css('width', (this.ratio * 100) + "%");
     }
   }
-
-  startDrag = (e) => {
-    this.isDragging = true;
-    if (this.$thumb && this.$thumb.length) this.$thumb.addClass('isDragging');
-    $(window).on("mousemove touchmove", this.onDrag);
-    $(window).on("mouseup touchend touchcancel", this.endDrag);
-    const ratio = this.eventToRatioX(e);
-    this.update(ratio, -1);
-    $(document).trigger('progress-thumb-drag', ratio);
-  };
-
-  onDrag = (e) => {
-    this.dragRatio = this.eventToRatioX(e);
-    this.update(this.dragRatio, -1);
-    $(document).trigger('progress-thumb-drag', this.dragRatio);
-  };
-
-  dragRatio = 0;
-
-  endDrag = (e) => {
-    this.isDragging = false;
-    if (this.$thumb && this.$thumb.length) this.$thumb.removeClass('isDragging');
-    $(window).off("mouseup touchend touchcancel");
-    $(window).off("mousemove touchmove");
-
-    // Disable and then re-enable click handler #goodenough
-    this.$el.off('click tap');
-    setTimeout(() => this.$el.on('click tap', this.onTrackClick), 500);
-
-    // touchend does NOT provide any number values, so must use last stored value.
-    const seconds = Model.status.getSecondsFromRatio(this.dragRatio);
-    if (seconds != -1) {
-      Service.queueCommandFrontAndGetStatus(Commands.seek(seconds));
-    }
-  };
-
-  onTrackClick = (e) => {
-    const ratio = this.eventToRatioX(e);
-    const seconds = Model.status.getSecondsFromRatio(ratio);
-    if (seconds != -1) {
-      Service.queueCommandFrontAndGetStatus(Commands.seek(seconds));
-    }
-  };
 
   /**
    * Given a mouse or touch event, return the equivalent x percentage value

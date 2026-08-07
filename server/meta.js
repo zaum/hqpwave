@@ -11,7 +11,7 @@ const FILENAME = 'hqpwv-metadata.json';
 const PATH = path.resolve(__dirname, '..', FILENAME);
 
 const ACTIVITY_COUNTER_THRESH = 10;
-const ACTIVITY_TIMEOUT_DURATION = 5 * 60 * 1000;
+const ACTIVITY_TIMEOUT_DURATION = 15 * 60 * 1000;
 const HISTORY_MAX_ITEMS = 1000;
 
 const DEPRECATED_KEYS = ['tracks', 'history'];
@@ -27,9 +27,9 @@ let activityTimeoutId = 0;
 /**
  * Returns true for success.
  */
-const init = () => {
+const init = async () => {
   let isSuccess;
-  isSuccess = initFile();
+  isSuccess = await initFile();
   if (!isSuccess) {
     return false;
   }
@@ -46,7 +46,7 @@ const init = () => {
  * Verifies files exists and is read/writable, or creates it.
  * Returns true for success.
  */
-const initFile = () => {
+const initFile = async () => {
   try {
     fs.accessSync(PATH, fs.constants.R_OK | fs.constants.W_OK);
   } catch (err) {
@@ -54,7 +54,7 @@ const initFile = () => {
     if (doesntExist) {
       log.x('create new metadata');
       data = makeData();
-      const result = saveFile();
+      const result = await saveFile();
       return result;
     } else {
       log.x('error:', FILENAME, err.code);
@@ -145,10 +145,9 @@ const getIsDirty = () => {
   return (activityCounter > 0);
 };
 
-// todo save to intermediate file and swap on success?
-const saveFile = () => {
+const saveFile = async () => {
   try {
-    fs.writeFileSync(PATH, JSON.stringify(data), {encoding: 'utf8'});
+    await fs.promises.writeFile(PATH, JSON.stringify(data), {encoding: 'utf8'});
   } catch (err) {
     log.x(`warning couldn't save metadata`, err.code);
     log.x('  ' + PATH);
@@ -156,6 +155,15 @@ const saveFile = () => {
   }
   log.i('saved metadata');
   return true;
+};
+
+const saveFileSync = () => {
+  try {
+    fs.writeFileSync(PATH, JSON.stringify(data), {encoding: 'utf8'});
+    return true;
+  } catch (err) {
+    return false;
+  }
 };
 
 // ---
@@ -296,7 +304,7 @@ onActivityTimeout = () => {
 activitySaveMetaAndStartTimeout = () => {
   activityCounter = 0;
   clearTimeout(activityTimeoutId);
-  saveFile();
+  saveFile().catch(() => {});
   startActivityTimeout();
 };
 
@@ -304,13 +312,13 @@ activitySaveMetaAndStartTimeout = () => {
 
 const clearHistory = () => {
   data[HISTORY_KEY] = [];
-  saveFile();
+  saveFile().catch(() => {});
   return true;
 };
 
 const clearData = () => {
   data = makeData();
-  saveFile();
+  saveFile().catch(() => {});
   return true;
 };
 
@@ -320,6 +328,7 @@ module.exports = {
   getFilepath: getFilepath,
   getIsDirty: getIsDirty,
   saveFile: saveFile,
+  saveFileSync: saveFileSync,
   getData: getData,
   getTracks: getTracks,
   getAlbums: getAlbums,

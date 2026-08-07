@@ -10,33 +10,22 @@ import ViewUtil from './view-util.js';
  */
 class SidebarView {
 
-  $el;
-  $page;
-  $scroll;
-  $toggle;
-  $resetButton;
-  $formatChips;
-  $genreList;
-  $browseItems;
-  $topBar;
-  isMobileSidebarMode = false;
-  desktopCollapsedBeforeMobile = false;
-  topBarResizeObserver = null;
-
-  // Filter state
-  activeFormats = new Set();
-  activeGenres = new Set();
-  activePeriods = new Set(); // store period elements or data
-  activeLabels = new Set();
-  browseFilter = 'all-albums'; // 'all-albums', 'favorite-albums', 'favorite-tracks'
-  genreMultiSelect = false;
-  periodMultiSelect = false;
-  labelMultiSelect = false;
-
   constructor() {
     this.$el = $('#sidebar');
     this.$page = $('#page');
     this.$topBar = $('#topBar');
+
+    this.isMobileSidebarMode = false;
+    this.desktopCollapsedBeforeMobile = false;
+    this.topBarResizeObserver = null;
+    this.activeFormats = new Set();
+    this.activeGenres = new Set();
+    this.activePeriods = new Set();
+    this.activeLabels = new Set();
+    this.browseFilter = 'all-albums';
+    this.genreMultiSelect = false;
+    this.periodMultiSelect = false;
+    this.labelMultiSelect = false;
 
     // Track which subview of the playlist compound is active ('playlist'|'history'|'load')
     this.playlistCompoundSubview = null;
@@ -141,6 +130,29 @@ class SidebarView {
 
     // Initialize period filters
     this.initPeriodFilters();
+
+    this.onMetaLoadResult = () => {
+      this.updateCounts();
+    };
+    this.onSettingsChanged = () => {
+      if (Model.library && Model.library.albums) {
+        this.populateLabelList();
+        this.updateLabelCounts();
+        this.updateLabelsExtractingIndicator();
+      }
+    };
+    this.onAlbumFavoriteChanged = () => {
+      this.updateCounts();
+      if (this.browseFilter === 'favorite-albums') {
+        this.onFiltersChanged();
+      }
+    };
+    this.onTrackFavoriteChanged = () => {
+      this.updateCounts();
+      if (this.browseFilter === 'favorite-tracks') {
+        this.onFiltersChanged();
+      }
+    };
 
     // Listen for library updates to populate genre list
     Util.addAppListener(this, 'model-library-updated', this.onModelLibraryUpdated);
@@ -290,32 +302,6 @@ class SidebarView {
     $('#sidebarRecordLabel').toggleClass('label-extracting', !!extracting);
   }
 
-  onMetaLoadResult = () => {
-    this.updateCounts();
-  }
-
-  onSettingsChanged = () => {
-    if (Model.library && Model.library.albums) {
-      this.populateLabelList();
-      this.updateLabelCounts();
-      this.updateLabelsExtractingIndicator();
-    }
-  }
-
-  onAlbumFavoriteChanged = () => {
-    this.updateCounts();
-    if (this.browseFilter === 'favorite-albums') {
-      this.onFiltersChanged();
-    }
-  }
-
-  onTrackFavoriteChanged = () => {
-    this.updateCounts();
-    if (this.browseFilter === 'favorite-tracks') {
-      this.onFiltersChanged();
-    }
-  }
-
   /**
    * Update sidebar counts.
    */
@@ -364,7 +350,7 @@ class SidebarView {
     for (const [genre, count] of sortedGenres) {
       const $item = $(`
         <div class="genre-item" data-genre="${this.escapeHtml(genre)}">
-          <span class="genre-name" style="color: var(--text-2)">${this.escapeHtml(genre)}</span>
+          <span class="genre-name">${this.escapeHtml(genre)}</span>
           <span class="genre-count">${count}</span>
         </div>
       `);
@@ -455,7 +441,7 @@ class SidebarView {
       }
       const $item = $(`
         <div class="label-item" data-label="${this.escapeHtml(label)}">
-          <span class="label-name" style="color: var(--text-2)">${this.escapeHtml(label)}</span>
+          <span class="label-name">${this.escapeHtml(label)}</span>
           <span class="label-count">${count}</span>
         </div>
       `);

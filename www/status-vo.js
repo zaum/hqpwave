@@ -3,8 +3,6 @@
  */
 export default class StatusVo {
 
-  _data;
-
   constructor(statusObject) {
     this._data = statusObject || {};
   }

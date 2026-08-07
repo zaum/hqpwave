@@ -16,26 +16,6 @@ import ViewUtil from './view-util.js';
  */
 export default class SettingsView extends Subview {
 
-  $closeButton;
-  $themeDarkCheckbox;
-  $themeLightCheckbox;
-  $showPlayButtonCheckbox;
-  $showFormatOverlayCheckbox;
-  $showLogoAnimationCheckbox;
-  $artistReleaseLimitInput;
-  $artistImageLimitInput;
-  $artistBioLimitInput;
-  $artistBatchImportButton;
-  $artistBatchImportStatusText;
-  $highlightColorPicker;
-  $playerBackgroundColorPicker;
-  $hideLabelsWithFewAlbumsCheckbox;
-  $labelVisibilityThresholdInput;
-  $writeFavoritesToAudioFilesCheckbox;
-  infoView;
-  _artistBatchImportPollTimer = null;
-  _artistBatchWasRunning = false;
-
   constructor() {
     super($("#settingsView"));
     this.$closeButton = this.$el.find('#settingsCloseButton');
@@ -43,6 +23,92 @@ export default class SettingsView extends Subview {
     this.$themeLightCheckbox = this.$el.find('#themeLight');
     this.$closeButton.on('click tap', (e) => $(document).trigger('settings-view-close'));
     this.infoView = new SettingsInfoView(this.$el.find("#settingsInfoView"));
+
+    this.onThemeCheckbox = (e) => {
+      Settings.colorTheme = (e.currentTarget.id == 'themeDark') ? 'dark' : 'light';
+      this.updateThemeCheckbox();
+      AppUtil.updateColorTheme();
+    };
+
+    this.onShowPlayButtonCheckbox = () => {
+      Settings.showPlayButton = !Settings.showPlayButton;
+      this.updateShowPlayButtonCheckbox();
+    };
+
+    this.onShowFormatOverlayCheckbox = () => {
+      Settings.showFormatOverlay = !Settings.showFormatOverlay;
+      this.updateShowFormatOverlayCheckbox();
+    };
+
+    this.onShowLibraryDateAndFormatCheckbox = () => {
+      Settings.showLibraryDateAndFormat = !Settings.showLibraryDateAndFormat;
+      this.updateShowLibraryDateAndFormatCheckbox();
+    };
+
+    this.onShowLogoAnimationCheckbox = () => {
+      Settings.showLogoAnimation = !Settings.showLogoAnimation;
+      this.updateShowLogoAnimationCheckbox();
+    };
+
+    this.onArtistReleaseLimitChange = () => {
+      Settings.artistReleaseLimit = this.$artistReleaseLimitInput.val();
+      this.updateArtistReleaseLimitInput();
+    };
+
+    this.onArtistImageLimitChange = () => {
+      Settings.artistImageLimit = this.$artistImageLimitInput.val();
+      this.updateArtistImageLimitInput();
+    };
+
+    this.onArtistBioLimitChange = () => {
+      Settings.artistBioLimit = this.$artistBioLimitInput.val();
+      this.updateArtistBioLimitInput();
+    };
+
+    this.onHighlightColorChange = () => {
+      Settings.highlightColor = this.$highlightColorPicker.val();
+      this.updateHighlightColorCSS();
+    };
+
+    this.onPlayerBackgroundColorChange = () => {
+      Settings.playerBackgroundColor = this.$playerBackgroundColorPicker.val();
+      this.updatePlayerBackgroundColorCSS();
+    };
+
+    this.onHideLabelsWithFewAlbumsCheckbox = () => {
+      Settings.hideLabelsWithFewAlbums = !Settings.hideLabelsWithFewAlbums;
+      this.updateHideLabelsWithFewAlbumsCheckbox();
+    };
+
+    this.onLabelVisibilityThresholdChange = () => {
+      Settings.labelVisibilityThreshold = this.$labelVisibilityThresholdInput.val();
+      this.updateLabelVisibilityThresholdInput();
+    };
+
+    this.onWriteFavoritesToAudioFilesCheckbox = () => {
+      Settings.writeFavoritesToAudioFiles = !Settings.writeFavoritesToAudioFiles;
+      this.updateWriteFavoritesToAudioFilesCheckbox();
+    };
+
+    this.onSaveLyricsToAudioFilesCheckbox = () => {
+      Settings.saveLyricsToAudioFiles = !Settings.saveLyricsToAudioFiles;
+      this.updateSaveLyricsToAudioFilesCheckbox();
+    };
+
+    this.onPerformanceModeCheckbox = () => {
+      Settings.performanceMode = !Settings.performanceMode;
+      this.updatePerformanceModeCheckbox();
+    };
+
+    this.onSettingsScroll = () => {
+      const scrollTop = this.$el[0].scrollTop;
+      const settingsLabel = this.$el.find('#settingsScrollLabel');
+      if (scrollTop > 50) {
+        settingsLabel.addClass('visible');
+      } else {
+        settingsLabel.removeClass('visible');
+      }
+    };
 
     this.$themeDarkCheckbox.on('click tap', this.onThemeCheckbox);
     this.$themeLightCheckbox.on('click tap', this.onThemeCheckbox);
@@ -77,6 +143,10 @@ export default class SettingsView extends Subview {
     this.$labelVisibilityThresholdInput.on('blur', this.onLabelVisibilityThresholdChange);
     this.$writeFavoritesToAudioFilesCheckbox = this.$el.find('#settingsWriteFavoritesToAudioFiles');
     this.$writeFavoritesToAudioFilesCheckbox.on('click tap', this.onWriteFavoritesToAudioFilesCheckbox);
+    this.$saveLyricsToAudioFilesCheckbox = this.$el.find('#settingsSaveLyricsToAudioFiles');
+    this.$saveLyricsToAudioFilesCheckbox.on('click tap', this.onSaveLyricsToAudioFilesCheckbox);
+    this.$performanceModeCheckbox = this.$el.find('#settingsPerformanceModeCheckbox');
+    this.$performanceModeCheckbox.on('click tap', this.onPerformanceModeCheckbox);
     this.$el.find('#metaDownload').attr('href', Values.META_DOWNLOAD_LINK);
     this.$el.find('#metaDelete').on('click', () => this.onMetaDeleteClick());
 
@@ -102,6 +172,9 @@ export default class SettingsView extends Subview {
 
     // Setup color preset click handlers
     this.setupColorPresets();
+
+    this._artistBatchImportPollTimer = null;
+    this._artistBatchWasRunning = false;
 
     Util.addAppListener(this, 'model-info-updated', () => this.infoView.update());
   }
@@ -303,6 +376,8 @@ export default class SettingsView extends Subview {
     this.updateHideLabelsWithFewAlbumsCheckbox();
     this.updateLabelVisibilityThresholdInput();
     this.updateWriteFavoritesToAudioFilesCheckbox();
+    this.updateSaveLyricsToAudioFilesCheckbox();
+    this.updatePerformanceModeCheckbox();
 
     this.$el[0].scrollTop = 0;
 
@@ -346,16 +421,6 @@ export default class SettingsView extends Subview {
     AppUtil.updateAccentColorCSS(Settings.highlightColor);
   }
 
-  onHighlightColorChange = () => {
-    Settings.highlightColor = this.$highlightColorPicker.val();
-    this.updateHighlightColorCSS();
-  };
-
-  onPlayerBackgroundColorChange = () => {
-    Settings.playerBackgroundColor = this.$playerBackgroundColorPicker.val();
-    this.updatePlayerBackgroundColorCSS();
-  };
-
   updatePlayerBackgroundColorCSS() {
     document.documentElement.style.setProperty('--player-bg-color', Settings.playerBackgroundColor);
     document.documentElement.style.setProperty('--player-bg', Settings.playerBackgroundColor);
@@ -366,23 +431,6 @@ export default class SettingsView extends Subview {
     }
   }
 
-  onSettingsScroll = () => {
-    const scrollTop = this.$el[0].scrollTop;
-    const settingsLabel = this.$el.find('#settingsScrollLabel');
-    if (scrollTop > 50) {
-      settingsLabel.addClass('visible');
-    } else {
-      settingsLabel.removeClass('visible');
-    }
-  };
-
-  onThemeCheckbox = (e) => {
-    Settings.colorTheme = (e.currentTarget.id == 'themeDark') ? 'dark' : 'light';
-    this.updateThemeCheckbox();
-    // And update the theme
-    AppUtil.updateColorTheme();
-  };
-
   updateShowPlayButtonCheckbox() {
     if (Settings.showPlayButton) {
       this.$showPlayButtonCheckbox.addClass('isChecked');
@@ -391,11 +439,6 @@ export default class SettingsView extends Subview {
       this.$showPlayButtonCheckbox.removeClass('isChecked');
       this.$showPlayButtonCheckbox.prop('checked', false);
     }
-  }
-
-  onShowPlayButtonCheckbox = () => {
-    Settings.showPlayButton = !Settings.showPlayButton;
-    this.updateShowPlayButtonCheckbox();
   }
 
   updateShowFormatOverlayCheckbox() {
@@ -408,11 +451,6 @@ export default class SettingsView extends Subview {
     }
   }
 
-  onShowFormatOverlayCheckbox = () => {
-    Settings.showFormatOverlay = !Settings.showFormatOverlay;
-    this.updateShowFormatOverlayCheckbox();
-  }
-
   updateShowLibraryDateAndFormatCheckbox() {
     if (Settings.showLibraryDateAndFormat) {
       this.$showLibraryDateAndFormatCheckbox.addClass('isChecked');
@@ -421,11 +459,6 @@ export default class SettingsView extends Subview {
       this.$showLibraryDateAndFormatCheckbox.removeClass('isChecked');
       this.$showLibraryDateAndFormatCheckbox.prop('checked', false);
     }
-  }
-
-  onShowLibraryDateAndFormatCheckbox = () => {
-    Settings.showLibraryDateAndFormat = !Settings.showLibraryDateAndFormat;
-    this.updateShowLibraryDateAndFormatCheckbox();
   }
 
   updateShowLogoAnimationCheckbox() {
@@ -438,11 +471,6 @@ export default class SettingsView extends Subview {
     }
   }
 
-  onShowLogoAnimationCheckbox = () => {
-    Settings.showLogoAnimation = !Settings.showLogoAnimation;
-    this.updateShowLogoAnimationCheckbox();
-  }
-
   updateHideLabelsWithFewAlbumsCheckbox() {
     if (Settings.hideLabelsWithFewAlbums) {
       this.$hideLabelsWithFewAlbumsCheckbox.addClass('isChecked');
@@ -453,18 +481,8 @@ export default class SettingsView extends Subview {
     }
   }
 
-  onHideLabelsWithFewAlbumsCheckbox = () => {
-    Settings.hideLabelsWithFewAlbums = !Settings.hideLabelsWithFewAlbums;
-    this.updateHideLabelsWithFewAlbumsCheckbox();
-  }
-
   updateLabelVisibilityThresholdInput() {
     this.$labelVisibilityThresholdInput.val(String(Settings.labelVisibilityThreshold));
-  }
-
-  onLabelVisibilityThresholdChange = () => {
-    Settings.labelVisibilityThreshold = this.$labelVisibilityThresholdInput.val();
-    this.updateLabelVisibilityThresholdInput();
   }
 
   updateWriteFavoritesToAudioFilesCheckbox() {
@@ -477,36 +495,36 @@ export default class SettingsView extends Subview {
     }
   }
 
-  onWriteFavoritesToAudioFilesCheckbox = () => {
-    Settings.writeFavoritesToAudioFiles = !Settings.writeFavoritesToAudioFiles;
-    this.updateWriteFavoritesToAudioFilesCheckbox();
+  updateSaveLyricsToAudioFilesCheckbox() {
+    if (Settings.saveLyricsToAudioFiles) {
+      this.$saveLyricsToAudioFilesCheckbox.addClass('isChecked');
+      this.$saveLyricsToAudioFilesCheckbox.prop('checked', true);
+    } else {
+      this.$saveLyricsToAudioFilesCheckbox.removeClass('isChecked');
+      this.$saveLyricsToAudioFilesCheckbox.prop('checked', false);
+    }
+  }
+
+  updatePerformanceModeCheckbox() {
+    if (Settings.performanceMode) {
+      this.$performanceModeCheckbox.addClass('isChecked');
+      this.$performanceModeCheckbox.prop('checked', true);
+    } else {
+      this.$performanceModeCheckbox.removeClass('isChecked');
+      this.$performanceModeCheckbox.prop('checked', false);
+    }
   }
 
   updateArtistReleaseLimitInput() {
     this.$artistReleaseLimitInput.val(String(Settings.artistReleaseLimit));
   }
 
-  onArtistReleaseLimitChange = () => {
-    Settings.artistReleaseLimit = this.$artistReleaseLimitInput.val();
-    this.updateArtistReleaseLimitInput();
-  }
-
   updateArtistImageLimitInput() {
     this.$artistImageLimitInput.val(String(Settings.artistImageLimit));
   }
 
-  onArtistImageLimitChange = () => {
-    Settings.artistImageLimit = this.$artistImageLimitInput.val();
-    this.updateArtistImageLimitInput();
-  }
-
   updateArtistBioLimitInput() {
     this.$artistBioLimitInput.val(String(Settings.artistBioLimit));
-  }
-
-  onArtistBioLimitChange = () => {
-    Settings.artistBioLimit = this.$artistBioLimitInput.val();
-    this.updateArtistBioLimitInput();
   }
 
   getLibraryArtistNames() {

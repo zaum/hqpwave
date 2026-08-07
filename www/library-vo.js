@@ -10,27 +10,6 @@ import Util from './util.js';
  */
 export default class LibraryVo {
 
-  // Array of album items
-  _albums;
-  // Array of library playlist items
-  _hqPlaylistItems;
-
-  // Cache objects:
-  /** Key is hash, value is library item (album) */
-  _albumHashToAlbum;
-  /** Key is uri, value is track hash. */
-  _trackUriToTrackHash;
-  /** Key is track hash, value is [track, album] */
-  _trackHashLookup = null;
-  /** Key is album path, value is album */
-  _pathToItem;
-  /** Alphabetized list of genre names */
-  _genreNames;
-  /** Alphabetized list of label names */
-  _labelNames;
-  /** True if labels are still being extracted in background */
-  _labelsExtracting = false;
-
   constructor(responseObject=null) {
     // Get main array from response object
     let responseArray;

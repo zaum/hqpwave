@@ -12,10 +12,6 @@ import LoadPlaylistView from './load-playlist-view.js';
  */
 export default class PlaylistCompoundView extends Subview {
 
-  mainView;
-  historyView;
-  loadView;
-
   constructor() {
     super($("#playlistView"));
     this.mainView = new PlaylistMainView(this.$el.find('#playlistMainView'));

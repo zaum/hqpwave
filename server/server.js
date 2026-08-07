@@ -24,7 +24,9 @@ const playlistHandler = require('./server-playlist-handler');
 const playlists = require('./playlists');
 const artistHandler = require('./artist-handler');
 const sources = require('./sources');
+const lyricsScraper = require('./lyrics-scraper');
 const { safeJson, safeStatusJson, safeSend, safeSendFile } = require('./response-util');
+const sharp = require('sharp');
 
 const APP_FILENAME = `hqpwv`;
 const WEBPAGE_DIR = path.join( __dirname, './../www' );
@@ -570,12 +572,22 @@ app.get('/endpoints/artistImage', (request, response) => {
   artistHandler.doImage(request, response);
 });
 
+const coverCache = new Map();
+const COVER_CACHE_MAX = 200;
 app.get('/endpoints/cover', async (request, response) => {
   const { hash, size, v } = request.query;
   if (!hash) {
     return response.status(400).send('Missing hash parameter');
   }
   const maxSize = parseInt(size, 10) || 400;
+  const cacheKey = hash + '_' + maxSize + '_' + (v || '');
+  const cached = coverCache.get(cacheKey);
+  if (cached) {
+    response.set('Content-Type', 'image/jpeg');
+    response.set('Cache-Control', 'public, max-age=31536000');
+    response.send(cached);
+    return;
+  }
   const hqplayerIp = hqpIp;
   if (!hqplayerIp) {
     return response.status(503).send('HQPlayer not connected');
@@ -586,11 +598,15 @@ app.get('/endpoints/cover', async (request, response) => {
       if (!res.ok) throw new Error(`HQPlayer cover fetch failed: ${res.status}`);
       return res.arrayBuffer();
     });
-    const sharp = require('sharp');
     const resized = await sharp(Buffer.from(imageBuffer))
       .resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true })
       .toFormat('jpeg', { quality: 85 })
       .toBuffer();
+    if (coverCache.size >= COVER_CACHE_MAX) {
+      const firstKey = coverCache.keys().next().value;
+      coverCache.delete(firstKey);
+    }
+    coverCache.set(cacheKey, resized);
     response.set('Content-Type', 'image/jpeg');
     response.set('Cache-Control', 'public, max-age=31536000');
     response.send(resized);
@@ -598,6 +614,61 @@ app.get('/endpoints/cover', async (request, response) => {
     console.error('[cover endpoint] Error:', err.message);
     response.status(500).send('Failed to fetch/resize cover');
   }
+});
+
+app.get('/endpoints/lyrics', async (request, response) => {
+  const trackHash = request.query.hash;
+  const artist = request.query.artist;
+  const title = request.query.title;
+  const doDelete = request.query.delete !== undefined;
+
+  if (doDelete) {
+    if (!trackHash) {
+      safeStatusJson(response, 400, { error: 'missing_hash' });
+      return;
+    }
+    const deleted = lyricsScraper.deleteLyricsFile(trackHash);
+    safeJson(response, { deleted });
+    return;
+  }
+
+  const needFetch = request.query.fetch !== undefined;
+
+  if (trackHash) {
+    const existing = lyricsScraper.readLyricsFile(trackHash);
+    if (existing && !needFetch) {
+      console.log('[lyrics] served from file for hash ' + trackHash + ' (' + existing.length + ' chars)');
+      safeJson(response, { lyrics: existing, source: 'file' });
+      return;
+    }
+  }
+
+  if (!artist || !title) {
+    safeStatusJson(response, 400, { error: 'missing_artist_or_title' });
+    return;
+  }
+
+  lyricsScraper.fetchLyrics(artist, title, (err, lyrics) => {
+    if (err || !lyrics) {
+      const msg = err ? err.message : 'not_found';
+      console.warn('[lyrics] fetch failed for "' + artist + ' - ' + title + '": ' + msg);
+      safeJson(response, { lyrics: null, error: msg });
+      return;
+    }
+
+    const writeFile = request.query.save !== 'false';
+    if (writeFile && trackHash) {
+      const ok = lyricsScraper.writeLyricsFile(trackHash, lyrics);
+      if (!ok) {
+        console.warn('[lyrics] write skipped/failed for hash ' + trackHash);
+      }
+    } else if (writeFile && !trackHash) {
+      console.warn('[lyrics] cannot save lyrics: no track hash for "' + artist + ' - ' + title + '"');
+    }
+
+    console.log('[lyrics] fetched lyrics for "' + artist + ' - ' + title + '" (' + lyrics.length + ' chars, source: web)');
+    safeJson(response, { lyrics, source: 'web' });
+  });
 });
 
 app.get('/endpoints/artistDbStats', (req, res) => {
@@ -817,12 +888,13 @@ const onProxyReady = (ip) => {
   server = app.listen(port, onSuccess).on('error', onError);
 
   // Init meta
-  let isSuccess = meta.init();
-  if (!isSuccess) {
-    log.x('warning meta init failed, hqpwv metadata disabled')
-  } else {
-    log.x('metadata ready');
-  }
+  meta.init().then((isSuccess) => {
+    if (!isSuccess) {
+      log.x('warning meta init failed, hqpwv metadata disabled')
+    } else {
+      log.x('metadata ready');
+    }
+  });
 
   // Init custom playlists
   isSuccess = playlists.init();
@@ -914,7 +986,7 @@ const showPromptAndExit = () => {
 // Save meta json before exiting
 const gracefulShutdown = (signal) => {
   if (meta.getIsDirty()) {
-    meta.saveFile();
+    meta.saveFileSync();
   }
   log.x(`done (${signal})`);
   process.exit();
@@ -923,7 +995,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('beforeExit', () => {
   if (meta.getIsDirty()) {
-    meta.saveFile();
+    meta.saveFileSync();
   }
 });
 

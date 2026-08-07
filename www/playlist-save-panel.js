@@ -11,19 +11,49 @@ import ViewUtil from './view-util.js';
  */
 export default class PlaylistSavePanel {
 
-  $el;
-  $closeButton;
-  $saveButton;
-  $input;
-
-  playlistArray;
-
   constructor($el) {
   	this.$el = $el;
     this.$closeButton = this.$el.find('#playlistSaveCloseButton');
     this.$saveButton = this.$el.find('#playlistSaveOkayButton');
     this.$input = this.$el.find('#playlistSaveInput');
     this.$input[0].value = '';
+
+    this.onInputKeyUp = (e) => {
+      if (e.keyCode == 13) {
+        this.$saveButton.click();
+      } else if (e.keyCode == 27) {
+        this.hide();
+      }
+    };
+    this.onSaveButton = () => {
+      const filename = this.getSanitizedText(this.$input[0].value);
+      if (!filename || this.playlistArray.length == 0) {
+        return;
+      }
+      this.$input[0].value = '';
+
+      const uris = [];
+      for (const item of this.playlistArray) {
+        const uri = item['@_uri'];
+        if (!uri) {
+          cl('warning no uri');
+          continue;
+        }
+        uris.push(item['@_uri']);
+      }
+      const content = AppUtil.makeM3U8(uris);
+
+      $(document).trigger('disable-user-input');
+      this.savePlaylist(filename, content, (isSuccess) => {
+        if (isSuccess) {
+          ToastView.show(`Playlist saved`);
+        } else {
+          ToastView.show(`<span class="colorAccent">Couldn't save playlist</span>`, 4000);
+        }
+        $(document).trigger('enable-user-input');
+        this.hide();
+      });
+    };
 
     this.$closeButton.on('click tap', () => this.hide());
     this.$input.on('input', () => this.updateSaveButton());
@@ -60,46 +90,6 @@ export default class PlaylistSavePanel {
     str = str.trim();
     return str;
   }
-
-  onInputKeyUp = (e) => {
-    if (e.keyCode == 13) {
-      this.$saveButton.click();
-    } else if (e.keyCode == 27) {
-      this.hide();
-    }
-  };
-
-  onSaveButton = () => {
-    const filename = this.getSanitizedText(this.$input[0].value);
-    if (!filename || this.playlistArray.length == 0) {
-      return; // shdnthpn
-    }
-    this.$input[0].value = '';
-
-    // make m3u8
-    const uris = [];
-    for (const item of this.playlistArray) {
-      const uri = item['@_uri'];
-      if (!uri) {
-        cl('warning no uri');
-        continue;
-      }
-      uris.push(item['@_uri']);
-    }
-    const content = AppUtil.makeM3U8(uris);
-
-    // save and hide
-    $(document).trigger('disable-user-input');
-    this.savePlaylist(filename, content, (isSuccess) => {
-      if (isSuccess) {
-        ToastView.show(`Playlist saved`);
-      } else {
-        ToastView.show(`<span class="colorAccent">Couldn't save playlist</span>`, 4000);
-      }
-      $(document).trigger('enable-user-input');
-      this.hide();
-    });
-  };
 
   savePlaylist(filename, data, successCallback) {
     const onSuccess = (data, textStatus, jqXHR) => {

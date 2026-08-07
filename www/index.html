@@ -15,6 +15,55 @@
   <script src="libs/platform.js"></script>
   <script src="libs/window-app.js"></script>
   <script>
+    (function() {
+      var errs = [];
+      function showErr(msg, source, lineno, colno, error) {
+        var str = msg + '\nat ' + (source || '') + ':' + (lineno || '') + ':' + (colno || '');
+        if (error && error.stack) {
+          str += '\nStack: ' + error.stack;
+        }
+        errs.push(str);
+        var div = document.getElementById('debug-err-overlay');
+        if (!div) {
+          div = document.createElement('div');
+          div.id = 'debug-err-overlay';
+          div.style.position = 'fixed';
+          div.style.top = '0';
+          div.style.left = '0';
+          div.style.width = '100%';
+          div.style.height = '100%';
+          div.style.backgroundColor = 'rgba(0,0,0,0.9)';
+          div.style.color = '#ff6b6b';
+          div.style.padding = '20px';
+          div.style.fontFamily = 'monospace';
+          div.style.fontSize = '14px';
+          div.style.overflow = 'auto';
+          div.style.zIndex = '999999';
+          div.style.whiteSpace = 'pre-wrap';
+          div.style.visibility = 'visible';
+          if (document.body) {
+            document.body.appendChild(div);
+          } else {
+            document.documentElement.appendChild(div);
+          }
+        }
+        div.textContent = '--- BROWSER ERRORS ---\n' + errs.join('\n\n');
+      }
+      window.onerror = function(msg, source, lineno, colno, error) {
+        showErr(msg, source, lineno, colno, error);
+        return false;
+      };
+      window.addEventListener('error', function(e) {
+        if (e.error) {
+          showErr(e.message, e.filename, e.lineno, e.colno, e.error);
+        } else if (e.target && (e.target.src || e.target.href)) {
+          console.warn('Failed to load asset: ' + (e.target.src || e.target.href));
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function(e) {
+        showErr('Unhandled Rejection: ' + e.reason, '', 0, 0);
+      });
+    })();
     const message = isSafariTooLow();
     if (message) {
       alert(message);
@@ -31,6 +80,89 @@
       visibility: hidden;
     }
   </style>
+  <!-- Error overlay debugger (iPad / Safari Web Inspector fallback) -->
+  <script>
+    (function() {
+      var errors = [];
+      var overlay = document.createElement('div');
+      overlay.id = 'errorOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.9);color:#f44;font:14px/1.4 monospace;padding:20px;overflow:auto;visibility:visible;pointer-events:auto;display:none';
+
+      var title = document.createElement('div');
+      title.textContent = 'JavaScript Errors:';
+      title.style.cssText = 'font-weight:bold;margin-bottom:10px;color:#fff';
+      overlay.appendChild(title);
+
+      var list = document.createElement('div');
+      overlay.appendChild(list);
+
+      document.documentElement.appendChild(overlay);
+
+      function addError(msg, url, line, col, err) {
+        errors.push({ msg: msg, url: url, line: line, col: col, err: err });
+        overlay.style.display = 'block';
+        var item = document.createElement('div');
+        item.style.cssText = 'margin-bottom:12px;padding:8px;border-bottom:1px solid #333';
+        item.innerHTML = '<div style="color:#f88">' + (typeof msg === 'object' ? (msg.message || msg.toString()) : String(msg).replace(/</g, '&lt;')) + '</div>' +
+          (url ? '<div style="color:#aaa;font-size:12px">' + url.replace(/</g, '&lt;') + ':' + line + ':' + col + '</div>' : '') +
+          (err && err.stack ? '<div style="color:#888;font-size:11px;margin-top:4px;white-space:pre-wrap">' + err.stack.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div>' : '');
+        list.appendChild(item);
+      }
+
+      window.onerror = function(msg, url, line, col, err) {
+        addError(msg, url, line, col, err);
+        return true;
+      };
+
+      window.addEventListener('unhandledrejection', function(e) {
+        var err = e.reason;
+        addError(err && err.message ? err.message : (err ? err.toString() : 'Unhandled Promise rejection'), null, null, null, err);
+      });
+
+      // State dump
+      function dumpState() {
+        var h = document.documentElement;
+        var b = document.body;
+        var page = document.getElementById('page');
+        var topBar = document.getElementById('topBar');
+        var playbar = document.getElementById('playbarView');
+        var loading = document.getElementById('loadingProgress');
+        var info = [
+          'UA: ' + navigator.userAgent,
+          'Size: ' + window.innerWidth + 'x' + window.innerHeight,
+          'html.visibility: ' + getComputedStyle(h).visibility + ' (inline: ' + h.style.visibility + ')',
+          'body.height: ' + (b ? b.style.height : '?'),
+          'page.height: ' + (page ? page.style.height : '?'),
+          'topBar.display: ' + (topBar ? getComputedStyle(topBar).display : '?'),
+          'topBar.visibility: ' + (topBar ? getComputedStyle(topBar).visibility : '?'),
+          'playbar.display: ' + (playbar ? getComputedStyle(playbar).display : '?'),
+          'playbar.visibility: ' + (playbar ? getComputedStyle(playbar).visibility : '?'),
+          'loadingProgress: ' + (loading ? 'EXISTS (z-index: ' + getComputedStyle(loading).zIndex + ')' : 'null')
+        ];
+        return info.join('\n');
+      }
+
+      // Show / hide toggle button
+      var toggle = document.createElement('button');
+      toggle.textContent = 'Show Errors';
+      toggle.style.cssText = 'position:fixed;bottom:0;right:0;z-index:100000;padding:4px 8px;background:#a00;color:#fff;border:none;cursor:pointer;font:12px sans-serif;visibility:visible';
+      toggle.onclick = function() {
+        if (overlay.style.display === 'none') {
+          overlay.style.display = 'block';
+          toggle.textContent = 'Hide Errors';
+          // Also append state dump
+          var dump = document.createElement('pre');
+          dump.style.cssText = 'color:#aaa;font-size:11px;margin-top:16px;padding:8px;border-top:1px solid #555;white-space:pre-wrap;line-height:1.5';
+          dump.textContent = '--- Page State ---\n' + dumpState();
+          overlay.appendChild(dump);
+        } else {
+          overlay.style.display = 'none';
+          toggle.textContent = 'Show Errors';
+        }
+      };
+      document.documentElement.appendChild(toggle);
+    })();
+  </script>
   <script type="module">
     import App from './app.js';
     const startApp = () => {
@@ -437,6 +569,7 @@
                   <div id="albumPlaylistButton" class="textButton">
                     <div class="iconPlus" aria-hidden="true"></div>Add to playlist
                   </div>
+                  <div id="albumLyricsButton" class="iconButton" title="Show lyrics"></div>
                   <div id="albumFavoriteButton" class="iconButton toggleButton favoriteButton">
                     <div class="favoriteIcon"></div>
                   </div>
@@ -828,6 +961,19 @@
                   </label>
                 </div>
               </div>
+              <div class="settings-card-row">
+                <div>
+                  <div class="row-label">Save lyrics to files</div>
+                  <div class="row-desc">Automatically save downloaded lyrics alongside audio files</div>
+                </div>
+                <div class="row-right">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="settingsSaveLyricsToAudioFiles" checked>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -961,6 +1107,16 @@
           </div>
         </div>
       </section>
+
+      <!-- Lyrics Overlay -->
+      <div id="lyricsOverlay">
+        <button id="lyricsCloseButton" class="iconButton closeButton" title="Close"></button>
+        <div id="lyricsOverlayContent">
+          <div id="lyricsOverlayText"></div>
+          <div id="lyricsOverlayStatus"></div>
+        </div>
+        <button id="lyricsDeleteButton" class="iconButton" title="Delete saved lyrics" style="display:none"></button>
+      </div>
 
       <!-- Context Menus -->
       <div id="albumContextMenu" class="contextMenu">

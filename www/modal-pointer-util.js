@@ -5,10 +5,6 @@ import ViewUtil from './view-util.js';
  */
 export default class ModealPointerUtil {
 
-  whitelist$;
-  callback;
-  disableUserInput;
-
   /**
    * @param whitelist$ jquery object or array of jquery objects that should remain clickable
    * @param callback is called when click is not on a whitelisted element 
@@ -17,6 +13,19 @@ export default class ModealPointerUtil {
     this.whitelist$ = Array.isArray(whitelist$) ? whitelist$ : [whitelist$];
     this.callback = callback;
     this.disableUserInput = disableUserInput;
+    this.onDocumentClick = (e) => {
+      let b = false;
+      for (const $item of this.whitelist$) {
+        if ($item.has($(e.target)).length > 0) {
+          b = true;
+          break;
+        }
+      }
+      if (!b) {
+        this.clear();
+        this.callback();
+      }
+    };
   }
 
   start() {
@@ -47,17 +56,4 @@ export default class ModealPointerUtil {
     }
   }
 
-  onDocumentClick = (e) => {
-    let b = false;
-    for (const $item of this.whitelist$) {
-      if ($item.has($(e.target)).length > 0) {
-        b = true;
-        break;
-      }
-    }
-    if (!b) {
-      this.clear();
-      this.callback();
-    }
-  };
 }

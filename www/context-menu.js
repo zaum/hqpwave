@@ -6,10 +6,6 @@ import ModalPointerUtil from './modal-pointer-util.js';
  */
 export default class ContextMenu {
 
-  $el;
-  $items;
-  ModalPointerUtil;
-
   /**
    * Element is expected to have this structure:
    *   <div class="contextMenu">

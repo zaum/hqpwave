@@ -10,10 +10,6 @@ import ViewUtil from './view-util.js';
  */
 export default class Subview {
 
-  $el;
-  $list;
-  _throttledScrollHandler;
-
   constructor($el, $list = null) {
     this.$el = $el;
     this.$list = $list;

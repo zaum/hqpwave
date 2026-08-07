@@ -10,14 +10,14 @@ import PlaylistVo from './playlist-vo.js';
  */
 class Model {
 
-	_library = new LibraryVo();
-	_status = new StatusVo();
-  _lastStatus = new StatusVo();
-  _state = new StateVo();
-	_playlist = new PlaylistVo();
-  _infoData = {};
-
-  hasLibrary;
+  constructor() {
+    this._library = new LibraryVo();
+    this._status = new StatusVo();
+    this._lastStatus = new StatusVo();
+    this._state = new StateVo();
+    this._playlist = new PlaylistVo();
+    this._infoData = {};
+  }
 
   // @NonNull
 	get library() {

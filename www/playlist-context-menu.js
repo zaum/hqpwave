@@ -9,15 +9,11 @@ import Service from './service.js';
  */
 export default class PlaylistContextMenu extends ContextMenu {
 
-  $upItem;
-  $downItem;
-  $removeItem;
-
-  index = -1;
-  matchingLibraryItem = null;
-
   constructor() {
     super($("#playlistContextMenu"));
+
+    this.index = -1;
+    this.matchingLibraryItem = null;
 
     this.$upItem = this.$el.find("#playlistContextUp");
     this.$downItem = this.$el.find("#playlistContextDown");

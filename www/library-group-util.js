@@ -390,7 +390,7 @@ class LibraryGroupUtil {
   /**
    * Is year included in the yearArray (generated from above fn)
    */
-  isYearInYearArray = (year, yearArray) => {
+  isYearInYearArray(year, yearArray) {
     if (!yearArray) {
       return false;
     }
@@ -410,7 +410,7 @@ class LibraryGroupUtil {
       }
     }
     return false;
-  };
+  }
 }
 
 export default new LibraryGroupUtil()

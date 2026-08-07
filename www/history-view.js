@@ -17,16 +17,52 @@ import ViewUtil from './view-util.js';
  */
 export default class HistoryView  extends Subview {
 
-  $count;
-  trackMetaChangeHandler;
-  tracks;
-  _historyRefreshTimerId = 0;
-
   constructor($el) {
-  	super($el);
+    super($el);
+    this._historyRefreshTimerId = 0;
     this.$list = this.$el.find('#historyList');
     this.$count = this.$el.find('#historyCount');
     this.$clearButton = this.$el.find('#historyClearButton');
+    this.onClearButton = () => {
+      if (!confirm('Are you sure you want to clear all history?')) {
+        return;
+      }
+      MetaUtil.clearHistory();
+      $.ajax({
+        url: `${Values.META_ENDPOINT}?clearHistory`,
+        cache: false
+      });
+      ToastView.show('History cleared');
+    };
+    this.onModelLibraryUpdated = () => {
+      this.populate();
+    };
+    this.onHistoryChanged = () => {
+      if (this._historyRefreshTimerId) {
+        return;
+      }
+      this._historyRefreshTimerId = setTimeout(() => {
+        this._historyRefreshTimerId = 0;
+        this.populate();
+      }, 50);
+    };
+    this.onMetaLoadResult = (e, isSuccess) => {
+      if (isSuccess === true) {
+        this.populate();
+      }
+    };
+    this.onContextButton = (event) => {
+      event.stopPropagation();
+      const $button = $(event.currentTarget);
+      const $listItem = $button.parent().parent();
+      const index = parseInt($listItem.attr('data-index'));
+      if (!(index >= 0)) {
+        cl('warning no index');
+        return;
+      }
+      const data = this.tracks[index];
+      TrackListItemContextMenu.show(this.$el, $button, data);
+    };
     this.$el.find('#historyCloseButton').on("click tap", () => $(document).trigger('history-close-button'));
     this.$clearButton.on("click tap", this.onClearButton);
     this.trackMetaChangeHandler = TrackListItemUtil.makeTrackMetaChangeHandler(this.$list);
@@ -114,19 +150,6 @@ export default class HistoryView  extends Subview {
     $contextButtons.on("click tap", this.onContextButton);
 	}
 
-	onContextButton = (event) => {
-    event.stopPropagation();
-    const $button = $(event.currentTarget);
-    const $listItem = $button.parent().parent();
-    const index = parseInt($listItem.attr('data-index'));
-    if (!(index >= 0)) {
-      cl('warning no index');
-      return;
-    }
-    const data = this.tracks[index];
-    TrackListItemContextMenu.show(this.$el, $button, data);
-	}
-
   updateClearButton() {
     if (MetaUtil.history.length > 0) {
       this.$clearButton.removeClass('isDisabled');
@@ -135,36 +158,4 @@ export default class HistoryView  extends Subview {
     }
   }
 
-  onClearButton = () => {
-    if (!confirm('Are you sure you want to clear all history?')) {
-      return;
-    }
-    MetaUtil.clearHistory();
-    $.ajax({
-      url: `${Values.META_ENDPOINT}?clearHistory`,
-      cache: false
-    });
-    ToastView.show('History cleared');
-  };
-
-  onModelLibraryUpdated = () => {
-    this.populate();
-  };
-
-  onHistoryChanged = () => {
-    // Debounce bursts (track changes can trigger multiple updates quickly).
-    if (this._historyRefreshTimerId) {
-      return;
-    }
-    this._historyRefreshTimerId = setTimeout(() => {
-      this._historyRefreshTimerId = 0;
-      this.populate();
-    }, 50);
-  };
-
-  onMetaLoadResult = (e, isSuccess) => {
-    if (isSuccess === true) {
-      this.populate();
-    }
-  };
 }

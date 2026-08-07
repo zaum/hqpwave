@@ -15,18 +15,12 @@ import { initTimelineMinimap } from './timeline-minimap.js';
  */
 export default class LibraryAlbumsList extends LibraryContentList {
 
-  filteredSortedAlbums;
-  sortType;
-  sortOrder;
-  groupType = 'none'; // Always use 'none' - no grouping
-  filterType;
-
-  filteredSortedAlbumsDirty = true;
-  groupsDirty = true;
-  domDirty = true;
-
   constructor($el) {
     super($el);
+    this.groupType = 'none';
+    this.filteredSortedAlbumsDirty = true;
+    this.groupsDirty = true;
+    this.domDirty = true;
     this.setSortType(Settings.librarySortType);
     this.setSortOrder(Settings.librarySortOrder);
     // Force groupType to 'none' - no grouping

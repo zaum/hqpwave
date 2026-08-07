@@ -1,11 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const log = require('./log');
+const { normalizeFilePath } = require('./file-util');
 
 let cache = {};
 let dirty = false;
 let saveTimeout = null;
-const SAVE_DELAY = 5000;
+const SAVE_DELAY = 30000;
 const CACHE_FILE = path.resolve(__dirname, '..', 'hqpwv-label-cache.json');
 
 let musicMetadata = null;
@@ -50,10 +51,9 @@ function loadCache() {
   }
 }
 
-function saveCache() {
+async function saveCache() {
   try {
-    fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
-    dirty = false;
+    await fs.promises.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf8');
   } catch (e) {
     log.w('could not save label cache: ' + e.message);
   }
@@ -62,22 +62,16 @@ function saveCache() {
 function scheduleSave() {
   dirty = true;
   if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(() => {
-    if (dirty) saveCache();
+  saveTimeout = setTimeout(async () => {
+    if (dirty) {
+      dirty = false;
+      await saveCache();
+    }
   }, SAVE_DELAY);
 }
 
 function getCachedLabel(albumHash) {
   return cache[albumHash] !== undefined ? cache[albumHash] : null;
-}
-
-function normalizeFilePath(rawPath) {
-  let p = rawPath || '';
-  try { p = decodeURIComponent(p); } catch (e) {}
-  p = p.trim().replace(/^file:\/+/i, '');
-  if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(p)) p = p.slice(1);
-  if (process.platform === 'win32' && /^[a-zA-Z]\|/.test(p)) p = p.replace(/^([a-zA-Z])\|/, '$1:');
-  return path.normalize(p);
 }
 
 function getLabelFromCommon(common) {
@@ -185,35 +179,53 @@ async function backgroundEnsureLabels(json) {
   const available = await ensureMusicMetadata();
   if (!available) return;
 
-  let processed = 0;
-
+  // Only consider albums that are not already cached, so repeated
+  // LibraryGet calls do not re-scan the whole library.
+  const toProcess = [];
   for (const album of albums) {
     if (!album || !album['@_hash']) continue;
     if (!album['LibraryFile']) continue;
     if (cache[album['@_hash']] !== undefined) continue;
-
-    if (processed === 0) {
-      log.i('label extraction started');
-    }
-
-    const tracks = Array.isArray(album['LibraryFile']) ? album['LibraryFile'] : [album['LibraryFile']];
-    const trackNames = tracks.map(t => t['@_name']).filter(Boolean);
-    const albumPath = album['@_path'];
-    if (!albumPath || !trackNames.length) continue;
-
-    try {
-      await ensureLabel(album['@_hash'], albumPath, trackNames);
-      processed++;
-    } catch (e) {
-      cache[album['@_hash']] = '';
-      scheduleSave();
-      processed++;
-    }
+    toProcess.push(album);
   }
 
-  if (processed > 0) {
-    log.i('label extraction finished: ' + processed + ' new');
+  if (toProcess.length === 0) {
+    return;
   }
+
+  log.i('label extraction started: ' + toProcess.length + ' uncached albums');
+
+  // Bounded concurrency so we do not open an unbounded number of files.
+  const CONCURRENCY = 4;
+  let cursor = 0;
+
+  const worker = async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= toProcess.length) return;
+      const album = toProcess[index];
+
+      const tracks = Array.isArray(album['LibraryFile']) ? album['LibraryFile'] : [album['LibraryFile']];
+      const trackNames = tracks.map(t => t['@_name']).filter(Boolean);
+      const albumPath = album['@_path'];
+      if (!albumPath || !trackNames.length) continue;
+
+      try {
+        await ensureLabel(album['@_hash'], albumPath, trackNames);
+      } catch (e) {
+        cache[album['@_hash']] = '';
+        scheduleSave();
+      }
+    }
+  };
+
+  const workers = [];
+  for (let i = 0; i < CONCURRENCY; i++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+
+  log.i('label extraction finished: ' + toProcess.length + ' processed');
 }
 
 loadCache();

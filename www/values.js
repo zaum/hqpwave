@@ -5,26 +5,21 @@ import Util from './util.js';
  */
 class Values {
 
-  EXCLUDED_ARTISTS = ['various', 'various artists', 'va', 'v.a.', 'unknown', 'multiple artists', 'multiple', 'miscellaneous', 'misc', 'compilation'];
-
-  PROJECT_URL = 'http://https://github.com/zaum/hqpwave';
-  TROUBLESHOOTING_HREF = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
-
-  ENDPOINTS_BASE_URL = window.location.origin + '/endpoints/'; // default
-  COMMAND_ENDPOINT = this.ENDPOINTS_BASE_URL + "command";
-  NATIVE_ENDPOINT = this.ENDPOINTS_BASE_URL + 'native';
-  META_ENDPOINT = this.ENDPOINTS_BASE_URL + 'meta';
-  META_DOWNLOAD_LINK = this.ENDPOINTS_BASE_URL + 'meta?getDownload';
-  PLAYLIST_ENDPOINT = this.ENDPOINTS_BASE_URL + 'playlist';
-
-
-
-  _hqpwvIp;
-  _hqpwvVersion = '';
-  _hqplayerIp;
-  _imagesEndpoint;
-  _startTime = new Date().getTime();
-  _coverCacheKey = Date.now();
+  constructor() {
+    this.EXCLUDED_ARTISTS = ['various', 'various artists', 'va', 'v.a.', 'unknown', 'multiple artists', 'multiple', 'miscellaneous', 'misc', 'compilation'];
+    this.PROJECT_URL = 'http://https://github.com/zaum/hqpwave';
+    this.TROUBLESHOOTING_HREF = 'https://github.com/zaum/hqpwave/blob/master/readme_enduser.md';
+    this.ENDPOINTS_BASE_URL = window.location.origin + '/endpoints/';
+    this.COMMAND_ENDPOINT = this.ENDPOINTS_BASE_URL + "command";
+    this.NATIVE_ENDPOINT = this.ENDPOINTS_BASE_URL + 'native';
+    this.META_ENDPOINT = this.ENDPOINTS_BASE_URL + 'meta';
+    this.META_DOWNLOAD_LINK = this.ENDPOINTS_BASE_URL + 'meta?getDownload';
+    this.PLAYLIST_ENDPOINT = this.ENDPOINTS_BASE_URL + 'playlist';
+    this.LYRICS_ENDPOINT = this.ENDPOINTS_BASE_URL + 'lyrics';
+    this._hqpwvVersion = '';
+    this._startTime = new Date().getTime();
+    this._coverCacheKey = Date.now();
+  }
 
   setValues(nativeGetInfoData) {
     this._hqpwvVersion = nativeGetInfoData['hqpwv_version'];

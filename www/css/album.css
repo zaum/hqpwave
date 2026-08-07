@@ -266,7 +266,7 @@
   padding-left: 52px;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1024px) {
 
   .relatedAlbums {
     margin-left: -24px;
@@ -339,7 +339,7 @@
   pointer-events: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumViewImageNavButton:hover {
   opacity: 1;
   background: var(--raised);
@@ -384,7 +384,7 @@
   z-index: 2;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .cover-favorite:hover {
   background: rgba(17, 17, 18, 0.9);
   transform: scale(1.05);
@@ -415,7 +415,7 @@
   gap: 8px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
 
   #albumViewTextsInner {
     flex-wrap: wrap;
@@ -452,7 +452,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: clamp(10px, 2.4vw, 12px);
+    font-size: 10px;
     padding: 8px 12px;
   }
 
@@ -506,7 +506,7 @@
   transition: color 0.15s;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #albumViewArtist .albumArtistPart:hover,
 #albumViewArtist .albumArtistPart:focus-visible {
   color: var(--text);
@@ -533,7 +533,7 @@
   white-space: pre;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .creditButton:hover,
   .creditButton:focus-visible {
     color: var(--accent);
@@ -667,7 +667,7 @@
 
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumStatsFolder:hover {
   color: var(--accent);
 }
@@ -823,7 +823,7 @@
   text-transform: uppercase;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #albumViewGenreButtons .genre-tag:hover,
 .tag:hover {
   border-color: var(--border-hi);
@@ -863,7 +863,7 @@
   transition: color 0.12s, opacity 0.12s, background 0.12s;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumPathAction:hover {
   color: var(--text-2);
   opacity: 1;
@@ -911,7 +911,7 @@
   mask-position: center;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #albumPlayNowButton:hover {
   opacity: 0.9;
 }
@@ -944,7 +944,7 @@
   mask-position: center;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 #albumPlaylistButton:hover {
   border-color: var(--border-hi);
   color: var(--text);
@@ -952,6 +952,28 @@
 }
 
 /* Use default favorite button styles from buttons.css */
+
+#albumLyricsButton {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  flex-shrink: 0;
+}
+
+#albumLyricsButton:before {
+  background-image: url("./../img/icons/lyrics_white_24dp.svg");
+}
+
+@media (min-width: 768px) {
+  #albumLyricsButton:hover {
+    background: var(--raised);
+  }
+
+  #albumLyricsButton:hover:before {
+    opacity: 1;
+  }
+}
 
 #albumCloseButton {
   position: absolute;
@@ -1199,7 +1221,7 @@
   cursor: pointer;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .track-item:hover .track-more {
   opacity: 1;
   animation: moreButtonIn 0.2s ease-out;
@@ -1230,7 +1252,7 @@
   transition: background 0.12s;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumItem:hover {
   background: rgba(255, 255, 255, 0.03);
   animation: albumItemHover 0.2s ease-out;
@@ -1285,14 +1307,14 @@
   mask-size: 16px 16px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumItem:hover .albumItemLeft .playButton {
   opacity: 1;
   animation: playButtonIn 0.2s ease-out;
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumItem:hover .albumItemLeft .indexText {
   display: block;
 }
@@ -1307,7 +1329,7 @@
   text-align: center;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
 
   .albumItemLeft .indexText {
     display: block;
@@ -1328,7 +1350,7 @@
   transition: opacity 0.15s;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .favoriteTrackCover:hover {
   opacity: 0.75;
 }
@@ -1450,7 +1472,7 @@
   opacity: 0.6;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .trackItemMeta .favoriteButton:hover {
   opacity: 1;
 }
@@ -1493,7 +1515,7 @@
   mask-position: center;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumItem:hover .albumItemPlaylistButton,
 .albumItemPlaylistButton:hover {
   opacity: 1;
@@ -1502,7 +1524,7 @@
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .albumItem:hover .albumItemContext,
 .albumItemContext:hover {
   opacity: 1;

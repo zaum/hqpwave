@@ -6,18 +6,75 @@ import Util from './util.js';
 
 export default class HqpRulesView {
 
-  $el;
-  $toggle;
-  $list;
-  $addBtn;
-  $defaultsBtn;
-
   constructor($el) {
     this.$el = $el;
     this.$toggle = this.$el.find('#rulesEnableToggle');
     this.$list = this.$el.find('#genreRulesList');
     this.$addBtn = this.$el.find('#genreRuleAddBtn');
     this.$defaultsBtn = this.$el.find('#genreRuleDefaultsBtn');
+
+    this.onToggleChange = () => {
+      Settings.enableRules = this.$toggle.prop('checked');
+      this.$list.toggleClass('isDisabled', !Settings.enableRules);
+      this.$addBtn.closest('.presetAddRow').toggleClass('isDisabled', !Settings.enableRules);
+    };
+    this.render = () => {
+      this.$toggle.prop('checked', Settings.enableRules);
+
+      const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || 'PCM';
+      const genres = this.getGenreNames();
+      const presets = this.getPresetNames(mode);
+
+      // Auto-populate defaults if rules are empty and genres are available
+      if (Settings.genreRules.length === 0 && genres.length > 0) {
+        this.autoPopulateDefaults(genres, Settings.getPresetsArray(mode));
+      }
+
+      const rules = Settings.genreRules;
+      const usedGenres = this.getUsedGenres(-1);
+
+      let html = '';
+      for (let i = 0; i < rules.length; i++) {
+        const rule = rules[i];
+        html += this.buildRuleRow(i, rule, genres, presets, usedGenres);
+      }
+      this.$list.html(html);
+
+      this.$list.toggleClass('isDisabled', !Settings.enableRules);
+
+      const $remove = this.$list.find('.genreRuleRemove');
+      $remove.on('click tap', (e) => this.onRemoveRule(e));
+    };
+
+    this.onAddRule = () => {
+      const genres = this.getGenreNames();
+      const usedGenres = this.getUsedGenres(-1);
+      const available = genres.filter(g => !usedGenres.has(g));
+      if (available.length === 0) return;
+
+      Settings.genreRules.push({ genre: available[0], presetIndex: '0' });
+      Settings.commitGenreRules();
+      this.render();
+    };
+    this.onAddDefaults = () => {
+      const genres = this.getGenreNames();
+      const usedGenres = new Set(Settings.genreRules.map(r => r.genre).filter(Boolean));
+      const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || 'PCM';
+      const presets = Settings.getPresetsArray(mode);
+
+      let added = 0;
+      for (const genre of genres) {
+        if (!usedGenres.has(genre)) {
+          const presetIndex = this.findMatchingPresetIndex(genre, presets);
+          Settings.genreRules.push({ genre: genre, presetIndex: presetIndex });
+          added++;
+        }
+      }
+      if (added > 0) {
+        Settings.commitGenreRules();
+        this.render();
+      }
+    };
 
     this.$toggle.on('change', this.onToggleChange);
     this.$addBtn.on('click tap', this.onAddRule);
@@ -34,11 +91,7 @@ export default class HqpRulesView {
 
   onHide() { }
 
-  onToggleChange = () => {
-    Settings.enableRules = this.$toggle.prop('checked');
-    this.$list.toggleClass('isDisabled', !Settings.enableRules);
-    this.$addBtn.closest('.presetAddRow').toggleClass('isDisabled', !Settings.enableRules);
-  };
+
 
   getGenreNames() {
     return Model.library.genreNames || [];
@@ -70,57 +123,6 @@ export default class HqpRulesView {
     }
     return '0';
   }
-
-  render = () => {
-    this.$toggle.prop('checked', Settings.enableRules);
-
-    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || 'PCM';
-    const genres = this.getGenreNames();
-    const presets = this.getPresetNames(mode);
-
-    // Auto-populate defaults if rules are empty and genres are available
-    if (Settings.genreRules.length === 0 && genres.length > 0) {
-      this.autoPopulateDefaults(genres, Settings.getPresetsArray(mode));
-    }
-
-    const rules = Settings.genreRules;
-    const usedGenres = this.getUsedGenres(-1);
-
-    let html = '';
-    for (let i = 0; i < rules.length; i++) {
-      const rule = rules[i];
-      html += this.buildRuleRow(i, rule, genres, presets, usedGenres);
-    }
-    this.$list.html(html);
-
-    this.$list.toggleClass('isDisabled', !Settings.enableRules);
-    this.$addBtn.closest('.presetAddRow').toggleClass('isDisabled', !Settings.enableRules);
-
-    this.$list.find('.genreRuleItem').each((i, el) => {
-      const $el = $(el);
-      const index = parseInt($el.attr('data-index'));
-      const $genreSelect = $el.find('.genreRuleGenreSelect');
-      const $presetSelect = $el.find('.genreRulePresetSelect');
-      const $deleteBtn = $el.find('.genreRuleDeleteBtn');
-
-      $genreSelect.on('change', () => {
-        Settings.genreRules[index].genre = $genreSelect.val();
-        Settings.commitGenreRules();
-        this.render();
-      });
-
-      $presetSelect.on('change', () => {
-        Settings.genreRules[index].presetIndex = $presetSelect.val();
-        Settings.commitGenreRules();
-      });
-
-      $deleteBtn.on('click tap', () => {
-        Settings.genreRules.splice(index, 1);
-        Settings.commitGenreRules();
-        this.render();
-      });
-    });
-  };
 
   autoPopulateDefaults(genres, presetArray) {
     const usedGenres = new Set();
@@ -156,34 +158,4 @@ export default class HqpRulesView {
       </div>`;
   }
 
-  onAddRule = () => {
-    const genres = this.getGenreNames();
-    const usedGenres = this.getUsedGenres(-1);
-    const available = genres.filter(g => !usedGenres.has(g));
-    if (available.length === 0) return;
-
-    Settings.genreRules.push({ genre: available[0], presetIndex: '0' });
-    Settings.commitGenreRules();
-    this.render();
-  };
-
-  onAddDefaults = () => {
-    const genres = this.getGenreNames();
-    const usedGenres = new Set(Settings.genreRules.map(r => r.genre).filter(Boolean));
-    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']) || 'PCM';
-    const presets = Settings.getPresetsArray(mode);
-
-    let added = 0;
-    for (const genre of genres) {
-      if (!usedGenres.has(genre)) {
-        const presetIndex = this.findMatchingPresetIndex(genre, presets);
-        Settings.genreRules.push({ genre: genre, presetIndex: presetIndex });
-        added++;
-      }
-    }
-    if (added > 0) {
-      Settings.commitGenreRules();
-      this.render();
-    }
-  };
 }

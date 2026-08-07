@@ -52,7 +52,7 @@ export default class ArtistView extends Subview {
     this.$el.on('click', '#artistViewSetDefaultImage', () => {
       const img = this.artistImageUrls[this.artistImageIndex];
       const imageId = img ? img.id : null;
-      console.log('[artist-view] Set default image clicked:', { imageId, artistId: this.artist?.id, imgIndex: this.artistImageIndex });
+      console.log('[artist-view] Set default image clicked:', { imageId, artistId: this.artist && this.artist.id, imgIndex: this.artistImageIndex });
       if (!this.artist || !this.artist.id || !imageId) {
         console.warn('[artist-view] Cannot set default image - missing data');
         return;
@@ -100,6 +100,15 @@ export default class ArtistView extends Subview {
     this.$backButton.on('click', () => {
       $(document).trigger('show-library');
     });
+
+    this.onPrevImageClick = (e) => {
+      e.stopPropagation();
+      this.setArtistImageByIndex(this.artistImageIndex - 1);
+    };
+    this.onNextImageClick = (e) => {
+      e.stopPropagation();
+      this.setArtistImageByIndex(this.artistImageIndex + 1);
+    };
   }
 
   updateOverlayVisibility() {
@@ -149,19 +158,6 @@ export default class ArtistView extends Subview {
       this.loadArtist(artistId);
     }
   }
-
-  artistImageUrls = [];
-  artistImageIndex = 0;
-
-  onPrevImageClick = (e) => {
-    e.stopPropagation();
-    this.setArtistImageByIndex(this.artistImageIndex - 1);
-  };
-
-  onNextImageClick = (e) => {
-    e.stopPropagation();
-    this.setArtistImageByIndex(this.artistImageIndex + 1);
-  };
 
   setArtistImageByIndex(index) {
     if (!this.artistImageUrls || this.artistImageUrls.length === 0) {
@@ -265,7 +261,7 @@ export default class ArtistView extends Subview {
     this.$backButton.show();
     
     // Create the error block securely without inline onclick executing in global scope
-    const $err = $(`<div class="artist-error" style="margin-top: 20px; color: var(--text-3);">
+    const $err = $(`<div class="artist-error">
        Could not find or import detailed profile data for this artist.<br><br>
        <button class="btn-secondary" id="retryArtistSearchBtn">Retry Search</button>
     </div>`);
@@ -490,7 +486,7 @@ export default class ArtistView extends Subview {
       
       // If we got only one paragraph, try to split it by sentences if it's long
       if (paragraphs.length === 1 && paragraphs[0].length > 300) {
-        const sentences = paragraphs[0].split(/(?<=[.])\s+(?=[A-Z])/);
+        const sentences = paragraphs[0].split(/([.])\s+(?=[A-Z])/);
         if (sentences.length > 1) {
           paragraphs = sentences.map(s => s.trim()).filter(Boolean);
         }
@@ -740,7 +736,7 @@ export default class ArtistView extends Subview {
             <div class="toggle-thumb"></div>
           </label>
         `);
-        const $modeLabel = $(`<span class="mode-label" style="font-size: 11px; color: var(--text-2); letter-spacing: 0.05em;">${initialLabel}</span>`);
+        const $modeLabel = $(`<span class="mode-label">${initialLabel}</span>`);
         
         const $reloadBtn = $(`<button class="iconButton" id="artistReloadButton" title="Reload artist data" aria-label="Reload artist data"></button>`);
         
@@ -1103,7 +1099,7 @@ export default class ArtistView extends Subview {
       const bitsHtml = (isLocal && albumInLibrary) ? AlbumUtil.getBitrateText(albumInLibrary) : '';
       const $item = $(
         `<div class="artistDiscItem ${isLocal ? 'is-local' : 'not-local'}" title="${isLocal ? 'In library' : 'Not in library'}">
-          <div class="coverWrap ${!hasCover ? 'no-cover' : ''} ${!isLocal && hasCover ? 'bw' : ''}" style="${isLocal ? 'cursor: pointer' : ''}">
+          <div class="coverWrap ${!hasCover ? 'no-cover' : ''} ${!isLocal && hasCover ? 'bw' : ''}">
             <img src="${coverSrc}" alt="" loading="lazy">
             ${isLocal ? `<div class="libraryItemPlayBtn" title="Play Album"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>` : ''}
             ${bitsHtml ? `<div class="libraryItemBits">${bitsHtml}</div>` : ''}

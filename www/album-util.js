@@ -98,15 +98,6 @@ export default class AlbumUtil {
     }
   }
 
-  static onGenreButtonClick = (e) => {
-    const value = $(e.currentTarget).attr('data-value');
-    if (!value) {
-      cl('warning no value');
-      return;
-    }
-    $(document).trigger('album-genre-button', value);
-  };
-
   static makePlaylistAlbumStatsText(album) {
     const bitrateText = AlbumUtil.getBitrateText(album);
     const filetypeText = AlbumUtil.getFiletypeText(album);
@@ -187,3 +178,12 @@ export default class AlbumUtil {
     return lastGoodSuffix.toUpperCase();
   }
 }
+
+AlbumUtil.onGenreButtonClick = (e) => {
+  const value = $(e.currentTarget).attr('data-value');
+  if (!value) {
+    cl('warning no value');
+    return;
+  }
+  $(document).trigger('album-genre-button', value);
+};

@@ -41,7 +41,7 @@
   font-size: 12px;
 }
 
-  @media (min-width: 769px) {
+  @media (min-width: 768px) {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
@@ -117,7 +117,7 @@
     opacity: 1;
     transform: translateY(0);
   }
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 }
 
 
@@ -187,7 +187,7 @@
   0%, 100% { color: var(--text-2); }
 }
   50% { color: var(--accent); }
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 }
 
 .settings-card-row .row-label.pulse {
@@ -1356,7 +1356,7 @@
   opacity: 0.8;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   #settingsView .viewHeader,
   #hqpSettingsView .viewHeader {
     padding-left: 20px;

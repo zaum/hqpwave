@@ -10,8 +10,6 @@ import ViewUtil from './view-util.js';
  */
 class TrackListItemContextMenu extends ContextMenu {
 
-  data;
-
   constructor() {
     super($("#trackListItemContextMenu"));
   }

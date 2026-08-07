@@ -15,9 +15,6 @@ import ViewUtil from './view-util.js';
  */
 export default class LoadPlaylistContextMenu extends ContextMenu {
 
-  playlistUri;
-  index;
-
   constructor() {
     super($('#loadPlaylistContextMenu'));
   }

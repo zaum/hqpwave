@@ -355,31 +355,6 @@ export default class TrackListItemUtil {
     return $el;
   }
 
-  static onAlbumButton = (e) => {
-    const $el = $(e.currentTarget);
-    const hash = $el.attr('data-hash');
-    const album = Model.library.getAlbumByAlbumHash(hash);
-    if (!album) {
-      return; // shdnthpn
-    }
-    $(document).trigger('track-album-button-click', album);
-  };
-
-  static onFavoriteButtonClick = (event) => {
-    event.stopPropagation(); // prevent listitem from responding to same event
-    const $button = $(event.currentTarget);
-    const $listItem = $button.parent().parent();
-    const hash = $listItem.attr('data-hash');
-    if (!hash) {
-      cl('warning no hash data attr', $button);
-      return;
-    }
-    const oldValue = MetaUtil.isTrackFavoriteFor(hash);
-    const newValue = !oldValue;
-    // update model
-    MetaUtil.setTrackFavoriteFor(hash, newValue);
-  };
-
   /**
    * Makes handler for listening to track meta events (two different ones).
    * Used for updating track list items' favorite button selectedness and track count.
@@ -413,3 +388,27 @@ export default class TrackListItemUtil {
     return f;
   }
 }
+
+TrackListItemUtil.onAlbumButton = (e) => {
+  const $el = $(e.currentTarget);
+  const hash = $el.attr('data-hash');
+  const album = Model.library.getAlbumByAlbumHash(hash);
+  if (!album) {
+    return;
+  }
+  $(document).trigger('track-album-button-click', album);
+};
+
+TrackListItemUtil.onFavoriteButtonClick = (event) => {
+  event.stopPropagation();
+  const $button = $(event.currentTarget);
+  const $listItem = $button.parent().parent();
+  const hash = $listItem.attr('data-hash');
+  if (!hash) {
+    cl('warning no hash data attr', $button);
+    return;
+  }
+  const oldValue = MetaUtil.isTrackFavoriteFor(hash);
+  const newValue = !oldValue;
+  MetaUtil.setTrackFavoriteFor(hash, newValue);
+};

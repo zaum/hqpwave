@@ -7,15 +7,12 @@ import ViewUtil from './view-util.js';
  */
 class SnackView {
 
-  $el = $('#snack');
-  $inner = this.$el.find('#snackInner');
-  $line1 = this.$el.find('#snackLine1');
-  $line2 = this.$el.find('#snackLine2');
-  $close = this.$el.find('#snackClose');
-
-  id;
-
   constructor() {
+    this.$el = $('#snack');
+    this.$inner = this.$el.find('#snackInner');
+    this.$line1 = this.$el.find('#snackLine1');
+    this.$line2 = this.$el.find('#snackLine2');
+    this.$close = this.$el.find('#snackClose');
     this.$close.on('click tap', () => this.hide());
   }
 

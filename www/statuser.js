@@ -8,12 +8,12 @@ import Service from './service.js';
 import Busyer from './busyer.js';
 import MetaUtil from './meta-util.js';
 
-const INTERVAL_FAST = 500;
-const INTERVAL_PLAYING = 1000;
-const INTERVAL_NOT_PLAYING = 10000;
-const INTERVAL_MOBILE_FAST = 1000;
-const INTERVAL_MOBILE_PLAYING = 2000;
-const INTERVAL_MOBILE_NOT_PLAYING = 15000;
+const INTERVAL_FAST = 1000;
+const INTERVAL_PLAYING = 2000;
+const INTERVAL_NOT_PLAYING = 15000;
+const INTERVAL_MOBILE_FAST = 1500;
+const INTERVAL_MOBILE_PLAYING = 3000;
+const INTERVAL_MOBILE_NOT_PLAYING = 20000;
 const VIEW_DETECT_DURATION_MS = 5 * 1000;
 
 /**
@@ -24,18 +24,18 @@ const VIEW_DETECT_DURATION_MS = 5 * 1000;
  */
 class Statuser {
 
-  /**
-   * The id of the last setTimeout that was called.
-   */
-  timeoutId;
-
-  ignoreNextNewTrackDetected = false;
-
-  viewDetectUri;
-  viewDetectPastZeroStartTime;
-  viewDetectHasTriggered;
-
   constructor() {
+    this.ignoreNextNewTrackDetected = false;
+    this.onServiceResponseHandled = (e, type, data) => {
+      if (type == 'Status') {
+        this.doStatusDiff();
+        return;
+      }
+
+      if (type == 'Play' || type == 'SelectTrack') {
+        this.doNext();
+      }
+    };
     $(document).on('service-response-handled', this.onServiceResponseHandled);
   }
 
@@ -73,18 +73,6 @@ class Statuser {
     }
     this.timeoutId = setTimeout(() => this.doNext(), duration);
   }
-
-  onServiceResponseHandled = (e, type, data) => {
-    if (type == 'Status') {
-      this.doStatusDiff();
-      return;
-    }
-
-    if (type == 'Play' || type == 'SelectTrack') {
-      // do-next now (don't wait)
-      this.doNext();
-    }
-  };
 
   /**
    * Detects when track has changed, plus.

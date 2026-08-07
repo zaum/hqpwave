@@ -13,43 +13,215 @@ import VolumePanel from './volume-panel.js';
  * Library view containing a list of albums.
  */
 export default class PlaybarView {
-  
-  $el;
-  $cover;
-  $coverImg;
-  progressView;
-  volumePanel;
-  $volumeInline;
-  $volumeInlineTrack;
-  $volumeInlineThumb;
-  $volumeInlineText;
-  $volumeToggle;
-  pointerUtil;
-
-  totalTracks = -1;
-  atTrack = -1;
-  state = '';
-
-  optimisticTimerId = null;
-  optimisticSeconds = -1;
-  optimisticTotal = 0;
-
-  playingText;
-  systemMessageText;
-  currentSecondsText;
-  totalSecondsText;
-  ratio;
-  isVolumePanelShowing = false;
-  _coverUrl = '';
-  _lastTrackUri = '';
-  isTransportFadeRunning = false;
-  transportFadeUnlockTimeoutId = null;
-  transportFadeStepTimeoutId = null;
 
   constructor() {
+    this.totalTracks = -1;
+    this.atTrack = -1;
+    this.state = '';
+    this.optimisticTimerId = null;
+    this.optimisticSeconds = -1;
+    this.optimisticTotal = 0;
+    this.isVolumePanelShowing = false;
+    this._coverUrl = '';
+    this._lastTrackUri = '';
+    this.isTransportFadeRunning = false;
+    this.transportFadeUnlockTimeoutId = null;
+    this.transportFadeStepTimeoutId = null;
+
+    this.onNewTrackDetected = (uri, lastUri) => {
+      // Clear any previous optimistic timer
+      if (this.optimisticTimerId) {
+        clearInterval(this.optimisticTimerId);
+        this.optimisticTimerId = null;
+      }
+
+      // Try to determine total seconds from status or playlist, fallback to 240s
+      let total = Model.status.totalSeconds;
+      if (!total || total <= 0) {
+        const idx = Model.playlist.currentIndex;
+        const item = (idx >= 0 && Model.playlist.array[idx]) ? Model.playlist.array[idx] : null;
+        if (item) {
+          const min = parseInt(item['@_total_min']);
+          const sec = parseInt(item['@_total_sec']);
+          if (!isNaN(min) && !isNaN(sec)) {
+            total = (min * 60) + sec;
+          }
+        }
+      }
+      if (!total || total <= 0) total = 240;
+
+      this.optimisticTotal = total;
+      this.optimisticSeconds = 0;
+      this.progressView.update(0, 0);
+
+      // Increment optimistic progress each second until real status arrives
+      this.optimisticTimerId = setInterval(() => {
+        this.optimisticSeconds++;
+        if (this.optimisticSeconds >= this.optimisticTotal) {
+          clearInterval(this.optimisticTimerId);
+          this.optimisticTimerId = null;
+          return;
+        }
+        const ratio = this.optimisticSeconds / this.optimisticTotal;
+        this.progressView.update(ratio, this.optimisticSeconds);
+        try {
+          // Update the current time text immediately (optimistic)
+          this.$trackCurrentTime.text(Util.durationText(this.optimisticSeconds));
+          // Update circular progress if present
+          if (this.circularProgress && typeof ratio === 'number') {
+            this.circularProgress.setProgress(ratio);
+          }
+          // Show total seconds if not yet populated
+          if (!this.totalSecondsText || this.totalSecondsText === '--:--') {
+            this.$trackLength.text(Util.durationText(this.optimisticTotal));
+          }
+        } catch (e) {
+          // swallow any UI errors
+        }
+      }, 1000);
+    };
+
+    this.onPlayButton = (e) => {
+      if (Model.status.isPlaying) {
+        this.queueTransportWithFade(Commands.pause());
+        return;
+      }
+
+      Service.queueCommandFrontAndGetStatus(Commands.play());
+    };
+
+    this.onStopButton = () => {
+      this.queueTransportWithFade(Commands.stop());
+    };
+
+    this.onPreviousButton = (e) => {
+      this.queueTransportWithFade(Commands.previous());
+    };
+
+    this.onNextButton = (e) => {
+      this.queueTransportWithFade(Commands.next());
+    };
+
+    this.onTrackChangeCommand = (commandXml) => {
+      this.queueTransportWithFade(commandXml);
+    };
+
+    this.onVolumeTrackClick = (e) => {
+      const trackWidth = this.$volumeInlineTrack.width();
+      const trackHeight = this.$volumeInlineTrack.height();
+      if (!trackWidth || !trackHeight) {
+        return;
+      }
+      const offset = this.$volumeInlineTrack.offset();
+      const touchPoint = (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0])
+        ? e.originalEvent.touches[0]
+        : null;
+      const clientX = (e.clientX !== undefined) ? e.clientX : (touchPoint ? touchPoint.clientX : null);
+      const clientY = (e.clientY !== undefined) ? e.clientY : (touchPoint ? touchPoint.clientY : null);
+      // Breakpoints: 480 / 768 / 1024 / 1600. CSS switches to horizontal at >=1024.
+      const isVertical = window.innerWidth < 1024;
+
+      let ratio;
+      if (isVertical) {
+        if (clientY === null) {
+          return;
+        }
+        ratio = (offset.top + trackHeight - clientY) / trackHeight;
+      } else {
+        if (clientX === null) {
+          return;
+        }
+        ratio = (clientX - offset.left) / trackWidth;
+      }
+
+      if (isNaN(ratio)) {
+        return;
+      }
+      ratio = Math.max(0, Math.min(1, ratio));
+
+      const current = Model.status.volume;
+      if (isNaN(current)) {
+        return;
+      }
+      const target = Math.round((ratio * 80) - 40); // map 0–1 to approx -40..+40 dB
+      const delta = target - current;
+      if (delta === 0) {
+        return;
+      }
+      const step = delta > 0 ? 1 : -1;
+      const steps = Math.min(6, Math.abs(Math.round(delta))); // clamp to avoid huge bursts
+
+      const command = step > 0 ? Commands.volumeUp() : Commands.volumeDown();
+      const commands = [];
+      for (let i = 0; i < steps; i++) {
+        commands.push(command);
+      }
+      commands.push(Commands.status());
+      Service.queueCommandsFront(commands);
+    };
+
+    this.onVolumeToggleClick = (e) => {
+      this.toggleVolumePopup();
+    };
+
+    this.onCoverClick = (e) => {
+      const album = this._getCurrentAlbum();
+      if (!album) {
+        return;
+      }
+      $(document).trigger('library-item-click', album);
+    };
+
+    this.startVolumeDrag = (e) => {
+      this.isVolumeDragging = true;
+      if (this.$volumeInlineThumb && this.$volumeInlineThumb.length) this.$volumeInlineThumb.addClass('isDragging');
+      $(window).on("mousemove touchmove", this.onVolumeDrag);
+      $(window).on("mouseup touchend touchcancel", this.endVolumeDrag);
+      const ratio = this._eventToVolumeRatio(e);
+      if (!isNaN(ratio)) {
+        this._setVolumeThumbRatio(ratio);
+      }
+      // temporarily disable click handler to avoid click after drag
+      this.$volumeInlineTrack.off('click tap');
+      setTimeout(() => this.$volumeInlineTrack.on('click tap', this.onVolumeTrackClick), 500);
+    };
+
+    this.onVolumeDrag = (e) => {
+      const ratio = this._eventToVolumeRatio(e);
+      if (isNaN(ratio)) return;
+      this._setVolumeThumbRatio(ratio);
+    };
+
+    this.endVolumeDrag = (e) => {
+      this.isVolumeDragging = false;
+      if (this.$volumeInlineThumb && this.$volumeInlineThumb.length) this.$volumeInlineThumb.removeClass('isDragging');
+      $(window).off("mouseup touchend touchcancel");
+      $(window).off("mousemove touchmove");
+
+      const ratio = this._eventToVolumeRatio(e) || 0;
+      // compute target dB and send commands (same mapping as onVolumeTrackClick)
+      const current = Model.status.volume;
+      if (isNaN(current)) return;
+      const target = Math.round((ratio * 80) - 40);
+      const delta = target - current;
+      if (delta === 0) return;
+      const step = delta > 0 ? 1 : -1;
+      const steps = Math.min(6, Math.abs(Math.round(delta)));
+      const command = step > 0 ? Commands.volumeUp() : Commands.volumeDown();
+      const commands = [];
+      for (let i = 0; i < steps; i++) {
+        commands.push(command);
+      }
+      commands.push(Commands.status());
+      Service.queueCommandsFront(commands);
+    };
+
     this.$el = $("#playbarView");
     this.$cover = this.$el.find('#playbarCover');
     this.$coverImg = this.$el.find('#playbarCoverImg');
+    this.$coverImg.on('error', function() {
+      this._setCoverEmptyClass();
+    }.bind(this));
 
     // Rem, button states are mostly governed by css classes on root view.
     this.$playButton = this.$el.find("#playButton");
@@ -149,10 +321,6 @@ export default class PlaybarView {
         destroyCircular();
       }
     });
-  }
-
-  get $el() {
-  	return this.$el;
   }
 
   update() {
@@ -445,84 +613,6 @@ export default class PlaybarView {
     this._updatePreviousNextButtons();
   }
 
-  onNewTrackDetected = (uri, lastUri) => {
-    // Clear any previous optimistic timer
-    if (this.optimisticTimerId) {
-      clearInterval(this.optimisticTimerId);
-      this.optimisticTimerId = null;
-    }
-
-    // Try to determine total seconds from status or playlist, fallback to 240s
-    let total = Model.status.totalSeconds;
-    if (!total || total <= 0) {
-      const idx = Model.playlist.currentIndex;
-      const item = (idx >= 0 && Model.playlist.array[idx]) ? Model.playlist.array[idx] : null;
-      if (item) {
-        const min = parseInt(item['@_total_min']);
-        const sec = parseInt(item['@_total_sec']);
-        if (!isNaN(min) && !isNaN(sec)) {
-          total = (min * 60) + sec;
-        }
-      }
-    }
-    if (!total || total <= 0) total = 240;
-
-    this.optimisticTotal = total;
-    this.optimisticSeconds = 0;
-    this.progressView.update(0, 0);
-
-    // Increment optimistic progress each second until real status arrives
-    this.optimisticTimerId = setInterval(() => {
-      this.optimisticSeconds++;
-      if (this.optimisticSeconds >= this.optimisticTotal) {
-        clearInterval(this.optimisticTimerId);
-        this.optimisticTimerId = null;
-        return;
-      }
-      const ratio = this.optimisticSeconds / this.optimisticTotal;
-      this.progressView.update(ratio, this.optimisticSeconds);
-      try {
-        // Update the current time text immediately (optimistic)
-        this.$trackCurrentTime.text(Util.durationText(this.optimisticSeconds));
-        // Update circular progress if present
-        if (this.circularProgress && typeof ratio === 'number') {
-          this.circularProgress.setProgress(ratio);
-        }
-        // Show total seconds if not yet populated
-        if (!this.totalSecondsText || this.totalSecondsText === '--:--') {
-          this.$trackLength.text(Util.durationText(this.optimisticTotal));
-        }
-      } catch (e) {
-        // swallow any UI errors
-      }
-    }, 1000);
-  }
-
-  onPlayButton = (e) => {
-    if (Model.status.isPlaying) {
-      this.queueTransportWithFade(Commands.pause());
-      return;
-    }
-
-    Service.queueCommandFrontAndGetStatus(Commands.play());
-  };
-
-  onStopButton = () => {
-    this.queueTransportWithFade(Commands.stop());
-  };
-
-  onPreviousButton = (e) => {
-    this.queueTransportWithFade(Commands.previous());
-  };
-
-  onNextButton = (e) => {
-    this.queueTransportWithFade(Commands.next());
-  };
-
-  onTrackChangeCommand = (commandXml) => {
-    this.queueTransportWithFade(commandXml);
-  };
-
   onProgressThumbDrag() {
     // Update current seconds text based on thumb's current position ratio
     // (during the course of the drag gesture only)
@@ -530,64 +620,6 @@ export default class PlaybarView {
     const s = Util.durationText(seconds);
     this.$trackCurrentTime.text(s);
   }
-
-  onVolumeTrackClick = (e) => {
-    const trackWidth = this.$volumeInlineTrack.width();
-    const trackHeight = this.$volumeInlineTrack.height();
-    if (!trackWidth || !trackHeight) {
-      return;
-    }
-    const offset = this.$volumeInlineTrack.offset();
-    const touchPoint = (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches[0])
-      ? e.originalEvent.touches[0]
-      : null;
-    const clientX = (e.clientX !== undefined) ? e.clientX : (touchPoint ? touchPoint.clientX : null);
-    const clientY = (e.clientY !== undefined) ? e.clientY : (touchPoint ? touchPoint.clientY : null);
-    // Breakpoints: 480 / 768 / 1024 / 1600. CSS switches to horizontal at >=1024.
-    const isVertical = window.innerWidth < 1024;
-
-    let ratio;
-    if (isVertical) {
-      if (clientY === null) {
-        return;
-      }
-      ratio = (offset.top + trackHeight - clientY) / trackHeight;
-    } else {
-      if (clientX === null) {
-        return;
-      }
-      ratio = (clientX - offset.left) / trackWidth;
-    }
-
-    if (isNaN(ratio)) {
-      return;
-    }
-    ratio = Math.max(0, Math.min(1, ratio));
-
-    const current = Model.status.volume;
-    if (isNaN(current)) {
-      return;
-    }
-    const target = Math.round((ratio * 80) - 40); // map 0–1 to approx -40..+40 dB
-    const delta = target - current;
-    if (delta === 0) {
-      return;
-    }
-    const step = delta > 0 ? 1 : -1;
-    const steps = Math.min(6, Math.abs(Math.round(delta))); // clamp to avoid huge bursts
-
-    const command = step > 0 ? Commands.volumeUp() : Commands.volumeDown();
-    const commands = [];
-    for (let i = 0; i < steps; i++) {
-      commands.push(command);
-    }
-    commands.push(Commands.status());
-    Service.queueCommandsFront(commands);
-  };
-
-  onVolumeToggleClick = (e) => {
-    this.toggleVolumePopup();
-  };
 
   queueTransportWithFade(transportCommand) {
     if (this.isTransportFadeRunning) {
@@ -736,20 +768,20 @@ export default class PlaybarView {
       }
     }
 
-    const currentIndex = Model.playlist?.currentIndex;
+    const currentIndex = Model.playlist ? Model.playlist.currentIndex : undefined;
     const hasCurrentTrack = Number.isInteger(currentIndex)
       && currentIndex >= 0
-      && currentIndex < (Model.playlist?.array?.length || 0);
+      && currentIndex < ((Model.playlist && Model.playlist.array && Model.playlist.array.length) || 0);
     if (!hasCurrentTrack) {
       return null;
     }
 
     const currentTrack = Model.playlist.array[currentIndex];
-    if (currentTrack?.album) {
+    if (currentTrack && currentTrack.album) {
       return currentTrack.album;
     }
 
-    const trackUri = currentTrack?.['@_uri'];
+    const trackUri = currentTrack && currentTrack['@_uri'];
     if (trackUri && Model.hasLibrary) {
       return Model.library.getAlbumByTrackUri(trackUri) || null;
     }
@@ -770,24 +802,22 @@ export default class PlaybarView {
         this._coverUrl = '';
         this.$coverImg.attr('src', '');
       }
+      this._setCoverEmptyClass();
       return;
     }
     const url = DataUtil.getAlbumImageUrlWithSize(album, 300);
     if (url && url !== this._coverUrl) {
       this._coverUrl = url;
       this.$coverImg.attr('src', url);
+      this.$cover.removeClass('hasEmptyCover');
       // Notify app that playbar cover changed so top-bar can update promptly
       try { $(document).trigger('playbar-cover-updated'); } catch (e) {}
     }
   }
 
-  onCoverClick = (e) => {
-    const album = this._getCurrentAlbum();
-    if (!album) {
-      return;
-    }
-    $(document).trigger('library-item-click', album);
-  };
+  _setCoverEmptyClass() {
+    this.$cover.addClass('hasEmptyCover');
+  }
 
   _updateVolumeInline() {
     const vol = Model.status.volume;
@@ -807,50 +837,6 @@ export default class PlaybarView {
       this.$volumeInlineThumb.css('height', '100%');
     }
     this.$volumeInlineText.text(`${vol} dB`);
-  }
-
-  startVolumeDrag = (e) => {
-    this.isVolumeDragging = true;
-    if (this.$volumeInlineThumb && this.$volumeInlineThumb.length) this.$volumeInlineThumb.addClass('isDragging');
-    $(window).on("mousemove touchmove", this.onVolumeDrag);
-    $(window).on("mouseup touchend touchcancel", this.endVolumeDrag);
-    const ratio = this._eventToVolumeRatio(e);
-    if (!isNaN(ratio)) {
-      this._setVolumeThumbRatio(ratio);
-    }
-    // temporarily disable click handler to avoid click after drag
-    this.$volumeInlineTrack.off('click tap');
-    setTimeout(() => this.$volumeInlineTrack.on('click tap', this.onVolumeTrackClick), 500);
-  }
-
-  onVolumeDrag = (e) => {
-    const ratio = this._eventToVolumeRatio(e);
-    if (isNaN(ratio)) return;
-    this._setVolumeThumbRatio(ratio);
-  }
-
-  endVolumeDrag = (e) => {
-    this.isVolumeDragging = false;
-    if (this.$volumeInlineThumb && this.$volumeInlineThumb.length) this.$volumeInlineThumb.removeClass('isDragging');
-    $(window).off("mouseup touchend touchcancel");
-    $(window).off("mousemove touchmove");
-
-    const ratio = this._eventToVolumeRatio(e) || 0;
-    // compute target dB and send commands (same mapping as onVolumeTrackClick)
-    const current = Model.status.volume;
-    if (isNaN(current)) return;
-    const target = Math.round((ratio * 80) - 40);
-    const delta = target - current;
-    if (delta === 0) return;
-    const step = delta > 0 ? 1 : -1;
-    const steps = Math.min(6, Math.abs(Math.round(delta)));
-    const command = step > 0 ? Commands.volumeUp() : Commands.volumeDown();
-    const commands = [];
-    for (let i = 0; i < steps; i++) {
-      commands.push(command);
-    }
-    commands.push(Commands.status());
-    Service.queueCommandsFront(commands);
   }
 
   _eventToVolumeRatio(e) {

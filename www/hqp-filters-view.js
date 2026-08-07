@@ -16,34 +16,109 @@ import SnackView from './snack-view.js';
  */
 export default class HqpFiltersView {
 
-  $el;
-  $modeSwitcher;
-  $filterSelect;
-  $shaperSelect;
-  $info;
-  $outputBitrate;
-  $outputBitrateValue;
-
-  presetsView;
-  outputBitrateString = null;
-
-  // todo `<FiltersItem index= name= value= />` [?]
-
   constructor($el) {
     this.$el = $el;
+    this.outputBitrateString = null;
 
     this.$modeSwitcher = this.$el.find('#modeSwitcher');
     this.$filterSelect = this.$el.find('#filterSelect');
     this.$shaperSelect = this.$el.find('#shaperSelect');
 
-    this.$modeSwitcher.on('click', '.mode-btn', this.onModeBtnClick);
-    this.$filterSelect.on('change', this.onSelectChange);
-    this.$shaperSelect.on('change', this.onSelectChange);
-
     this.$info = this.$el.find('#hqpFiltersInfo');
     this.$outputBitrate = this.$el.find('#outputBitrate');
     this.$outputBitrateValue = this.$el.find('#outputBitrateValue');
 
+    this.populateSelects = () => {
+      const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
+      this.highlightActiveMode(mode);
+
+      const filterName = Model.status.data['@_active_filter'];
+      const filtersArray = HqpConfigModel.filtersData[mode];
+      this.populateSelect(this.$filterSelect, filtersArray, '@_name', '@_index', filterName);
+
+      const shaperName = Model.status.data['@_active_shaper'];
+      const shapersArray = HqpConfigModel.shapersData[mode];
+      this.populateSelect(this.$shaperSelect, shapersArray, '@_name', '@_index', shaperName);
+    };
+    this.populateSelectsRedundant = () => {
+      setTimeout(() => Service.queueCommand(Commands.status(), this.populateSelects), 250);
+      setTimeout(() => Service.queueCommand(Commands.status(), this.populateSelects), 1000);
+      this.$el.css('pointer-events', 'none');
+      setTimeout(() => this.$el.css('pointer-events', ''), 1100);
+    };
+    this.onSelectChange = (e) => {
+      const select = e.currentTarget;
+      const value = select.value;
+      if (value == undefined) {
+        cl('warning no value on select', select);
+        return;
+      }
+
+      let command;
+      let label;
+      if (select === this.$filterSelect[0]) {
+        command = Commands.setFilter(value);
+        label = 'filter';
+      } else if (select === this.$shaperSelect[0]) {
+        command = Commands.setShaping(value);
+        label = 'shaper';
+      }
+
+      if (command == undefined) {
+        cl('warning no command');
+        return;
+      }
+
+      Service.queueCommandsFront([{ xml: command, callback: (data) => {
+        const b = DataUtil.isResultOk(data);
+        if (!b) {
+          SnackView.show('set-error', 'HQPlayer response', `Couldn't set ${label}`, '');
+        }
+        HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()) );
+      }, suppressHqpErrorToast: true }]);
+    };
+    this.onModelStatusUpdated = () => {
+      if (Model.status.isStopped) {
+        ViewUtil.setDisplayed(this.$info, false);
+      }
+
+      this.updateOutputBitrate();
+
+      const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
+      this.highlightActiveMode(mode);
+      if (Model.status.data['@_active_filter'] != Model.lastStatus.data['@_active_filter']) {
+        const filterName = Model.status.data['@_active_filter'];
+        const filtersArray = HqpConfigModel.filtersData[mode];
+        this.populateSelect(this.$filterSelect, filtersArray, '@_name', '@_index', filterName);
+      }
+      if (Model.status.data['@_active_shaper'] != Model.lastStatus.data['@_active_shaper']) {
+        const shaperName = Model.status.data['@_active_shaper'];
+        const shapersArray = HqpConfigModel.shapersData[mode];
+        this.populateSelect(this.$shaperSelect, shapersArray, '@_name', '@_index', shaperName);
+      }
+    };
+    this.onModeBtnClick = (e) => {
+      const $btn = $(e.currentTarget);
+      const mode = $btn.attr('data-mode');
+      if ($btn.hasClass('isActive')) return;
+      const modeIndex = HqpConfigModel.getModeIndex(mode);
+      if (modeIndex == null) return;
+      this.$modeSwitcher.css('pointer-events', 'none');
+      Service.queueCommandsFront([{ xml: Commands.setMode(modeIndex), callback: (data) => {
+        this.$modeSwitcher.css('pointer-events', '');
+        const b = DataUtil.isResultOk(data);
+        if (!b) {
+          SnackView.show('set-error', 'HQPlayer response', `Couldn't set mode to ${mode}`, '');
+          const actualMode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
+          this.highlightActiveMode(actualMode);
+        }
+        HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()));
+      }, suppressHqpErrorToast: true }]);
+    };
+
+    this.$modeSwitcher.on('click', '.mode-btn', this.onModeBtnClick);
+    this.$filterSelect.on('change', this.onSelectChange);
+    this.$shaperSelect.on('change', this.onSelectChange);
 
     this.presetsView = new HqpPresetsView($('#hqpPresetsView'));
 
@@ -68,31 +143,6 @@ export default class HqpFiltersView {
     $(document).off('model-status-updated', this.onModelStatusUpdated);
   }
   
-  populateSelects = () => {
-    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
-    this.highlightActiveMode(mode);
-
-    const filterName = Model.status.data['@_active_filter'];
-    const filtersArray = HqpConfigModel.filtersData[mode];
-    this.populateSelect(this.$filterSelect, filtersArray, '@_name', '@_index', filterName);
-
-    const shaperName = Model.status.data['@_active_shaper'];
-    const shapersArray = HqpConfigModel.shapersData[mode];
-    this.populateSelect(this.$shaperSelect, shapersArray, '@_name', '@_index', shaperName);
-  };
-
-  /**
-   * Use this to guarantee (more or less) that views will get updated reliably after a 'set' command
-   * due to the fact that 'set' commands are observed to not always be 'synchronous'.
-   */
-  populateSelectsRedundant = () => {
-    setTimeout(() => Service.queueCommand(Commands.status(), this.populateSelects), 250);
-    setTimeout(() => Service.queueCommand(Commands.status(), this.populateSelects), 1000);
-    // also, block silently
-    this.$el.css('pointer-events', 'none');
-    setTimeout(() => this.$el.css('pointer-events', ''), 1100);
-  };
-
   /**
    * @param $select the <select> to be be populated
    * @param array the data array from which the <options> will be populated
@@ -165,40 +215,6 @@ export default class HqpFiltersView {
     }
   }
 
-  onSelectChange = (e) => {
-    const select = e.currentTarget;
-    // Note: The option value attribute holds the data object's _index_ value,
-    // which is what's used for the 'Set' XML's "value" attribute (!)
-    const value = select.value;
-    if (value == undefined) {
-      cl('warning no value on select', select);
-      return;
-    }
-
-    let command;
-    let label;
-    if (select === this.$filterSelect[0]) {
-      command = Commands.setFilter(value);
-      label = 'filter';
-    } else if (select === this.$shaperSelect[0]) {
-      command = Commands.setShaping(value);
-      label = 'shaper';
-    }
-
-    if (command == undefined) {
-      cl('warning no command');
-      return;
-    }
-
-    Service.queueCommandsFront([{ xml: command, callback: (data) => {
-      const b = DataUtil.isResultOk(data); // todo unverified
-      if (!b) {
-        SnackView.show('set-error', 'HQPlayer response', `Couldn't set ${label}`, '');
-      }
-      HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()) );
-    }, suppressHqpErrorToast: true }]);
-  };
-
   onLoadPresetButton(index) {
     const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
     const arr = Settings.getPresetsArray(mode);
@@ -206,27 +222,6 @@ export default class HqpFiltersView {
     PresetUtil.applyPreset(preset, () => {
       this.populateSelectsRedundant();
     });
-  }
-
-  onModelStatusUpdated = () => {
-    if (Model.status.isStopped) {
-      ViewUtil.setDisplayed(this.$info, false);
-    }
-
-    this.updateOutputBitrate();
-
-    const mode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
-    this.highlightActiveMode(mode);
-    if (Model.status.data['@_active_filter'] != Model.lastStatus.data['@_active_filter']) {
-      const filterName = Model.status.data['@_active_filter'];
-      const filtersArray = HqpConfigModel.filtersData[mode];
-      this.populateSelect(this.$filterSelect, filtersArray, '@_name', '@_index', filterName);
-    }
-    if (Model.status.data['@_active_shaper'] != Model.lastStatus.data['@_active_shaper']) {
-      const shaperName = Model.status.data['@_active_shaper'];
-      const shapersArray = HqpConfigModel.shapersData[mode];
-      this.populateSelect(this.$shaperSelect, shapersArray, '@_name', '@_index', shaperName);
-    }
   }
 
   highlightActiveMode(mode) {
@@ -241,22 +236,4 @@ export default class HqpFiltersView {
     });
   }
 
-  onModeBtnClick = (e) => {
-    const $btn = $(e.currentTarget);
-    const mode = $btn.attr('data-mode');
-    if ($btn.hasClass('isActive')) return;
-    const modeIndex = HqpConfigModel.getModeIndex(mode);
-    if (modeIndex == null) return;
-    this.$modeSwitcher.css('pointer-events', 'none');
-    Service.queueCommandsFront([{ xml: Commands.setMode(modeIndex), callback: (data) => {
-      this.$modeSwitcher.css('pointer-events', '');
-      const b = DataUtil.isResultOk(data);
-      if (!b) {
-        SnackView.show('set-error', 'HQPlayer response', `Couldn't set mode to ${mode}`, '');
-        const actualMode = HqpConfigModel.normalizeMode(Model.status.data['@_active_mode']);
-        this.highlightActiveMode(actualMode);
-      }
-      HqpConfigModel.updateData(() => Service.queueCommandFront(Commands.status()));
-    }, suppressHqpErrorToast: true }]);
-  }
 }

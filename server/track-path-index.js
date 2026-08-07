@@ -1,15 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 const log = require('./log');
+const { normalizeFilePath } = require('./file-util');
 
 const INDEX_FILE = path.resolve(__dirname, '..', 'hqpwv-track-paths.json');
 
 let hashToPath = {};
 let albumPaths = {};
+let albumToTracks = {};
+let pathToHash = {};
 let syncedAlbums = new Set();
 let isDirty = false;
 let saveTimeout = null;
-const SAVE_DELAY = 5000;
+const SAVE_DELAY = 30000;
 
 function loadIndex() {
   try {
@@ -28,15 +31,14 @@ function loadIndex() {
   }
 }
 
-function saveIndex() {
+async function saveIndex() {
   try {
     const data = {
       paths: hashToPath,
       albumPaths: albumPaths,
       syncedAlbums: Array.from(syncedAlbums)
     };
-    fs.writeFileSync(INDEX_FILE, JSON.stringify(data, null, 2), 'utf8');
-    isDirty = false;
+    await fs.promises.writeFile(INDEX_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (e) {
     log.w('could not save track path index: ' + e.message);
   }
@@ -46,20 +48,12 @@ function scheduleSave() {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
-  saveTimeout = setTimeout(() => {
+  saveTimeout = setTimeout(async () => {
     if (isDirty) {
-      saveIndex();
+      isDirty = false;
+      await saveIndex();
     }
   }, SAVE_DELAY);
-}
-
-function normalizeFilePath(rawPath) {
-  let p = rawPath || '';
-  try { p = decodeURIComponent(p); } catch (e) {}
-  p = p.trim().replace(/^file:\/+/i, '');
-  if (process.platform === 'win32' && /^\/[a-zA-Z]:/.test(p)) p = p.slice(1);
-  if (process.platform === 'win32' && /^[a-zA-Z]\|/.test(p)) p = p.replace(/^([a-zA-Z])\|/, '$1:');
-  return path.normalize(p);
 }
 
 function buildIndex(json) {
@@ -67,6 +61,12 @@ function buildIndex(json) {
   if (!dirs) return;
 
   const albums = Array.isArray(dirs) ? dirs : [dirs];
+
+  // Build the incoming entry set so we can skip the (expensive) rewrite
+  // when the library contents have not changed since the last build.
+  const incomingEntries = {};
+  const incomingAlbumPaths = {};
+  const incomingAlbumToTracks = {};
   let count = 0;
 
   const newSyncedAlbums = new Set();
@@ -78,7 +78,7 @@ function buildIndex(json) {
     const albumPath = normalizeFilePath(album['@_path'] || '');
     if (!albumPath) continue;
 
-    albumPaths[albumHash] = albumPath;
+    incomingAlbumPaths[albumHash] = albumPath;
 
     if (syncedAlbums.has(albumHash)) {
       newSyncedAlbums.add(albumHash);
@@ -92,16 +92,54 @@ function buildIndex(json) {
       if (!trackName || !trackHash) continue;
 
       const fullHash = albumHash + '_' + trackHash;
-      hashToPath[fullHash] = path.join(albumPath, trackName);
+      const fullPath = path.join(albumPath, trackName);
+      incomingEntries[fullHash] = fullPath;
+      if (!incomingAlbumToTracks[albumHash]) incomingAlbumToTracks[albumHash] = [];
+      incomingAlbumToTracks[albumHash].push({ trackHash, fullHash, filePath: fullPath });
       count++;
     }
   }
 
+  // Detect whether anything actually changed before mutating state.
+  const entriesChanged =
+    Object.keys(incomingEntries).length !== Object.keys(hashToPath).length ||
+    Object.keys(incomingAlbumPaths).length !== Object.keys(albumPaths).length;
+  let dirty = entriesChanged;
+  if (!entriesChanged) {
+    for (const key in incomingEntries) {
+      if (hashToPath[key] !== incomingEntries[key]) {
+        dirty = true;
+        break;
+      }
+    }
+    if (!dirty) {
+      for (const key in incomingAlbumPaths) {
+        if (albumPaths[key] !== incomingAlbumPaths[key]) {
+          dirty = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Always adopt the freshly computed maps (cheap object assign) so the
+  // in-memory index stays correct even when we skip persisting.
+  hashToPath = incomingEntries;
+  albumPaths = incomingAlbumPaths;
+  albumToTracks = incomingAlbumToTracks;
+  // Rebuild reverse path->hash map for O(1) lookups.
+  const incomingPathToHash = {};
+  for (const key in incomingEntries) {
+    incomingPathToHash[path.normalize(incomingEntries[key])] = key;
+  }
+  pathToHash = incomingPathToHash;
   syncedAlbums = newSyncedAlbums;
 
-  log.x('track path index built: ' + count + ' entries, ' + syncedAlbums.size + ' already synced');
-  isDirty = true;
-  scheduleSave();
+  log.x('track path index built: ' + count + ' entries, ' + syncedAlbums.size + ' already synced' + (dirty ? '' : ' (unchanged, skip save)'));
+  if (dirty) {
+    isDirty = true;
+    scheduleSave();
+  }
 }
 
 function getTrackPath(trackHash) {
@@ -114,12 +152,7 @@ function getAlbumPath(albumHash) {
 
 function getTrackHashFromPath(filePath) {
   const normalized = path.normalize(filePath);
-  for (const [hash, p] of Object.entries(hashToPath)) {
-    if (path.normalize(p) === normalized) {
-      return hash;
-    }
-  }
-  return null;
+  return pathToHash[normalized] || null;
 }
 
 function isAlbumSynced(albumHash) {
@@ -133,15 +166,9 @@ function markAlbumSynced(albumHash) {
 }
 
 function getTracksByAlbumHash(albumHash) {
-  const prefix = albumHash + '_';
-  const result = [];
-  for (const [key, filePath] of Object.entries(hashToPath)) {
-    if (key.startsWith(prefix)) {
-      const trackHash = key.substring(prefix.length);
-      result.push({ trackHash, fullHash: key, filePath });
-    }
-  }
-  return result;
+  const tracks = albumToTracks[albumHash];
+  if (!tracks) return [];
+  return tracks.map(t => ({ trackHash: t.trackHash, fullHash: t.fullHash, filePath: t.filePath }));
 }
 
 function getEntryCount() {

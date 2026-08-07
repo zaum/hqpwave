@@ -11,11 +11,9 @@ import AppUtil from './app-util.js';
  */
 export default class AlbumContextMenu extends ContextMenu {
 
-  album;
-  index = -1;
-
   constructor($el) {
     super($el);
+    this.index = -1;
 
     this.$itemPlaylist = this.$el.find('#albumContextItemPlaylist');
     this.$itemPlaylistMultiple = this.$el.find('#albumContextItemPlaylistMultiple');

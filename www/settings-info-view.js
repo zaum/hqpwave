@@ -7,12 +7,6 @@ import Values from './values.js';
 
 export default class SettingsInfoView {
 
-  $el;
-  $hqpVersion;
-  $hqpConnection;
-  $connectionLed;
-  $hqpIpAddress;
-
   constructor($el) {
     this.$el = $el;
     this.$hqpVersion = this.$el.find("#hqpVersion");

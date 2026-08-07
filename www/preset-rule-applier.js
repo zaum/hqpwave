@@ -10,9 +10,8 @@ import AppUtil from './app-util.js';
 
 class PresetRuleApplier {
 
-  abCounter = 0;
-
   constructor() {
+    this.abCounter = 0;
     Util.addAppListener(this, 'new-track', this.onNewTrackDetected);
   }
 

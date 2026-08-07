@@ -133,88 +133,115 @@ async function backgroundSyncFavorites(json) {
     const dirs = json?.['LibraryGet']?.['LibraryDirectory'];
     if (!dirs) return;
 
-  const meta = require('./meta');
-  if (!meta.getIsEnabled()) return;
+    const albums = Array.isArray(dirs) ? dirs : [dirs];
 
-  const metaData = meta.getData();
-  const tracks = metaData?.['tracks-r2'];
-  if (!tracks) return;
+    let skipped = 0;
+    let synced = 0;
+    let processed = 0;
 
-  for (const album of albums) {
-    try {
-      if (!album || !album['@_hash'] || !album['LibraryFile']) continue;
+    const meta = require('./meta');
+    if (!meta.getIsEnabled()) return;
 
-      const albumHash = album['@_hash'];
-      if (trackPathIndex.isAlbumSynced(albumHash)) {
-        skipped++;
-        continue;
-      }
-      const albumFav = await readAlbumFavorite(albumHash);
-      if (albumFav === true) {
-        const albumEntry = metaData['albums']?.[albumHash];
-        if (!albumEntry || !albumEntry['favorite']) {
-          if (!metaData['albums']) metaData['albums'] = {};
-          if (!metaData['albums'][albumHash]) metaData['albums'][albumHash] = {};
-          metaData['albums'][albumHash]['favorite'] = true;
-          synced++;
+    const metaData = meta.getData();
+    const tracks = metaData?.['tracks-r2'];
+    if (!tracks) return;
+
+    // Bounded concurrency so the whole library is not scanned sequentially,
+    // but we also never open an unbounded number of files at once.
+    const CONCURRENCY = 4;
+    let cursor = 0;
+    let active = 0;
+    let done = false;
+
+    const runAlbum = async () => {
+      while (!done) {
+        const index = cursor++;
+        if (index >= albums.length) {
+          done = true;
+          return;
+        }
+        const album = albums[index];
+        try {
+          if (!album || !album['@_hash'] || !album['LibraryFile']) continue;
+
+          const albumHash = album['@_hash'];
+          if (trackPathIndex.isAlbumSynced(albumHash)) {
+            skipped++;
+            continue;
+          }
+          const albumFav = await readAlbumFavorite(albumHash);
+          if (albumFav === true) {
+            const albumEntry = metaData['albums']?.[albumHash];
+            if (!albumEntry || !albumEntry['favorite']) {
+              if (!metaData['albums']) metaData['albums'] = {};
+              if (!metaData['albums'][albumHash]) metaData['albums'][albumHash] = {};
+              metaData['albums'][albumHash]['favorite'] = true;
+              synced++;
+            }
+          }
+
+          const albumTracks = Array.isArray(album['LibraryFile']) ? album['LibraryFile'] : [album['LibraryFile']];
+
+          let albumHadFavorite = albumFav === true;
+
+          for (const track of albumTracks) {
+            const trackName = track['@_name'];
+            const trackHash = track['@_hash'];
+            if (!trackName || !trackHash) continue;
+
+            const fullHash = albumHash + '_' + trackHash;
+            const filePath = trackPathIndex.getTrackPath(fullHash);
+            if (!filePath) continue;
+
+            const fileFav = await readFavorite(filePath);
+            if (fileFav === null) continue;
+
+            const existing = tracks[fullHash];
+            const currentFav = existing ? existing['favorite'] : false;
+
+            if (fileFav !== currentFav) {
+              tracks[fullHash] = tracks[fullHash] || {};
+              tracks[fullHash]['favorite'] = fileFav;
+              synced++;
+            }
+
+            if (fileFav) {
+              albumHadFavorite = true;
+            }
+          }
+
+          if (albumHadFavorite) {
+            const albumEntry = metaData['albums']?.[albumHash];
+            if (!albumEntry || !albumEntry['favorite']) {
+              if (!metaData['albums']) metaData['albums'] = {};
+              if (!metaData['albums'][albumHash]) metaData['albums'][albumHash] = {};
+              metaData['albums'][albumHash]['favorite'] = true;
+              synced++;
+            }
+          }
+
+          trackPathIndex.markAlbumSynced(albumHash);
+          processed++;
+        } catch (e) {
+          log.w('background sync error for album ' + (album?.['@_hash'] || 'unknown') + ': ' + e.message);
         }
       }
+    };
 
-      const albumTracks = Array.isArray(album['LibraryFile']) ? album['LibraryFile'] : [album['LibraryFile']];
-
-      let albumHadFavorite = albumFav === true;
-
-      for (const track of albumTracks) {
-        const trackName = track['@_name'];
-        const trackHash = track['@_hash'];
-        if (!trackName || !trackHash) continue;
-
-        const fullHash = albumHash + '_' + trackHash;
-        const filePath = trackPathIndex.getTrackPath(fullHash);
-        if (!filePath) continue;
-
-        const fileFav = await readFavorite(filePath);
-        if (fileFav === null) continue;
-
-        const existing = tracks[fullHash];
-        const currentFav = existing ? existing['favorite'] : false;
-
-        if (fileFav !== currentFav) {
-          tracks[fullHash] = tracks[fullHash] || {};
-          tracks[fullHash]['favorite'] = fileFav;
-          synced++;
-        }
-
-        if (fileFav) {
-          albumHadFavorite = true;
-        }
-      }
-
-      if (albumHadFavorite) {
-        const albumEntry = metaData['albums']?.[albumHash];
-        if (!albumEntry || !albumEntry['favorite']) {
-          if (!metaData['albums']) metaData['albums'] = {};
-          if (!metaData['albums'][albumHash]) metaData['albums'][albumHash] = {};
-          metaData['albums'][albumHash]['favorite'] = true;
-          synced++;
-        }
-      }
-
-      trackPathIndex.markAlbumSynced(albumHash);
-      processed++;
-    } catch (e) {
-      log.w('background sync error for album ' + (album?.['@_hash'] || 'unknown') + ': ' + e.message);
+    const workers = [];
+    for (let i = 0; i < CONCURRENCY; i++) {
+      workers.push(runAlbum());
     }
-  }
+    await Promise.all(workers);
 
-  if (synced > 0) {
-    meta.saveFile();
-    log.i('favorite sync from audio files: ' + synced + ' updated, ' + processed + ' processed, ' + skipped + ' skipped');
-  } else {
-    if (processed > 0) {
-      log.i('favorite sync from audio files: ' + processed + ' albums checked, no favorites found, ' + skipped + ' skipped');
+    if (synced > 0) {
+      meta.saveFile();
+      log.i('favorite sync from audio files: ' + synced + ' updated, ' + processed + ' processed, ' + skipped + ' skipped');
+    } else {
+      if (processed > 0) {
+        log.i('favorite sync from audio files: ' + processed + ' albums checked, no favorites found, ' + skipped + ' skipped');
+      }
     }
-  }
   } catch (e) {
     log.w('background sync error: ' + e.message);
   }

@@ -421,7 +421,7 @@
   pointer-events: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .trackItem:hover {
   background: rgba(255, 255, 255, 0.04);
 }
@@ -447,13 +447,13 @@
   height: 20px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .trackItem:hover .dragHandleButton {
   opacity: 1;
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .trackItem .dragHandleButton:hover {
   opacity: 1;
 }
@@ -546,7 +546,7 @@
   opacity: 0.6;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .trackItemMeta .favoriteButton:hover {
   opacity: 1;
 }
@@ -575,13 +575,13 @@
   background-size: 18px 18px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .trackItem:hover .right .deleteButton {
   opacity: 0.85;
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .trackItem .right .deleteButton:hover {
   opacity: 1;
 }
@@ -694,7 +694,7 @@
   gap: 12px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .playlistItem:hover {
   background: rgba(255, 255, 255, 0.02);
 }
@@ -714,13 +714,13 @@
   cursor: grab;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .playlistItem:hover .dragHandleButton {
   opacity: 1;
 }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .playlistItem .dragHandleButton:hover {
   opacity: 1;
 }
@@ -755,7 +755,7 @@
   opacity: 0;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .playlistItem:hover .moreButton {
   opacity: 1;
 }
@@ -823,7 +823,7 @@
   gap: 12px;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .historyItem:hover {
   background: rgba(255, 255, 255, 0.02);
 }
@@ -1051,13 +1051,15 @@
   display: flex;
   align-items: center;
   padding: 10px 24px;
+  padding-right: 12px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.12s;
   gap: 12px;
+  overflow: hidden;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
 .loadItem:hover {
   background: rgba(255, 255, 255, 0.02);
 }

@@ -5,13 +5,13 @@ import ViewUtil from './view-util.js';
  */
 class DialogView {
 
-  $outer = $('#generalDialogOuter');
-  $dialog = this.$outer.find('#generalDialog');
-  $title = this.$dialog.find('#generalDialogTitle');
-  $message = this.$dialog.find('#generalDialogMessage');
-  $button = this.$dialog.find('#generalDialogButton');
-
-  constructor() { }
+  constructor() {
+    this.$outer = $('#generalDialogOuter');
+    this.$dialog = this.$outer.find('#generalDialog');
+    this.$title = this.$dialog.find('#generalDialogTitle');
+    this.$message = this.$dialog.find('#generalDialogMessage');
+    this.$button = this.$dialog.find('#generalDialogButton');
+  }
 
   show(titleText, messageHtmlText, buttonText, isFatalStyle, onButton) {
 

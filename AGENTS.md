@@ -19,6 +19,12 @@ applyTo: "**"
 
 - always use english in code
 
+# compatibility
+
+- target: Safari 12+ / iOS 12+ (no transpilation, no polyfills)
+- do NOT use: class fields (`x = y` in class body), optional chaining (`?.`), CSS `:has()`, CSS `clamp()`
+- ok to use: `class`, `import/export`, arrow functions, `const/let`, `async/await`, template literals, destructuring, spread, `Set`/`Map`, CSS Grid, CSS variables, `fetch()`
+
 "The terminal is awaiting input" is just an exit option, you can ignore it and proceed
 
 let me know when you've read the file

@@ -208,14 +208,15 @@ Util.autoScrollListItem = ($listItem, $holder, step=2) => {
     // bc of dynamic sizing of container due to topbar scroll effect (!)
     const delta = getBottomEdgeDistance($listItem);
     if (delta < 1.01 || count-- <= 0) {
-      clearInterval(id);
+      cancelAnimationFrame(id);
       $(document).trigger('enable-user-input');
       return;
     }
     const target = $holder.scrollTop() + step; // (delta * 0.35);
-    $holder.scrollTop(target)
+    $holder.scrollTop(target);
+    id = requestAnimationFrame(f);
   };
-  const id = setInterval(f, 16);
+  let id = requestAnimationFrame(f);
 };
 
 /**

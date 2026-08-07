@@ -13,40 +13,10 @@ const TIMEOUT = 20 * 1000;
  */
 class Busyer {
 
-  _isBusy = false;
-  startTime = 0;
-
   constructor() {
-    $(document).on('service-response-handled', this.onServiceResponseHandled);
-  }
-
-  get isBusy() {
-    return this._isBusy;
-  }
-
-  startBusy() {
-    if (this._isBusy) {
-      cl('is already busy');
-      return;
-    }
-    this.startTime = new Date().getTime();
-    // cl(`busy-start`);
-    this._isBusy = true;
-    $(document).trigger('busy-start');
-  }
-
-  stopBusy() {
-    if (!this._isBusy) {
-      cl('is already stopped');
-      return;
-    }
-    const dur = Util.makeCasualSecondsString(new Date().getTime() - this.startTime);
-    // cl(`busy-stop (${dur})`);
     this._isBusy = false;
-    $(document).trigger('busy-stop');
-  }
-
-  onServiceResponseHandled = (e, type) => {
+    this.startTime = 0;
+    this.onServiceResponseHandled = (e, type) => {
 
     let shouldChangeToTrue = false;
     if (!this._isBusy) {
@@ -93,6 +63,35 @@ class Busyer {
       this.stopBusy();
     }
   };
+    $(document).on('service-response-handled', this.onServiceResponseHandled);
+  }
+
+  get isBusy() {
+    return this._isBusy;
+  }
+
+  startBusy() {
+    if (this._isBusy) {
+      cl('is already busy');
+      return;
+    }
+    this.startTime = new Date().getTime();
+    // cl(`busy-start`);
+    this._isBusy = true;
+    $(document).trigger('busy-start');
+  }
+
+  stopBusy() {
+    if (!this._isBusy) {
+      cl('is already stopped');
+      return;
+    }
+    const dur = Util.makeCasualSecondsString(new Date().getTime() - this.startTime);
+    // cl(`busy-stop (${dur})`);
+    this._isBusy = false;
+    $(document).trigger('busy-stop');
+  }
+
 }
 
 export default new Busyer();

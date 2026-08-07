@@ -15,10 +15,6 @@ import HqpRulesView from './hqp-rules-view.js';
  */
 export default class HqpSettingsView extends Subview {
 
-  $closeButton;
-  filtersView;
-  rulesView;
-
   constructor() {
     super($("#hqpSettingsView"));
     this.$closeButton = this.$el.find('#hqpSettingsCloseButton');

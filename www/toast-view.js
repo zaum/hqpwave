@@ -8,12 +8,11 @@ const INDEFINITE_MIN_DURATION = 2500;
  */
 class ToastView {
 
-  $el = $('#toast');
-  $inner = this.$el.find('#toastInner');
-  timeoutId;
-  indefiniteShowStart = 0;
-
-  constructor() { }
+  constructor() {
+    this.$el = $('#toast');
+    this.$inner = this.$el.find('#toastInner');
+    this.indefiniteShowStart = 0;
+  }
 
   /**
    * @param duration 0 will make it 'indefinite'.

@@ -6,8 +6,6 @@ import Util from './util.js';
  */
 export default class PlaylistVo {
 
-  _array;
-
   constructor(responseObject=null) {
     if (!responseObject) {
       this._array = [];

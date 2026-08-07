@@ -3,8 +3,6 @@
  */
 export default class StateVo {
 
-  _data;
-
   constructor(responseObject=null) {
     if (!responseObject) {
       this._data = {}

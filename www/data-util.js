@@ -8,8 +8,6 @@ import Util from './util.js';
 
 class DataUtil {
 
-  static NO_ERROR_TEXT_TEXT = "error";
-
   /**
    * From a given response json, returns the array (if any) which is two levels deep.
    * Many types of hqp response data uses this structure.
@@ -122,5 +120,7 @@ static getAlbumImageUrl(album) {
     return metaUri === trackUri;
   }
 }
+
+DataUtil.NO_ERROR_TEXT_TEXT = "error";
 
 export default DataUtil;

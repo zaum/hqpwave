@@ -19,13 +19,13 @@ window.isSafariTooLow = () => {
     const osVersion = (platform.os && platform.os.version && parseFloat(platform.os.version))
         ? parseFloat(platform.os.version)
         : 0;
-    if (osVersion > 0 && osVersion < 14.5) {
-      return "HQPWV requires iOS 14.5+.";
+    if (osVersion > 0 && osVersion < 12) {
+      return "HQPWV requires iOS 12+.";
     }
   } else if (isOsx) {
     const browserVersionFloat = parseFloat(platform.version);
-    if (browserVersionFloat > 0 && browserVersionFloat < 14.1) {
-      return "HQPWV requires desktop Safari v14.1+ or a different browser.";
+    if (browserVersionFloat > 0 && browserVersionFloat < 12) {
+      return "HQPWV requires desktop Safari v12+ or a different browser.";
     }
   }
   return null;
