@@ -1,8 +1,9 @@
 ```markdown
 # Changelog
 
-## 0.9.12 — Upcoming release
+## 1.0.0 — New UI design and enhanced browsing
 
+- New UI design with a refreshed top bar, sidebar filter layout, and better mobile search flow.
 - Improved library search and filters so the app is easier to browse.
 - Search now matches artist, album, genre, track, record label, format and year.
 - Use commas to combine search terms and year ranges like `1970-1980`, `1990-`, `-2000`.
