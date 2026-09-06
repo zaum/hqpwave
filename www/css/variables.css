@@ -1,4 +1,19 @@
 :root {
+  /* Type scale - single source of truth for font sizes (see AGENTS.md).
+     Do not use raw font-size values in CSS; always reference these tokens.
+     If a new size is needed that is not on this scale, ask first. */
+  --fs-2xs: 8px;         /* tiny meta, dense list secondary info */
+  --fs-xs: 10px;         /* captions, mono metadata, timestamps */
+  --fs-s: 11px;          /* small labels, uppercase UI text */
+  --fs-base: 12px;       /* default body/list text */
+  --fs-m: 14px;          /* emphasized text, inputs, buttons */
+  --fs-l: 16px;          /* section headers, serif titles */
+  --fs-icon: 18px;       /* icon-only buttons */
+  --fs-xl: 20px;         /* view titles, playbar messages */
+  --fs-2xl: 28px;        /* page titles */
+  --fs-display: 42px;    /* album view title, large icons */
+  --fs-display-lg: 52px; /* artist name (84px on >=1024px screens, see artist.css) */
+
   /* Dark theme (default) */
   --bg: #111112;
   --textInv: #f0efed;
@@ -17,7 +32,16 @@
   --accent-bg: rgba(232,200,138,0.07);
   --accent-hi: rgba(232,200,138,0.16);
   --green: #52c27a;
+  --green-bg: rgba(82, 194, 122, 0.1);
+  --green-hi: rgba(82, 194, 122, 0.2);
   --red: #e05858;
+
+  /* Shared surfaces & effects */
+  --overlay-bg: rgba(17, 17, 18, 0.9);      /* blurred overlays: top bar, playbar */
+  --hover-fill: rgba(255, 255, 255, 0.04);  /* subtle hover tint on rows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --red-btn: #e05858;
   --red-btn-bg: rgba(224,88,88,0.08);
   
@@ -67,7 +91,16 @@
   --accent-bg: rgba(200,160,80,0.1);
   --accent-hi: rgba(200,160,80,0.2);
   --green: #3da85c;
+  --green-bg: rgba(61, 168, 92, 0.1);
+  --green-hi: rgba(61, 168, 92, 0.2);
   --red: #d04848;
+
+  /* Shared surfaces & effects */
+  --overlay-bg: rgba(248, 247, 245, 0.9);   /* blurred overlays: top bar, playbar */
+  --hover-fill: rgba(0, 0, 0, 0.04);        /* subtle hover tint on rows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --red-btn: #d04848;
   --red-btn-bg: rgba(208,72,72,0.08);
   

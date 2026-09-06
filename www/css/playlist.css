@@ -9,7 +9,7 @@
 
 #playlistMainView {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -164,7 +164,7 @@
 
 #playlistMainView .title {
   font-family: 'Playfair Display', serif;
-  font-size: 20px;
+  font-size: var(--fs-xl);
 }
 
 /* Playlist Header */
@@ -178,13 +178,13 @@
 
 .playlist-header .title {
   font-family: 'Playfair Display', serif;
-  font-size: 20px;
+  font-size: var(--fs-xl);
   font-weight: 400;
 }
 
 #playlistRepeatButton {
   margin-left: auto;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   padding: 6px 12px;
 }
 
@@ -204,7 +204,7 @@
 }
 
 .playlistButtons .textButton {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   padding: 6px 12px;
 }
 
@@ -244,7 +244,7 @@
 }
 
 .historyButtons .textButton {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   padding: 6px 12px;
 }
 
@@ -288,7 +288,7 @@
 }
 
 #playlistSaver label {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-2);
   margin: 0;
 }
@@ -301,7 +301,7 @@
   border: 1px solid var(--border-md);
   border-radius: 6px;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-base);
   max-width: 300px;
 }
 
@@ -462,7 +462,7 @@
 .trackItem .left span,
 .trackItemNum {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   text-align: center;
   flex: 1;
@@ -475,7 +475,7 @@
 }
 
 .trackItem .trackText {
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -496,7 +496,7 @@
 
 .trackItemDuration {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -506,7 +506,7 @@
 }
 
 .trackItem .extraLine {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -522,7 +522,7 @@
 }
 
 .trackItem .nonLibraryInfo {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-bottom: 2px;
 }
@@ -536,7 +536,7 @@
 
 .trackItemMeta .numViews {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   min-width: 32px;
   text-align: right;
@@ -648,7 +648,7 @@
 }
 
 .trackItemAlbumHeader .albumLineButton .text {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -660,14 +660,14 @@
 }
 
 .trackItemAlbumHeader .albumLineButton .text .albumTitle {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   margin-top: 1px;
 }
 
 .trackItemAlbumHeader .statsText {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   flex-shrink: 0;
 }
@@ -728,7 +728,7 @@
 
 .playlistItemNum {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   width: 28px;
   text-align: center;
@@ -746,7 +746,7 @@
 
 .playlistItemDuration {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   flex-shrink: 0;
 }
@@ -836,7 +836,7 @@
 
 /* History item title - uses shared .title-md from base.css */
 .historyItemTitle {
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -846,7 +846,7 @@
 
 /* History item artist - uses shared .subtitle from base.css */
 .historyItemArtist {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-top: 1px;
 }
@@ -854,7 +854,7 @@
 /* History item time - has specific styling (different from shared .caption) */
 .historyItemTime {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   flex-shrink: 0;
   text-align: center;
@@ -950,7 +950,7 @@
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   color: var(--text-2);
   box-sizing: border-box;
   margin: 0;
@@ -967,7 +967,7 @@
   position: relative;
   z-index: 70;
   color: var(--text-2);
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   line-height: 1;
 }
 
@@ -1036,7 +1036,7 @@
 
 .loadListCustomSubheader,
 .loadListHqpSubheader {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -1067,13 +1067,13 @@
 
 .loadItem .loadItemName {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
 }
 
 .loadItem .loadItemCount {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 

@@ -16,3 +16,14 @@ design/
 copilot-instructions.md
 
 server/data/
+# Runtime data files - rewritten by the server while running, must not be tracked
+hqpwv-track-paths.json
+hqpwv-label-cache.json
+hqpwv-runtime-architecture.html
+hqpwv-runtime-architecture.json
+hqpwv-runtime-architecture.visual-check.1440x900.dark.png
+hqpwv-runtime-architecture.visual-check.1440x900.light.png
+hqpwv-runtime-architecture.visual-check.2048x1320.dark.png
+hqpwv-runtime-architecture.visual-check.2048x1320.light.png
+hqpwv-runtime-architecture.visual-check.html
+hqpwv-runtime-architecture.visual-check.json

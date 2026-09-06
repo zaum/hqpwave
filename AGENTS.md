@@ -15,6 +15,16 @@ applyTo: "**"
 - new buttons add to buttons.css
 - below 1024px use the mini logo (logo-mini.svg, wave mark only) for the brand logo, same height as the full logo
 
+# Typography
+
+- font sizes must use the type-scale tokens defined in www/css/variables.css:
+  --fs-2xs (8px), --fs-xs (10px), --fs-s (11px), --fs-base (12px), --fs-m (14px),
+  --fs-l (16px), --fs-icon (18px, icon-only buttons), --fs-xl (20px), --fs-2xl (28px),
+  --fs-display (42px), --fs-display-lg (52px; 84px on >=1024px screens via token override in artist.css)
+- do not use raw font-size values (px/rem) anywhere else
+- relative sizes are only allowed for icon alignment (em, inherit, e.g. font-size: 1.4em)
+- if a size outside this scale is really needed, ask the user first
+
 # code
 
 - always use english in code
@@ -28,3 +38,5 @@ applyTo: "**"
 "The terminal is awaiting input" is just an exit option, you can ignore it and proceed
 
 let me know when you've read the file
+
+after change shutdown and restart the server

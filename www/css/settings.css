@@ -27,18 +27,18 @@
 }
 
 #settingsView .title {
-  font-size: 32px;
+  font-size: var(--fs-2xl);
 }
 
 #settingsScrollLabel {
   display: none;
   font-family: 'Playfair Display', serif;
-  font-size: 14px;
+  font-size: var(--fs-m);
   font-weight: 400;
   color: var(--text-2);
   position: fixed;
   top: 80px;
-  font-size: 12px;
+  font-size: var(--fs-base);
 }
 
   @media (min-width: 768px) {
@@ -65,7 +65,7 @@
 
 #settingsProjectAnchor {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   letter-spacing: 0.1em;
   text-decoration: none;
@@ -122,7 +122,7 @@
 
 
 .settingsSubheading {
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -158,14 +158,14 @@
 }
 
 .settings-card-row .row-label {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
   font-weight: 400;
   letter-spacing: 0.01em;
 }
 
 .settings-card-row .row-desc {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   margin-top: 3px;
   line-height: 1.5;
@@ -202,7 +202,7 @@
   border-radius: 4px;
   background: var(--bg);
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-base);
   text-align: right;
 }
 
@@ -245,7 +245,7 @@
 
 .mode-btn {
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--fs-s);
   font-weight: 300;
   letter-spacing: 0.02em;
   color: var(--text-3);
@@ -280,7 +280,7 @@
   padding: 6px 14px;
   border-radius: 4px;
   border: 1px solid var(--border);
-  font-size: 12px;
+  font-size: var(--fs-base);
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 0.2s;
@@ -323,7 +323,7 @@
 .color-swatch.active::after {
   content: '';
   position: absolute;
-  inset: -4px;
+  top: -4px; right: -4px; bottom: -4px; left: -4px;
   border-radius: 50%;
   border: 1.5px solid currentColor;
 }
@@ -340,7 +340,7 @@
 
 .color-picker-wrap input[type=color] {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   opacity: 0;
   width: 100%;
   height: 100%;
@@ -436,13 +436,13 @@
 .row-between { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .row-right.gap-16 { gap: 16px; }
 .row-right-combo .toggle-switch + .settingsNumberInput { margin-left: 4px; }
-.mono-small { font-family: 'Geist Mono', monospace; font-size: 10px; color: var(--text-2); }
+.mono-small { font-family: 'Geist Mono', monospace; font-size: var(--fs-xs); color: var(--text-2); }
 .inputGroup.row { display: flex; align-items: center; gap: 8px; width: 100%; }
 .settingsInput.expanded { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; flex-grow: 1; color: var(--text-2); }
 
 #settingsHotkeys .c1 {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--accent);
   padding: 4px 10px;
   background: var(--surface2);
@@ -454,7 +454,7 @@
 }
 
 #settingsHotkeys .c2 {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-2);
   padding-left: 12px;
 }
@@ -489,7 +489,7 @@
 
 .key-badge {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 900;
   padding: 3px 8px;
   background: var(--surface2);
@@ -503,7 +503,7 @@
 }
 
 .key-action {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-2);
   letter-spacing: 0.01em;
 }
@@ -525,7 +525,7 @@
 
 .info-block .hqp-name {
   font-family: 'Playfair Display', serif;
-  font-size: 18px;
+  font-size: var(--fs-l);
   font-weight: 400;
   color: var(--text);
   margin-bottom: 2px;
@@ -533,7 +533,7 @@
 
 .info-block .hqp-version {
   font-family: 'Geist Mono', monospace;
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-2);
   margin-bottom: 12px;
 }
@@ -590,7 +590,7 @@
   grid-column: 2;
   grid-row: 3;
   font-family: 'Geist Mono', monospace;
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-3);
 }
 
@@ -633,7 +633,7 @@
 
 .image-source-item .source-url-input {
   flex-grow: 1;
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
   background: transparent;
   border: none;
@@ -703,7 +703,7 @@
   border-radius: 4px;
   color: var(--text-2);
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--fs-icon);
   transition: background-color 0.15s, color 0.15s;
 }
 
@@ -722,16 +722,16 @@
 }
 
 .settingsMeta span {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
 }
 
 .settingsMeta .description {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   margin-top: 8px;
   line-height: 1.6;
-  font-size: 10px;
+  font-size: var(--fs-xs);
 }
 
 #metaDownload {
@@ -743,7 +743,7 @@
   border: 1px solid var(--border-md);
   border-radius: 4px;
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-base);
   cursor: pointer;
   transition: all 0.2s;
   text-decoration: none;
@@ -771,7 +771,7 @@
 
 .settingsTheme>div:first-child,
 .settingsHighlightColor>div:first-child {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
   margin-bottom: 12px;
 }
@@ -783,7 +783,7 @@
 }
 
 .settingsTheme .line span {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-2);
 }
 
@@ -797,7 +797,7 @@
 }
 
 #hqpSettingsView .title {
-  font-size: 28px;
+  font-size: var(--fs-2xl);
 }
 
 #hqpSettingsCloseButton {
@@ -807,11 +807,11 @@
 }
 
 #hqpFiltersView {
-  font-size: 12px;
+  font-size: var(--fs-base);
 }
 
 #outputBitrate {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-2);
   margin-bottom: 20px;
 }
@@ -828,7 +828,7 @@
 
 .settingsSelectOuter label {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-bottom: 6px;
   letter-spacing: 0.1em;
@@ -842,7 +842,7 @@
   border: 1px solid var(--border-md);
   border-radius: 6px;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-base);
   cursor: pointer;
   appearance: none;
 }
@@ -878,7 +878,7 @@
   background: var(--surface2);
   border: 1px solid var(--border-md);
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -924,7 +924,7 @@
 }
 
 #hqpFiltersInfo {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-top: 16px;
   font-style: italic;
@@ -968,7 +968,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  box-shadow: var(--shadow-lg);
 }
 
 .presetDragHandle {
@@ -1009,7 +1009,7 @@
 }
 
 .presetName {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -1023,7 +1023,7 @@
 }
 
 .presetDesc {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   margin-top: 2px;
   white-space: nowrap;
@@ -1032,7 +1032,7 @@
 }
 
 .presetNameInput {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--accent);
@@ -1135,7 +1135,7 @@
   border-radius: 6px;
   background: transparent;
   color: var(--text-2);
-  font-size: 11px;
+  font-size: var(--fs-s);
   font-weight: 300;
   letter-spacing: 0.02em;
   display: inline-flex;
@@ -1196,7 +1196,7 @@
 }
 
 .ruleToggleLabel {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
 }
 
@@ -1212,7 +1212,7 @@
   gap: 10px;
   padding: 12px 20px;
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
+  font-size: var(--fs-s);
 }
 
 .genreRuleItem:last-child {
@@ -1231,7 +1231,7 @@
   border: 1px solid var(--border-md);
   border-radius: 4px;
   color: var(--text);
-  font-size: 11px;
+  font-size: var(--fs-s);
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -1385,19 +1385,19 @@
 
 .footer-brand #footerVersion {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.06em;
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
 }
 
 .footer-project {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   text-decoration: none;
   letter-spacing: 0.1em;
-  font-size: 12px;
+  font-size: var(--fs-base);
 }
 
 .footer-project:hover {
@@ -1407,7 +1407,7 @@
 /* Dialog */
 #generalDialogOuter {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
   visibility: hidden;
@@ -1427,12 +1427,12 @@
 
 #generalDialogTitle {
   font-family: 'Playfair Display', serif;
-  font-size: 18px;
+  font-size: var(--fs-l);
   margin-bottom: 12px;
 }
 
 #generalDialogMessage {
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text-2);
   line-height: 1.5;
   margin-bottom: 20px;

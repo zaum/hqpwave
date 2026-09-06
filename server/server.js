@@ -287,7 +287,18 @@ if (__dirname.includes('/lee/')) {
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(WEBPAGE_DIR));
+app.use(express.static(WEBPAGE_DIR, {
+  // Cache policy: HTML always revalidates so code updates go live immediately;
+  // images and fonts are effectively immutable here and cache for one day.
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.html' || ext === '.htm') {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.woff', '.woff2'].includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+  }
+}));
 
 /**
  * 'commands'

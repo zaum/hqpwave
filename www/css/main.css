@@ -1,15 +1,6 @@
 /* HQPWV Main Stylesheet
- * This file imports all modular CSS files
- * Order matters: variables -> base -> components -> views
+ * Stylesheets are loaded as parallel <link> tags from index.html (faster than
+ * a sequential @import chain). This file is kept only as a pointer so stale
+ * cached pages referencing main.css do not 404; do not re-add @imports here.
  */
 
-@import url('./variables.css');
-@import url('./base.css');
-@import url('./components.css');
-@import url('./layout.css');
-@import url('./library.css');
-@import url('./album.css?v=20260526_2');
-@import url('./artist.css');
-@import url('./playlist.css');
-@import url('./settings.css');
-@import url('./buttons.css');

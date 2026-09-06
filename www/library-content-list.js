@@ -163,6 +163,12 @@ export default class LibraryContentList {
       const img = $item.find('img')[0];
       if (img && this.intersectionObs) {
         this.intersectionObs.observe(img);
+      } else if (img) {
+        // No IntersectionObserver (iOS < 12.2): load the image immediately
+        const src = img.getAttribute('data-src');
+        if (src && img.getAttribute('src') !== src) {
+          img.setAttribute('src', src);
+        }
       }
       $group.append($item);
     }

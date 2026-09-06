@@ -71,7 +71,7 @@
 }
 
 .count-text {
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 300;
   color: var(--text-3);
   letter-spacing: 0.02em;
@@ -97,7 +97,7 @@
   border-radius: 7px;
   background: transparent;
   color: var(--text-2);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 300;
   cursor: pointer;
   transition: all 0.15s;
@@ -128,7 +128,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--fs-base);
   transition: all 0.15s;
   border-right: 1px solid var(--border-md);
 }
@@ -301,7 +301,7 @@
   border-radius: 10px;
   background: var(--surface2);
   color: var(--text-2);
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   line-height: 1.4;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
   opacity: 0;
@@ -323,7 +323,7 @@
 .search-help-examples {
   color: var(--text);
   font-weight: 500;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
 }
 
 .search-help-examples {
@@ -333,12 +333,12 @@
 .search-help-line span {
   color: var(--text);
   font-weight: 500;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
 }
 
 .search-help-example-line {
   color: var(--text-2);
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   font-weight: 400;
 }
 
@@ -445,7 +445,7 @@
   border: 1px solid var(--border-md);
   border-radius: 8px;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 300;
   outline: none;
   transition: border-color 0.18s;
@@ -467,7 +467,7 @@
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 14px;
+  font-size: var(--fs-m);
   color: var(--text-3);
   cursor: pointer;
   transition: color 0.15s;
@@ -505,7 +505,7 @@
   align-items: center;
   gap: 14px;
   margin: 32px 0 14px;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   font-weight: 400;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -531,7 +531,7 @@
   margin: 0;
   padding: 0 0 0 28px;
   height: 36px;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 400;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -574,7 +574,7 @@
   margin-left: auto;
   padding-right: 20px;
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -715,7 +715,7 @@
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--surface2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
   transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -739,7 +739,7 @@
 /* Hover Overlay */
 .art-overlay {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background: rgba(17, 17, 18, 0.55);
   opacity: 0;
   transition: opacity 0.18s;
@@ -775,7 +775,7 @@
   transition: opacity 0.2s, transform 0.2s;
   cursor: pointer;
   z-index: 5;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .libraryItemPlayBtn svg {
@@ -912,7 +912,7 @@
   bottom: 8px;
   left: 8px;
   font-family: 'Geist Mono', monospace;
-  font-size: 8px;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.08em;
   padding: 3px 7px;
   border-radius: 4px;
@@ -967,7 +967,7 @@
   align-self: center;
   justify-self: center;
   color: var(--text);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 400;
   line-height: 1.2;
   margin-top: 8px;
@@ -986,7 +986,7 @@
 }
 
 .libraryItemText1 {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -998,7 +998,7 @@
 }
 
 .libraryItemText2 {
-  font-size: 11px;
+  font-size: var(--fs-s);
   font-weight: 300;
   color: var(--text-2);
   white-space: nowrap;
@@ -1016,7 +1016,7 @@
 
 .libraryItemText3 {
   grid-area: text3;
-  font-size: 8px !important;
+  font-size: var(--fs-2xs) !important;
   font-weight: 300;
   color: var(--text-2);
   white-space: nowrap;
@@ -1045,7 +1045,7 @@
 
 /* Use shared .title-sm from base.css for album titles */
 .title-sm {
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -1078,7 +1078,7 @@
 
 .libraryNoneTitle {
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--fs-m);
   font-weight: 500;
   margin-bottom: 10px;
 }
@@ -1089,14 +1089,14 @@
   justify-content: center;
   gap: 8px;
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 300;
   line-height: 1.45;
 }
 
 .libraryNoneArrow {
   color: var(--text-2);
-  font-size: 14px;
+  font-size: var(--fs-m);
   font-weight: 500;
   line-height: 1;
 }
@@ -1211,7 +1211,7 @@
   position: absolute;
   left: 0;
   width: 100%;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
   cursor: pointer;
   padding: 4px;

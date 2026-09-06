@@ -94,11 +94,18 @@
   padding: 0;
   box-sizing: border-box;
   font-family: 'Geist', "Noto Sans TC", sans-serif;
-  font-size: 11px;
   color: var(--text);
   scrollbar-color: var(--text-3) var(--surface);
   -webkit-tap-highlight-color: transparent;
   -webkit-user-drag: none;
+}
+
+/* Form controls do not inherit font-size by default; keep them on the type scale */
+button,
+input,
+select,
+textarea {
+  font-size: inherit;
 }
 
 *:focus {
@@ -114,6 +121,7 @@ html {
 body {
   overflow: hidden;
   background-color: var(--bg);
+  font-size: var(--fs-base);
   -webkit-font-smoothing: antialiased;
   /* App sets an explicit pixel height via JS (window.innerHeight) to avoid
      mobile/embedded 100vh issues. Keep CSS from forcing a larger min-height,
@@ -125,7 +133,7 @@ body {
 body::after {
   content: '';
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   pointer-events: none;
   opacity: 0.022;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -246,7 +254,7 @@ html.isCompactViewport .brand.isStrokeAnimating .brand-logo-mark-stroke {
 label {
   display: block;
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 400;
   letter-spacing: 0.12em;
   color: var(--text-3);
@@ -331,7 +339,7 @@ label {
 /* Loading overlay */
 .loading-overlay {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   z-index: 100000;
   display: flex;
   flex-direction: column;
@@ -357,12 +365,12 @@ label {
 }
 .loading-overlay-pct {
   position: absolute;
-  font-size: 14px;
+  font-size: var(--fs-m);
   font-weight: 600;
   color: var(--text);
 }
 .loading-overlay-label {
-  font-size: 11px;
+  font-size: var(--fs-s);
   color: var(--text-2);
 }
 
@@ -462,7 +470,7 @@ label {
 
 /* Title medium */
 .title-md {
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 400;
   color: var(--text);
   white-space: nowrap;
@@ -473,7 +481,7 @@ label {
 
 /* Subtitle */
 .subtitle {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   font-weight: 300;
   color: var(--text-3);
   margin-top: 1px;
@@ -486,20 +494,20 @@ label {
 /* Caption / meta text */
 .caption {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
   letter-spacing: 0.04em;
 }
 
 .caption-lg {
   font-family: 'Geist Mono', monospace;
-  font-size: 12px;
+  font-size: var(--fs-base);
   color: var(--text);
   letter-spacing: 0.05em;
 }
 
 .metaCaption {
-  font-size: 10px;
+  font-size: var(--fs-xs);
   line-height: inherit;
   color: var(--text-3);
   font-weight: 400;
@@ -510,7 +518,7 @@ label {
 
 .settings-label {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-xs);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent);

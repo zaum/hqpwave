@@ -1,0 +1,129 @@
+/* HQPWV Legacy fallbacks (iOS 12 / Safari 12)
+ *
+ * Modern browsers never apply anything from this file: every rule is gated
+ * behind classes that the inline feature probe in index.html adds ONLY when
+ * the browser lacks support:
+ *   .no-flex-gap      - flex layout gap is ignored (Safari < 14.1)
+ *   .no-aspect-ratio  - aspect-ratio property is ignored (Safari < 15)
+ * Flex gaps are replaced with child margins; when deleting iOS 12 support,
+ * this file and the probe script can be removed together.
+ */
+
+/* ---- album.css ---- */
+.no-flex-gap #albumViewImageNav > * + * { margin-left: 6px; }
+.no-flex-gap #albumViewTextsInner > * + * { margin-top: 8px; }
+.no-flex-gap .hero-format > * + * { margin-left: 6px; }
+.no-flex-gap .hero-artist { margin-right: -14px; margin-bottom: -4px; }
+.no-flex-gap .hero-artist > * { margin-right: 14px; margin-bottom: 4px; }
+.no-flex-gap .albumStatsRow > * + * { margin-left: 12px; }
+.no-flex-gap .albumStatsLeft > * + * { margin-left: 0.35em; }
+.no-flex-gap .albumStatsRight > * + * { margin-left: 0.6em; }
+.no-flex-gap #albumList .albumPerformerLine > * + * { margin-top: 4px; }
+.no-flex-gap .hero-tags > * + * { margin-left: 6px; }
+.no-flex-gap #albumViewPathRow > * + * { margin-left: 8px; }
+.no-flex-gap .hero-actions > * + * { margin-left: 10px; }
+.no-flex-gap #albumPlayNowButton > * + * { margin-left: 8px; }
+.no-flex-gap #albumPlaylistButton > * + * { margin-left: 8px; }
+.no-flex-gap .albumItemLeft > * + * { margin-left: 6px; }
+.no-flex-gap .trackItemMeta > * + * { margin-left: 8px; }
+.no-flex-gap .disc-label > * + * { margin-left: 12px; }
+.no-flex-gap .relatedAlbumsHeader { margin-right: -12px; margin-bottom: -12px; }
+.no-flex-gap .relatedAlbumsHeader > * { margin-right: 12px; margin-bottom: 12px; }
+
+/* ---- artist.css ---- */
+.no-flex-gap .artist-image-controls > * + * { margin-top: 12px; }
+.no-flex-gap #artistViewPictureControls > * + * { margin-left: 12px; }
+.no-flex-gap .artist-picture-controls > * + * { margin-left: 12px; }
+.no-flex-gap .artist-bio-source { margin-right: -16px; margin-bottom: -16px; }
+.no-flex-gap .artist-bio-source > * { margin-right: 16px; margin-bottom: 16px; }
+.no-flex-gap .artist-bio-source .sourceItem > * + * { margin-left: 8px; }
+
+/* ---- base.css ---- */
+.no-flex-gap .loading-overlay > * + * { margin-top: 16px; }
+.no-flex-gap .settings-label > * + * { margin-left: 12px; }
+
+/* ---- buttons.css ---- */
+.no-flex-gap .textButton > * + * { margin-left: 8px; }
+.no-flex-gap .btn-primary > * + * { margin-left: 8px; }
+.no-flex-gap .btn-secondary > * + * { margin-left: 8px; }
+.no-flex-gap .tabBar > * + * { margin-left: 2px; }
+
+/* ---- components.css ---- */
+.no-flex-gap .dropdownItem > * + * { margin-left: 10px; }
+.no-flex-gap .chip > * + * { margin-left: 6px; }
+
+/* ---- layout.css ---- */
+.no-flex-gap .topbar-nav > * + * { margin-left: 2px; }
+.no-flex-gap #topBarButtons > * + * { margin-left: 8px; }
+.no-flex-gap .topbar-right > * + * { margin-left: 8px; }
+.no-flex-gap .sidebar-reset > * + * { margin-right: 8px; } /* flex-direction: row-reverse */
+.no-flex-gap .format-chips { margin-right: -6px; margin-bottom: -6px; }
+.no-flex-gap .format-chips > * { margin-right: 6px; margin-bottom: 6px; }
+.no-flex-gap #playbarView > * + * { margin-left: 12px; }
+/* restore children pushed right via margin-left:auto (the rule above overrides them) */
+.no-flex-gap #playbarView > .playbar-center,
+.no-flex-gap #playbarView > .pb-right { margin-left: auto; }
+.no-flex-gap #transportButtons > * + * { margin-left: 4px; }
+.no-flex-gap #playingTrackArea > * + * { margin-left: 10px; }
+.no-flex-gap #playbarView .pb-right > * + * { margin-left: 10px; }
+.no-flex-gap .volume-inline > * + * { margin-left: 8px; }
+.no-flex-gap #volumeInline > * + * { margin-top: 8px; }
+@media (min-width: 1024px) {
+  .no-flex-gap #volumeInline > * + * { margin-top: 0; margin-left: 8px; }
+}
+
+/* ---- library.css ---- */
+.no-flex-gap .sort-btn > * + * { margin-left: 6px; }
+.no-flex-gap .group-heading > * + * { margin-left: 14px; }
+.no-flex-gap .libraryItemText3 > * + * { margin-left: 0.35em; }
+.no-flex-gap #libraryNoneItem > * + * { margin-top: 10px; }
+.no-flex-gap .libraryNoneHint > * + * { margin-left: 8px; }
+
+/* ---- playlist.css ---- */
+.no-flex-gap .playlist-header > * + * { margin-left: 12px; }
+.no-flex-gap .playlistButtons > * + * { margin-left: 8px; }
+.no-flex-gap .historyButtons > * + * { margin-left: 8px; }
+.no-flex-gap #playlistSaver .inner > * + * { margin-left: 12px; }
+.no-flex-gap .trackItem > * + * { margin-left: 8px; }
+.no-flex-gap .trackItem .left > * + * { margin-left: 4px; }
+.no-flex-gap .trackItemMeta > * + * { margin-left: 8px; }
+.no-flex-gap .trackItemAlbumHeader > * + * { margin-left: 12px; }
+.no-flex-gap .trackItemAlbumHeader .albumLineButton > * + * { margin-left: 12px; }
+.no-flex-gap .playlistItem > * + * { margin-left: 12px; }
+.no-flex-gap .historyItem > * + * { margin-left: 12px; }
+.no-flex-gap .loadItem > * + * { margin-left: 12px; }
+
+/* ---- settings.css ---- */
+.no-flex-gap #hqpSettingsView .viewHeader > * + * { margin-left: 18px; }
+.no-flex-gap .settings-card-row > * + * { margin-left: 16px; }
+.no-flex-gap .settings-card-row .row-right > * + * { margin-left: 10px; }
+.no-flex-gap .mode-switcher > * + * { margin-left: 12px; }
+.no-flex-gap .theme-options > * + * { margin-left: 8px; }
+.no-flex-gap .color-swatch-row > * + * { margin-left: 8px; }
+.no-flex-gap .column-stack > * + * { margin-top: 12px; }
+.no-flex-gap .inputGroup.row > * + * { margin-left: 8px; }
+.no-flex-gap .hotkey-row > * + * { margin-left: 14px; }
+.no-flex-gap .image-sources-list > * + * { margin-top: 6px; }
+.no-flex-gap .image-source-item > * + * { margin-left: 8px; }
+.no-flex-gap #metaDownload > * + * { margin-left: 8px; }
+.no-flex-gap .settingsMeta .line > * + * { margin-left: 8px; }
+.no-flex-gap .settingsTheme .line > * + * { margin-left: 12px; }
+.no-flex-gap .presetItem > * + * { margin-left: 8px; }
+.no-flex-gap .presetAddRow > * + * { margin-left: 16px; }
+.no-flex-gap .presetFooterBtn > * + * { margin-left: 6px; }
+.no-flex-gap .genreRuleItem > * + * { margin-left: 10px; }
+.no-flex-gap .genreRuleItem > .genreRuleDeleteBtn { margin-left: auto; }
+.no-flex-gap .color-presets > * + * { margin-left: 8px; }
+.no-flex-gap .footer-brand > * + * { margin-left: 8px; }
+
+/* ---- aspect-ratio fallbacks ----
+ * Without aspect-ratio, square wrappers sized only by the property collapse
+ * to zero height. Let the image itself (natural square) size the wrapper. */
+@media (min-width: 1024px) {
+  .no-aspect-ratio .albumViewPictureOuter,
+  .no-aspect-ratio .cover-wrap { height: auto; }
+  .no-aspect-ratio #albumViewPicture,
+  .no-aspect-ratio .cover { height: auto; }
+}
+.no-aspect-ratio .artistDiscItem .coverWrap { height: auto; }
+.no-aspect-ratio .artistDiscItem .coverWrap img { width: 100%; height: auto; }

@@ -3,15 +3,57 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HQPWV</title>
+  <!-- Feature probe: adds .no-flex-gap / .no-aspect-ratio to <html> ONLY on
+       browsers lacking support (Safari < 14.1 / < 15), so the fallback rules
+       in legacy-gap.css never apply to modern browsers. -->
+  <script>
+    (function () {
+      try {
+        var probe = document.createElement('div');
+        probe.style.cssText = 'position:absolute;top:0;left:0;visibility:hidden;pointer-events:none;display:flex;gap:4px;';
+        var a = document.createElement('div');
+        var b = document.createElement('div');
+        a.style.width = '10px';
+        b.style.width = '10px';
+        probe.appendChild(a);
+        probe.appendChild(b);
+        document.documentElement.appendChild(probe);
+        var width = probe.offsetWidth;
+        probe.parentNode.removeChild(probe);
+        /* 24px = 10 + 4(gap) + 10 -> flex gap works; 20px -> gap ignored */
+        if (width >= 24) {
+          document.documentElement.classList.add('has-flex-gap');
+        } else if (width > 0) {
+          document.documentElement.classList.add('no-flex-gap');
+        }
+      } catch (e) { /* leave modern default */ }
+      try {
+        var p2 = document.createElement('div');
+        p2.style.aspectRatio = '1 / 1';
+        if (!p2.style.aspectRatio) {
+          document.documentElement.classList.add('no-aspect-ratio');
+        }
+      } catch (e) { /* leave modern default */ }
+    })();
+  </script>
   <!-- Favicons -->
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.png" type="image/png">
-  <link rel="stylesheet" href="css/main.css?v=20260526_2">
-  <!-- Google Material Symbols for icons used in UI -->
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=sync">
+  <!-- Stylesheets loaded as parallel <link>s (was: @import chain in main.css,
+       which forced sequential downloads). Bump ?v= to force clients to reload. -->
+  <link rel="stylesheet" href="css/variables.css?v=20260906_1">
+  <link rel="stylesheet" href="css/base.css?v=20260906_1">
+  <link rel="stylesheet" href="css/components.css?v=20260906_1">
+  <link rel="stylesheet" href="css/layout.css?v=20260906_1">
+  <link rel="stylesheet" href="css/library.css?v=20260906_1">
+  <link rel="stylesheet" href="css/album.css?v=20260906_1">
+  <link rel="stylesheet" href="css/artist.css?v=20260906_1">
+  <link rel="stylesheet" href="css/playlist.css?v=20260906_1">
+  <link rel="stylesheet" href="css/settings.css?v=20260906_1">
+  <link rel="stylesheet" href="css/buttons.css?v=20260906_1">
+  <link rel="stylesheet" href="css/legacy-gap.css?v=20260906_1">
   <script src="libs/platform.js"></script>
   <script src="libs/window-app.js"></script>
   <script>
@@ -104,8 +146,8 @@
         var item = document.createElement('div');
         item.style.cssText = 'margin-bottom:12px;padding:8px;border-bottom:1px solid #333';
         item.innerHTML = '<div style="color:#f88">' + (typeof msg === 'object' ? (msg.message || msg.toString()) : String(msg).replace(/</g, '&lt;')) + '</div>' +
-          (url ? '<div style="color:#aaa;font-size:12px">' + url.replace(/</g, '&lt;') + ':' + line + ':' + col + '</div>' : '') +
-          (err && err.stack ? '<div style="color:#888;font-size:11px;margin-top:4px;white-space:pre-wrap">' + err.stack.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div>' : '');
+          (url ? '<div style="color:#aaa;font-size:var(--fs-base)">' + url.replace(/</g, '&lt;') + ':' + line + ':' + col + '</div>' : '') +
+          (err && err.stack ? '<div style="color:#888;font-size:var(--fs-base);margin-top:4px;white-space:pre-wrap">' + err.stack.replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div>' : '');
         list.appendChild(item);
       }
 
@@ -152,7 +194,7 @@
           toggle.textContent = 'Hide Errors';
           // Also append state dump
           var dump = document.createElement('pre');
-          dump.style.cssText = 'color:#aaa;font-size:11px;margin-top:16px;padding:8px;border-top:1px solid #555;white-space:pre-wrap;line-height:1.5';
+          dump.style.cssText = 'color:#aaa;font-size:var(--fs-base);margin-top:16px;padding:8px;border-top:1px solid #555;white-space:pre-wrap;line-height:1.5';
           dump.textContent = '--- Page State ---\n' + dumpState();
           overlay.appendChild(dump);
         } else {

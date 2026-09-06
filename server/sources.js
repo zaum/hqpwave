@@ -74,6 +74,9 @@ const httpGetJson = (url, cb, redirects = 0, options = {}) => {
 const musicbrainzCache = new Map();
 const musicbrainzQueue = [];
 let musicbrainzProcessing = false;
+// MusicBrainz answers 503/429 when rate limited; retry with exponential backoff.
+const MB_MAX_ATTEMPTS = 3;
+const MB_RETRY_BASE_DELAY_MS = 2000;
 
 // Track import progress per artist name (or temporary key)
 const importStatus = new Map();
@@ -81,6 +84,10 @@ const importInFlight = new Map();
 let importRunCounter = 0;
 const recentImportResults = new Map();
 const RECENT_IMPORT_TTL_MS = 15000;
+// Failed imports are remembered briefly so client-driven retries do not
+// hammer MusicBrainz right after a rate-limit failure.
+const recentImportFailures = new Map();
+const RECENT_IMPORT_FAILURE_TTL_MS = 60000;
 const DEFAULT_RELEASE_LIMIT = 99;
 const MAX_RELEASE_LIMIT = 9999;
 const DEFAULT_IMAGE_LIMIT = 5;
@@ -134,7 +141,7 @@ const isArtistRecordCompleteEnough = (artist) => {
 const processMusicBrainzQueue = () => {
   if (musicbrainzProcessing || musicbrainzQueue.length === 0) return;
   musicbrainzProcessing = true;
-  const { url, cb } = musicbrainzQueue.shift();
+  const { url, cb, attempts = 0 } = musicbrainzQueue.shift();
   
   if (musicbrainzCache.has(url)) {
     cb(null, musicbrainzCache.get(url));
@@ -144,6 +151,18 @@ const processMusicBrainzQueue = () => {
   }
 
   httpGetJson(url, (err, json) => {
+    // Retryable error (rate limit / transient): back off and re-queue before
+    // giving up, so imports survive temporary MusicBrainz throttling.
+    if (err && attempts + 1 < MB_MAX_ATTEMPTS && isRetryableRequestError(err)) {
+      const delay = Math.min(MB_RETRY_BASE_DELAY_MS * Math.pow(2, attempts), 10000);
+      console.warn('[sources] MB retryable error, retrying in ' + delay + 'ms (attempt ' + (attempts + 2) + '/' + MB_MAX_ATTEMPTS + '):', err.message);
+      musicbrainzQueue.unshift({ url, cb, attempts: attempts + 1 });
+      setTimeout(() => {
+        musicbrainzProcessing = false;
+        processMusicBrainzQueue();
+      }, delay);
+      return;
+    }
     if (err) {
       console.error('[sources] MB error:', { url, err });
     } else if (json) {
@@ -161,7 +180,7 @@ const processMusicBrainzQueue = () => {
 };
 
 const musicbrainzGet = (url, cb, priority = 0) => {
-  musicbrainzQueue.push({ url, cb, priority });
+  musicbrainzQueue.push({ url, cb, priority, attempts: 0 });
   // Process items in order of priority (higher first), then by queue entry time
   musicbrainzQueue.sort((a, b) => b.priority - a.priority);
   processMusicBrainzQueue();
@@ -588,6 +607,12 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
     importInFlight.get(importKey).push(cb);
     return;
   }
+  const recentFailure = recentImportFailures.get(importKey);
+  if (recentFailure && (Date.now() - recentFailure.finishedAt) < RECENT_IMPORT_FAILURE_TTL_MS) {
+    console.log('[sources] Skipping repeat import, recent failure for artist:', name, '-', (recentFailure.error && recentFailure.error.message) || recentFailure.error);
+    cb(recentFailure.error);
+    return;
+  }
   const recent = recentImportResults.get(importKey);
   if (recent && (Date.now() - recent.finishedAt) < RECENT_IMPORT_TTL_MS) {
     db.getArtistById(recent.mbid, (recentErr, recentArtist) => {
@@ -615,8 +640,10 @@ const fetchAndStoreArtistByName = (nameRaw, optionsOrCb, maybeCb) => {
     importInFlight.delete(importKey);
     if (!err && result) {
       recentImportResults.set(importKey, { mbid: result, finishedAt: Date.now() });
+      recentImportFailures.delete(importKey);
     } else {
       recentImportResults.delete(importKey);
+      recentImportFailures.set(importKey, { error: err, finishedAt: Date.now() });
     }
     console.log(IMPORT_LOG_SEPARATOR);
     if (err) {
